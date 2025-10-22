@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { ChevronDown, ChevronLeft, Filter, ArrowUpDown, Search, MoreHorizontal, Zap, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Select } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 interface Registration {
@@ -22,6 +23,17 @@ const App: React.FC = () => {
     const [registrations, setRegistrations] = useState<Registration[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+
+    // Filter states
+    const [filters, setFilters] = useState({
+        school: '',
+        cycle: '',
+        course: '',
+        class: '',
+        needsPickup: '',
+        inWhatsAppGroup: '',
+        registrationStatus: ''
+    })
 
     // Fetch real data from Supabase edge function
     useEffect(() => {
@@ -109,6 +121,35 @@ const App: React.FC = () => {
         fetchRegistrations()
     }, [])
 
+    // Filter and process data
+    const filteredRegistrations = useMemo(() => {
+        return registrations.filter(reg => {
+            if (filters.school && reg.school !== filters.school) return false
+            if (filters.cycle && reg.cycle !== filters.cycle) return false
+            if (filters.course && reg.course !== filters.course) return false
+            if (filters.class && reg.class !== filters.class) return false
+            if (filters.needsPickup && reg.needsPickup.toString() !== filters.needsPickup) return false
+            if (filters.inWhatsAppGroup && reg.inWhatsAppGroup.toString() !== filters.inWhatsAppGroup) return false
+            if (filters.registrationStatus && reg.registrationStatus !== filters.registrationStatus) return false
+            return true
+        })
+    }, [registrations, filters])
+
+    // Get unique values for filter options
+    const filterOptions = useMemo(() => {
+        return {
+            schools: [...new Set(registrations.map(r => r.school))].filter(Boolean),
+            cycles: [...new Set(registrations.map(r => r.cycle))].filter(Boolean),
+            courses: [...new Set(registrations.map(r => r.course))].filter(Boolean),
+            classes: [...new Set(registrations.map(r => r.class))].filter(Boolean),
+            registrationStatuses: [...new Set(registrations.map(r => r.registrationStatus))].filter(Boolean)
+        }
+    }, [registrations])
+
+    const handleFilterChange = (filterName: string, value: string) => {
+        setFilters(prev => ({ ...prev, [filterName]: value }))
+    }
+
     if (loading) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
@@ -147,149 +188,186 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-gray-100">
             {/* Header */}
             <div className="border-b bg-white shadow-sm">
-                <div className="flex items-center justify-between px-6 py-4">
-                    <div className="flex items-center gap-2">
-                        <h1 className="text-xl font-semibold">הרשמות לפי קבוצות - 2</h1>
-                        <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">הרשמות</span>
-                    </div>
+                <div className="max-w-7xl mx-auto px-6 py-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-xl font-semibold">הרשמות לפי קבוצות - {filteredRegistrations.length}</h1>
+                            <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">הרשמות</span>
+                        </div>
 
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" className="flex items-center gap-2">
-                            Group
-                            <span className="bg-primary text-primary-foreground rounded-full px-2 py-1 text-xs">2</span>
-                        </Button>
-                        <Button variant="outline" className="flex items-center gap-2">
-                            <Filter className="h-4 w-4" />
-                            Filter
-                        </Button>
-                        <Button variant="outline" className="flex items-center gap-2">
-                            <ArrowUpDown className="h-4 w-4" />
-                            Sort
-                        </Button>
-                        <Button variant="outline" size="icon">
-                            <div className="h-4 w-4 bg-muted-foreground rounded-sm"></div>
-                        </Button>
-                        <Button variant="outline" size="icon">
-                            <Search className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" className="flex items-center gap-2">
+                                Group
+                                <span className="bg-primary text-primary-foreground rounded-full px-2 py-1 text-xs">2</span>
+                            </Button>
+                            <Button variant="outline" className="flex items-center gap-2">
+                                <Filter className="h-4 w-4" />
+                                Filter
+                            </Button>
+                            <Button variant="outline" className="flex items-center gap-2">
+                                <ArrowUpDown className="h-4 w-4" />
+                                Sort
+                            </Button>
+                            <Button variant="outline" size="icon">
+                                <div className="h-4 w-4 bg-muted-foreground rounded-sm"></div>
+                            </Button>
+                            <Button variant="outline" size="icon">
+                                <Search className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Filter Bar */}
-            <div className="border-b bg-white px-6 py-4">
-                <div className="flex items-center gap-4">
-                    <Button variant="outline" className="flex items-center gap-2">
-                        בית ספר
-                        <ChevronDown className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" className="flex items-center gap-2">
-                        מחזור
-                        <ChevronDown className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" className="flex items-center gap-2">
-                        חוג
-                        <ChevronDown className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" className="flex items-center gap-2">
-                        כיתה
-                        <ChevronDown className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" className="flex items-center gap-2">
-                        האם צריך איסוף מהצהרון
-                        <ChevronDown className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" className="flex items-center gap-2">
-                        האם בקבוצת הוואטסאפ
-                        <ChevronDown className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" className="flex items-center gap-2">
-                        סטטוס רישום לחוג
-                        <ChevronDown className="h-4 w-4" />
-                    </Button>
-                </div>
-            </div>
-
-            {/* Grouping Section */}
-            <div className="bg-white px-6 py-4 border-b">
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">חוג</span>
-                        <ChevronDown className="h-4 w-4" />
-                    </div>
-                    <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1 rounded-md">
-                        <Zap className="h-4 w-4 text-yellow-600" />
-                        <span className="text-sm font-medium">אלקטרוניקה</span>
-                        <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">52</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">מחזור</span>
-                        <ChevronDown className="h-4 w-4" />
-                    </div>
-                    <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-md">
-                        <span className="text-sm">גורדון - אלקטרוניקה - א-ב - אלקטרוניקה א-ב - ראשון - 16:15</span>
-                        <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full">21</span>
+                {/* Filter Bar */}
+                <div className="border-b bg-white">
+                    <div className="max-w-7xl mx-auto px-6 py-3">
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                            <Select
+                                placeholder="בית ספר"
+                                options={filterOptions.schools.map(school => ({ value: school, label: school }))}
+                                value={filters.school}
+                                onValueChange={(value) => handleFilterChange('school', value)}
+                            />
+                            <Select
+                                placeholder="מחזור"
+                                options={filterOptions.cycles.map(cycle => ({ value: cycle, label: cycle }))}
+                                value={filters.cycle}
+                                onValueChange={(value) => handleFilterChange('cycle', value)}
+                            />
+                            <Select
+                                placeholder="חוג"
+                                options={filterOptions.courses.map(course => ({ value: course, label: course }))}
+                                value={filters.course}
+                                onValueChange={(value) => handleFilterChange('course', value)}
+                            />
+                            <Select
+                                placeholder="כיתה"
+                                options={filterOptions.classes.map(cls => ({ value: cls, label: cls }))}
+                                value={filters.class}
+                                onValueChange={(value) => handleFilterChange('class', value)}
+                            />
+                            <Select
+                                placeholder="איסוף מהצהרון"
+                                options={[
+                                    { value: 'true', label: 'כן' },
+                                    { value: 'false', label: 'לא' }
+                                ]}
+                                value={filters.needsPickup}
+                                onValueChange={(value) => handleFilterChange('needsPickup', value)}
+                            />
+                            <Select
+                                placeholder="קבוצת וואטסאפ"
+                                options={[
+                                    { value: 'true', label: 'כן' },
+                                    { value: 'false', label: 'לא' }
+                                ]}
+                                value={filters.inWhatsAppGroup}
+                                onValueChange={(value) => handleFilterChange('inWhatsAppGroup', value)}
+                            />
+                            <Select
+                                placeholder="סטטוס רישום"
+                                options={filterOptions.registrationStatuses.map(status => ({ value: status, label: status }))}
+                                value={filters.registrationStatus}
+                                onValueChange={(value) => handleFilterChange('registrationStatus', value)}
+                            />
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Data Table */}
-            <div className="bg-white">
-                <div className="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-gray-50">
-                                <TableHead className="text-right font-semibold text-gray-700">תאריך הגעה לשיעור ניסיון</TableHead>
-                                <TableHead className="text-right font-semibold text-gray-700">האם צריך איסוף מהצהרון</TableHead>
-                                <TableHead className="text-right font-semibold text-gray-700">כיתה</TableHead>
-                                <TableHead className="text-right font-semibold text-gray-700">בית ספר</TableHead>
-                                <TableHead className="text-right font-semibold text-gray-700">חוג</TableHead>
-                                <TableHead className="text-right font-semibold text-gray-700">שם מלא הורה</TableHead>
-                                <TableHead className="text-right font-semibold text-gray-700">טלפון הורה</TableHead>
-                                <TableHead className="text-right font-semibold text-gray-700">מחזור</TableHead>
-                                <TableHead className="text-right font-semibold text-gray-700">שם הילד</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {registrations.map((registration, index) => (
-                                <TableRow key={registration.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                    <TableCell className="font-medium text-gray-900">{registration.trialDate}</TableCell>
-                                    <TableCell className="text-center">
-                                        {registration.needsPickup && (
-                                            <div className="flex items-center justify-center w-6 h-6 bg-green-100 rounded-full mx-auto">
-                                                <Check className="h-4 w-4 text-green-600" />
-                                            </div>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                                            {registration.class}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-gray-700">{registration.school}</TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <Zap className="h-4 w-4 text-yellow-600" />
-                                            <span className="text-gray-700">{registration.course}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-gray-700">{registration.parentName}</TableCell>
-                                    <TableCell className="text-gray-700 font-mono">{registration.parentPhone}</TableCell>
-                                    <TableCell>
-                                        <Button variant="outline" size="sm" className="text-xs bg-gray-100 hover:bg-gray-200 border-gray-300">
-                                            {registration.cycle}
-                                        </Button>
-                                    </TableCell>
-                                    <TableCell className="font-semibold text-gray-900">{registration.childName}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                {/* Grouping Section */}
+                <div className="bg-white border-b">
+                    <div className="max-w-7xl mx-auto px-6 py-3">
+                        <div className="flex items-center gap-4 flex-wrap">
+                            {filters.course && (
+                                <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1 rounded-md">
+                                    <Zap className="h-4 w-4 text-yellow-600" />
+                                    <span className="text-sm font-medium">{filters.course}</span>
+                                    <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">
+                                        {filteredRegistrations.filter(r => r.course === filters.course).length}
+                                    </span>
+                                </div>
+                            )}
+
+                            {filters.cycle && (
+                                <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-md">
+                                    <span className="text-sm">{filters.cycle}</span>
+                                    <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full">
+                                        {filteredRegistrations.filter(r => r.cycle === filters.cycle).length}
+                                    </span>
+                                </div>
+                            )}
+
+                            {filters.school && (
+                                <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-md">
+                                    <span className="text-sm">{filters.school}</span>
+                                    <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded-full">
+                                        {filteredRegistrations.filter(r => r.school === filters.school).length}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Data Table */}
+                <div className="bg-white">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="bg-gray-50">
+                                        <TableHead className="text-right font-semibold text-gray-700">תאריך הגעה לשיעור ניסיון</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700">האם צריך איסוף מהצהרון</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700">כיתה</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700">בית ספר</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700">חוג</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700">שם מלא הורה</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700">טלפון הורה</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700">מחזור</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700">שם הילד</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredRegistrations.map((registration, index) => (
+                                        <TableRow key={registration.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                            <TableCell className="font-medium text-gray-900">{registration.trialDate}</TableCell>
+                                            <TableCell className="text-center">
+                                                {registration.needsPickup && (
+                                                    <div className="flex items-center justify-center w-6 h-6 bg-green-100 rounded-full mx-auto">
+                                                        <Check className="h-4 w-4 text-green-600" />
+                                                    </div>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                    {registration.class}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="text-gray-700">{registration.school}</TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <Zap className="h-4 w-4 text-yellow-600" />
+                                                    <span className="text-gray-700">{registration.course}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-gray-700">{registration.parentName}</TableCell>
+                                            <TableCell className="text-gray-700 font-mono">{registration.parentPhone}</TableCell>
+                                            <TableCell>
+                                                <Button variant="outline" size="sm" className="text-xs bg-gray-100 hover:bg-gray-200 border-gray-300">
+                                                    {registration.cycle}
+                                                </Button>
+                                            </TableCell>
+                                            <TableCell className="font-semibold text-gray-900">{registration.childName}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
