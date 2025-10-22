@@ -32,16 +32,18 @@ serve(async (req) => {
   try {
     // Get Airtable PAT from environment
     const AIRTABLE_PAT = Deno.env.get("AIRTABLE_PAT")
+    const AIRTABLE_BASE_ID = Deno.env.get("AIRTABLE_BASE_ID")
 
     if (!AIRTABLE_PAT) {
       throw new Error("AIRTABLE_PAT environment variable is not set")
     }
 
-    // For now, we'll use a hardcoded base ID - you can make this configurable later
-    const AIRTABLE_BASE_ID = "appXXXXXXXXXXXXXX" // Replace with your actual base ID
+    if (!AIRTABLE_BASE_ID) {
+      throw new Error("AIRTABLE_BASE_ID environment variable is not set")
+    }
 
     // Fetch data from Airtable
-    const response = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Registrations`, {
+    const response = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/הרשמה לניסיון`, {
       headers: {
         Authorization: `Bearer ${AIRTABLE_PAT}`,
         "Content-Type": "application/json",

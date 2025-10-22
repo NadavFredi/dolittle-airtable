@@ -23,126 +23,90 @@ const App: React.FC = () => {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    // Mock data for demonstration - replace with actual API call
+    // Fetch real data from Supabase edge function
     useEffect(() => {
-        // Simulate API call
-        setTimeout(() => {
-            setRegistrations([
-                {
-                    id: '1',
-                    childName: 'גיל',
-                    cycle: 'רוניקה א-ב - ראשון - 16:15',
-                    parentPhone: '0505518585',
-                    parentName: 'אריאל אלבז',
-                    course: 'אלקטרוניקה',
-                    school: 'גורדון',
-                    class: 'א',
-                    needsPickup: true,
-                    trialDate: '14/9/2025',
-                    inWhatsAppGroup: true,
-                    registrationStatus: 'מאושר'
-                },
-                {
-                    id: '2',
-                    childName: 'ליאם יורמן',
-                    cycle: 'רוניקה א-ב - ראשון - 16:15',
-                    parentPhone: '0505518586',
-                    parentName: 'דניאלה יורמן',
-                    course: 'אלקטרוניקה',
-                    school: 'גורדון',
-                    class: 'ב',
-                    needsPickup: true,
-                    trialDate: '14/9/2025',
-                    inWhatsAppGroup: true,
-                    registrationStatus: 'מאושר'
-                },
-                {
-                    id: '3',
-                    childName: 'פלא ניב',
-                    cycle: 'רוניקה א-ב - ראשון - 16:15',
-                    parentPhone: '0505518587',
-                    parentName: 'מיכל ניב',
-                    course: 'אלקטרוניקה',
-                    school: 'גורדון',
-                    class: 'א',
-                    needsPickup: true,
-                    trialDate: '14/9/2025',
-                    inWhatsAppGroup: false,
-                    registrationStatus: 'מאושר'
-                },
-                {
-                    id: '4',
-                    childName: 'נועה כהן',
-                    cycle: 'רוניקה א-ב - ראשון - 16:15',
-                    parentPhone: '0505518588',
-                    parentName: 'שרה כהן',
-                    course: 'אלקטרוניקה',
-                    school: 'גורדון',
-                    class: 'ב',
-                    needsPickup: true,
-                    trialDate: '14/9/2025',
-                    inWhatsAppGroup: true,
-                    registrationStatus: 'מאושר'
-                },
-                {
-                    id: '5',
-                    childName: 'דוד לוי',
-                    cycle: 'רוניקה א-ב - ראשון - 16:15',
-                    parentPhone: '0505518589',
-                    parentName: 'מיכאל לוי',
-                    course: 'אלקטרוניקה',
-                    school: 'גורדון',
-                    class: 'א',
-                    needsPickup: true,
-                    trialDate: '14/9/2025',
-                    inWhatsAppGroup: true,
-                    registrationStatus: 'מאושר'
-                },
-                {
-                    id: '6',
-                    childName: 'מיכל אברהם',
-                    cycle: 'רוניקה א-ב - ראשון - 16:15',
-                    parentPhone: '0505518590',
-                    parentName: 'רחל אברהם',
-                    course: 'אלקטרוניקה',
-                    school: 'גורדון',
-                    class: 'ב',
-                    needsPickup: true,
-                    trialDate: '14/9/2025',
-                    inWhatsAppGroup: false,
-                    registrationStatus: 'מאושר'
-                },
-                {
-                    id: '7',
-                    childName: 'יונתן ישראלי',
-                    cycle: 'רוניקה א-ב - ראשון - 16:15',
-                    parentPhone: '0505518591',
-                    parentName: 'דני ישראלי',
-                    course: 'אלקטרוניקה',
-                    school: 'גורדון',
-                    class: 'א',
-                    needsPickup: true,
-                    trialDate: '14/9/2025',
-                    inWhatsAppGroup: true,
-                    registrationStatus: 'מאושר'
-                },
-                {
-                    id: '8',
-                    childName: 'שירה רוזן',
-                    cycle: 'רוניקה א-ב - ראשון - 16:15',
-                    parentPhone: '0505518592',
-                    parentName: 'ענת רוזן',
-                    course: 'אלקטרוניקה',
-                    school: 'גורדון',
-                    class: 'ב',
-                    needsPickup: true,
-                    trialDate: '14/9/2025',
-                    inWhatsAppGroup: true,
-                    registrationStatus: 'מאושר'
+        const fetchRegistrations = async () => {
+            try {
+                setLoading(true)
+                setError(null)
+
+                // Get Supabase URL from environment
+                const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'http://localhost:54321'
+
+                const response = await fetch(`${supabaseUrl}/functions/v1/get-registrations`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                })
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`)
                 }
-            ])
-            setLoading(false)
-        }, 1000)
+
+                const result = await response.json()
+
+                if (result.success) {
+                    setRegistrations(result.data)
+                } else {
+                    throw new Error(result.error || 'Failed to fetch registrations')
+                }
+            } catch (err) {
+                console.error('Error fetching registrations:', err)
+                setError(err instanceof Error ? err.message : 'An unknown error occurred')
+
+                // Fallback to mock data if API fails
+                console.log('Falling back to mock data...')
+                setRegistrations([
+                    {
+                        id: '1',
+                        childName: 'גיל',
+                        cycle: 'רוניקה א-ב - ראשון - 16:15',
+                        parentPhone: '0505518585',
+                        parentName: 'אריאל אלבז',
+                        course: 'אלקטרוניקה',
+                        school: 'גורדון',
+                        class: 'א',
+                        needsPickup: true,
+                        trialDate: '14/9/2025',
+                        inWhatsAppGroup: true,
+                        registrationStatus: 'מאושר'
+                    },
+                    {
+                        id: '2',
+                        childName: 'ליאם יורמן',
+                        cycle: 'רוניקה א-ב - ראשון - 16:15',
+                        parentPhone: '0505518586',
+                        parentName: 'דניאלה יורמן',
+                        course: 'אלקטרוניקה',
+                        school: 'גורדון',
+                        class: 'ב',
+                        needsPickup: true,
+                        trialDate: '14/9/2025',
+                        inWhatsAppGroup: true,
+                        registrationStatus: 'מאושר'
+                    },
+                    {
+                        id: '3',
+                        childName: 'פלא ניב',
+                        cycle: 'רוניקה א-ב - ראשון - 16:15',
+                        parentPhone: '0505518587',
+                        parentName: 'מיכל ניב',
+                        course: 'אלקטרוניקה',
+                        school: 'גורדון',
+                        class: 'א',
+                        needsPickup: true,
+                        trialDate: '14/9/2025',
+                        inWhatsAppGroup: false,
+                        registrationStatus: 'מאושר'
+                    }
+                ])
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchRegistrations()
     }, [])
 
     if (loading) {
@@ -156,12 +120,24 @@ const App: React.FC = () => {
         )
     }
 
+    const handleRefresh = () => {
+        window.location.reload()
+    }
+
     if (error) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="text-center">
-                    <p className="text-destructive mb-4">שגיאה בטעינת הנתונים: {error}</p>
-                    <Button onClick={() => window.location.reload()}>נסה שוב</Button>
+            <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+                <div className="text-center bg-white p-8 rounded-lg shadow-lg max-w-md">
+                    <div className="text-red-500 mb-4">
+                        <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">שגיאה בטעינת הנתונים</h2>
+                    <p className="text-gray-600 mb-4">{error}</p>
+                    <Button onClick={handleRefresh} className="bg-blue-600 hover:bg-blue-700">
+                        נסה שוב
+                    </Button>
                 </div>
             </div>
         )
