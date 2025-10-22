@@ -42,29 +42,84 @@ serve(async (req) => {
       throw new Error("AIRTABLE_BASE_ID environment variable is not set")
     }
 
-    // Fetch data from Airtable
-    const response = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/הרשמה לניסיון`, {
+    // Fetch registrations data
+    const registrationsResponse = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/הרשמה לניסיון`, {
       headers: {
         Authorization: `Bearer ${AIRTABLE_PAT}`,
         "Content-Type": "application/json",
       },
     })
 
-    if (!response.ok) {
-      throw new Error(`Airtable API error: ${response.status} ${response.statusText}`)
+    if (!registrationsResponse.ok) {
+      throw new Error(`Airtable API error: ${registrationsResponse.status} ${registrationsResponse.statusText}`)
     }
 
-    const data = await response.json()
+    const registrationsData = await registrationsResponse.json()
+
+    // Fetch lookup tables
+    const [schoolsResponse, cyclesResponse, coursesResponse] = await Promise.all([
+      fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/בתי ספר`, {
+        headers: {
+          Authorization: `Bearer ${AIRTABLE_PAT}`,
+          "Content-Type": "application/json",
+        },
+      }),
+      fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/מחזורים`, {
+        headers: {
+          Authorization: `Bearer ${AIRTABLE_PAT}`,
+          "Content-Type": "application/json",
+        },
+      }),
+      fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/חוגים`, {
+        headers: {
+          Authorization: `Bearer ${AIRTABLE_PAT}`,
+          "Content-Type": "application/json",
+        },
+      }),
+    ])
+
+    // Parse lookup data
+    const schoolsData = schoolsResponse.ok ? await schoolsResponse.json() : { records: [] }
+    const cyclesData = cyclesResponse.ok ? await cyclesResponse.json() : { records: [] }
+    const coursesData = coursesResponse.ok ? await coursesResponse.json() : { records: [] }
+
+    // Create lookup maps using the correct field names
+    const schoolMap = new Map()
+    schoolsData.records.forEach((record: any) => {
+      const schoolId = record.fields["מזהה בית ספר"]
+      const schoolName = record.fields.Name || record.fields.שם || record.fields["שם בית ספר"] || record.id
+      if (schoolId) {
+        schoolMap.set(schoolId, schoolName)
+      }
+    })
+
+    const cycleMap = new Map()
+    cyclesData.records.forEach((record: any) => {
+      const cycleId = record.fields["מזהה מחזור"]
+      const cycleName = record.fields.Name || record.fields.שם || record.fields["שם מחזור"] || record.id
+      if (cycleId) {
+        cycleMap.set(cycleId, cycleName)
+      }
+    })
+
+    const courseMap = new Map()
+    coursesData.records.forEach((record: any) => {
+      const courseId = record.fields["מזהה חוג"]
+      const courseName = record.fields.Name || record.fields.שם || record.fields["שם חוג"] || record.id
+      if (courseId) {
+        courseMap.set(courseId, courseName)
+      }
+    })
 
     // Transform the data to match our UI structure
-    const registrations = data.records.map((record: RegistrationRecord) => ({
+    const registrations = registrationsData.records.map((record: RegistrationRecord) => ({
       id: record.id,
       childName: record.fields["שם הילד"] || "",
-      cycle: record.fields["מחזור"] || "",
+      cycle: cycleMap.get(record.fields["מחזור"]) || record.fields["מחזור"] || "",
       parentPhone: record.fields["טלפון הורה"] || "",
       parentName: record.fields["שם מלא הורה"] || "",
-      course: record.fields["חוג"] || "",
-      school: record.fields["בית ספר"] || "",
+      course: courseMap.get(record.fields["חוג"]) || record.fields["חוג"] || "",
+      school: schoolMap.get(record.fields["בית ספר"]) || record.fields["בית ספר"] || "",
       class: record.fields["כיתה"] || "",
       needsPickup: record.fields["האם צריך איסוף מהצהרון"] || false,
       trialDate: record.fields["תאריך הגעה לשיעור ניסיון"] || "",
@@ -72,11 +127,21 @@ serve(async (req) => {
       registrationStatus: record.fields["סטטוס רישום לחוג"] || "",
     }))
 
+    // Get unique values for filters
+    const filterOptions = {
+      schools: Array.from(schoolMap.values()).filter(Boolean),
+      cycles: Array.from(cycleMap.values()).filter(Boolean),
+      courses: Array.from(courseMap.values()).filter(Boolean),
+      classes: [...new Set(registrations.map((r) => r.class))].filter(Boolean),
+      registrationStatuses: [...new Set(registrations.map((r) => r.registrationStatus))].filter(Boolean),
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         data: registrations,
         total: registrations.length,
+        filterOptions: filterOptions,
       }),
       {
         headers: {

@@ -21,6 +21,13 @@ interface Registration {
 
 const App: React.FC = () => {
     const [registrations, setRegistrations] = useState<Registration[]>([])
+    const [filterOptions, setFilterOptions] = useState({
+        schools: [] as string[],
+        cycles: [] as string[],
+        courses: [] as string[],
+        classes: [] as string[],
+        registrationStatuses: [] as string[]
+    })
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
@@ -60,6 +67,9 @@ const App: React.FC = () => {
 
                 if (result.success) {
                     setRegistrations(result.data)
+                    if (result.filterOptions) {
+                        setFilterOptions(result.filterOptions)
+                    }
                 } else {
                     throw new Error(result.error || 'Failed to fetch registrations')
                 }
@@ -135,16 +145,6 @@ const App: React.FC = () => {
         })
     }, [registrations, filters])
 
-    // Get unique values for filter options
-    const filterOptions = useMemo(() => {
-        return {
-            schools: [...new Set(registrations.map(r => r.school))].filter(Boolean),
-            cycles: [...new Set(registrations.map(r => r.cycle))].filter(Boolean),
-            courses: [...new Set(registrations.map(r => r.course))].filter(Boolean),
-            classes: [...new Set(registrations.map(r => r.class))].filter(Boolean),
-            registrationStatuses: [...new Set(registrations.map(r => r.registrationStatus))].filter(Boolean)
-        }
-    }, [registrations])
 
     const handleFilterChange = (filterName: string, value: string) => {
         setFilters(prev => ({ ...prev, [filterName]: value }))
