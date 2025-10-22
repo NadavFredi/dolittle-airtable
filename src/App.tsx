@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { ChevronDown, ChevronLeft, Filter, Sort, Search, MoreHorizontal, Zap, Check } from 'lucide-react'
+import { ChevronDown, ChevronLeft, Filter, ArrowUpDown, Search, MoreHorizontal, Zap, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Select } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 interface Registration {
@@ -70,6 +69,76 @@ const App: React.FC = () => {
                     trialDate: '14/9/2025',
                     inWhatsAppGroup: false,
                     registrationStatus: 'מאושר'
+                },
+                {
+                    id: '4',
+                    childName: 'נועה כהן',
+                    cycle: 'רוניקה א-ב - ראשון - 16:15',
+                    parentPhone: '0505518588',
+                    parentName: 'שרה כהן',
+                    course: 'אלקטרוניקה',
+                    school: 'גורדון',
+                    class: 'ב',
+                    needsPickup: true,
+                    trialDate: '14/9/2025',
+                    inWhatsAppGroup: true,
+                    registrationStatus: 'מאושר'
+                },
+                {
+                    id: '5',
+                    childName: 'דוד לוי',
+                    cycle: 'רוניקה א-ב - ראשון - 16:15',
+                    parentPhone: '0505518589',
+                    parentName: 'מיכאל לוי',
+                    course: 'אלקטרוניקה',
+                    school: 'גורדון',
+                    class: 'א',
+                    needsPickup: true,
+                    trialDate: '14/9/2025',
+                    inWhatsAppGroup: true,
+                    registrationStatus: 'מאושר'
+                },
+                {
+                    id: '6',
+                    childName: 'מיכל אברהם',
+                    cycle: 'רוניקה א-ב - ראשון - 16:15',
+                    parentPhone: '0505518590',
+                    parentName: 'רחל אברהם',
+                    course: 'אלקטרוניקה',
+                    school: 'גורדון',
+                    class: 'ב',
+                    needsPickup: true,
+                    trialDate: '14/9/2025',
+                    inWhatsAppGroup: false,
+                    registrationStatus: 'מאושר'
+                },
+                {
+                    id: '7',
+                    childName: 'יונתן ישראלי',
+                    cycle: 'רוניקה א-ב - ראשון - 16:15',
+                    parentPhone: '0505518591',
+                    parentName: 'דני ישראלי',
+                    course: 'אלקטרוניקה',
+                    school: 'גורדון',
+                    class: 'א',
+                    needsPickup: true,
+                    trialDate: '14/9/2025',
+                    inWhatsAppGroup: true,
+                    registrationStatus: 'מאושר'
+                },
+                {
+                    id: '8',
+                    childName: 'שירה רוזן',
+                    cycle: 'רוניקה א-ב - ראשון - 16:15',
+                    parentPhone: '0505518592',
+                    parentName: 'ענת רוזן',
+                    course: 'אלקטרוניקה',
+                    school: 'גורדון',
+                    class: 'ב',
+                    needsPickup: true,
+                    trialDate: '14/9/2025',
+                    inWhatsAppGroup: true,
+                    registrationStatus: 'מאושר'
                 }
             ])
             setLoading(false)
@@ -99,9 +168,9 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-gray-100">
             {/* Header */}
-            <div className="border-b bg-white">
+            <div className="border-b bg-white shadow-sm">
                 <div className="flex items-center justify-between px-6 py-4">
                     <div className="flex items-center gap-2">
                         <h1 className="text-xl font-semibold">הרשמות לפי קבוצות - 2</h1>
@@ -119,7 +188,7 @@ const App: React.FC = () => {
                             Filter
                         </Button>
                         <Button variant="outline" className="flex items-center gap-2">
-                            <Sort className="h-4 w-4" />
+                            <ArrowUpDown className="h-4 w-4" />
                             Sort
                         </Button>
                         <Button variant="outline" size="icon">
@@ -138,31 +207,34 @@ const App: React.FC = () => {
             {/* Filter Bar */}
             <div className="border-b bg-white px-6 py-4">
                 <div className="flex items-center gap-4">
-                    <Select placeholder="בית ספר">
-                        <option value="gordon">גורדון</option>
-                    </Select>
-                    <Select placeholder="מחזור">
-                        <option value="cycle1">מחזור 1</option>
-                    </Select>
-                    <Select placeholder="חוג">
-                        <option value="electronics">אלקטרוניקה</option>
-                    </Select>
-                    <Select placeholder="כיתה">
-                        <option value="a">א</option>
-                        <option value="b">ב</option>
-                    </Select>
-                    <Select placeholder="האם צריך איסוף מהצהרון">
-                        <option value="yes">כן</option>
-                        <option value="no">לא</option>
-                    </Select>
-                    <Select placeholder="האם בקבוצת הוואטסאפ">
-                        <option value="yes">כן</option>
-                        <option value="no">לא</option>
-                    </Select>
-                    <Select placeholder="סטטוס רישום לחוג">
-                        <option value="approved">מאושר</option>
-                        <option value="pending">ממתין</option>
-                    </Select>
+                    <Button variant="outline" className="flex items-center gap-2">
+                        בית ספר
+                        <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" className="flex items-center gap-2">
+                        מחזור
+                        <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" className="flex items-center gap-2">
+                        חוג
+                        <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" className="flex items-center gap-2">
+                        כיתה
+                        <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" className="flex items-center gap-2">
+                        האם צריך איסוף מהצהרון
+                        <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" className="flex items-center gap-2">
+                        האם בקבוצת הוואטסאפ
+                        <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" className="flex items-center gap-2">
+                        סטטוס רישום לחוג
+                        <ChevronDown className="h-4 w-4" />
+                    </Button>
                 </div>
             </div>
 
@@ -192,55 +264,57 @@ const App: React.FC = () => {
 
             {/* Data Table */}
             <div className="bg-white">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>תאריך הגעה לשיעור ניסיון</TableHead>
-                            <TableHead>האם צריך איסוף מהצהרון</TableHead>
-                            <TableHead>כיתה</TableHead>
-                            <TableHead>בית ספר</TableHead>
-                            <TableHead>חוג</TableHead>
-                            <TableHead>שם מלא הורה</TableHead>
-                            <TableHead>טלפון הורה</TableHead>
-                            <TableHead>מחזור</TableHead>
-                            <TableHead>שם הילד</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {registrations.map((registration) => (
-                            <TableRow key={registration.id}>
-                                <TableCell className="font-medium">{registration.trialDate}</TableCell>
-                                <TableCell>
-                                    {registration.needsPickup && (
-                                        <div className="flex items-center justify-center w-6 h-6 bg-green-100 rounded-full">
-                                            <Check className="h-4 w-4 text-green-600" />
-                                        </div>
-                                    )}
-                                </TableCell>
-                                <TableCell>
-                                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">
-                                        {registration.class}
-                                    </span>
-                                </TableCell>
-                                <TableCell>{registration.school}</TableCell>
-                                <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        <Zap className="h-4 w-4 text-yellow-600" />
-                                        {registration.course}
-                                    </div>
-                                </TableCell>
-                                <TableCell>{registration.parentName}</TableCell>
-                                <TableCell>{registration.parentPhone}</TableCell>
-                                <TableCell>
-                                    <Button variant="outline" size="sm" className="text-xs">
-                                        {registration.cycle}
-                                    </Button>
-                                </TableCell>
-                                <TableCell className="font-medium">{registration.childName}</TableCell>
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="bg-gray-50">
+                                <TableHead className="text-right font-semibold text-gray-700">תאריך הגעה לשיעור ניסיון</TableHead>
+                                <TableHead className="text-right font-semibold text-gray-700">האם צריך איסוף מהצהרון</TableHead>
+                                <TableHead className="text-right font-semibold text-gray-700">כיתה</TableHead>
+                                <TableHead className="text-right font-semibold text-gray-700">בית ספר</TableHead>
+                                <TableHead className="text-right font-semibold text-gray-700">חוג</TableHead>
+                                <TableHead className="text-right font-semibold text-gray-700">שם מלא הורה</TableHead>
+                                <TableHead className="text-right font-semibold text-gray-700">טלפון הורה</TableHead>
+                                <TableHead className="text-right font-semibold text-gray-700">מחזור</TableHead>
+                                <TableHead className="text-right font-semibold text-gray-700">שם הילד</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                        </TableHeader>
+                        <TableBody>
+                            {registrations.map((registration, index) => (
+                                <TableRow key={registration.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                    <TableCell className="font-medium text-gray-900">{registration.trialDate}</TableCell>
+                                    <TableCell className="text-center">
+                                        {registration.needsPickup && (
+                                            <div className="flex items-center justify-center w-6 h-6 bg-green-100 rounded-full mx-auto">
+                                                <Check className="h-4 w-4 text-green-600" />
+                                            </div>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                            {registration.class}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className="text-gray-700">{registration.school}</TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            <Zap className="h-4 w-4 text-yellow-600" />
+                                            <span className="text-gray-700">{registration.course}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-gray-700">{registration.parentName}</TableCell>
+                                    <TableCell className="text-gray-700 font-mono">{registration.parentPhone}</TableCell>
+                                    <TableCell>
+                                        <Button variant="outline" size="sm" className="text-xs bg-gray-100 hover:bg-gray-200 border-gray-300">
+                                            {registration.cycle}
+                                        </Button>
+                                    </TableCell>
+                                    <TableCell className="font-semibold text-gray-900">{registration.childName}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
         </div>
     )
