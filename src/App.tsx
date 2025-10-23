@@ -601,7 +601,6 @@ const App: React.FC = () => {
 
         try {
             const uniquePhones = getUniquePhoneNumbers()
-            const webhookUrl = 'https://hook.eu2.make.com/pdvxq3rh5t1zb054fyyzgiw3ade6gvrb'
 
             const payload = {
                 registrations: filteredRegistrations.map(reg => ({
@@ -624,10 +623,11 @@ const App: React.FC = () => {
                 flowId: flowId
             }
 
-            const response = await fetch(webhookUrl, {
+            const response = await fetch(`${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1/send-bulk-messages`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${(import.meta as any).env.VITE_SUPABASE_ANON_KEY}`
                 },
                 body: JSON.stringify(payload)
             })
@@ -636,8 +636,8 @@ const App: React.FC = () => {
                 const result = await response.json()
 
                 // Store tracking URL - no ugly browser alerts!
-                if (result.url) {
-                    setTrackingUrl(result.url)
+                if (result.result?.url) {
+                    setTrackingUrl(result.result.url)
                 }
 
                 // Don't close modal yet - user can see tracking link

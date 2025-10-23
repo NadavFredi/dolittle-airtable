@@ -104,3 +104,8 @@ enable_confirmations = false
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/get-registrations/index.ts"
+
+[functions.send-bulk-messages]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/send-bulk-messages/index.ts"
