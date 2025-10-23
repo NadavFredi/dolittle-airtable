@@ -72,16 +72,14 @@ const FilterCondition = ({
 
         if (valueOptions.length > 0) {
             return (
-                <select
+                <Autocomplete
+                    options={valueOptions.map((option: string) => ({ label: option, value: option }))}
                     value={condition.value as string || ''}
-                    onChange={(e) => onUpdate({ ...condition, value: e.target.value })}
-                    className="px-2 py-1 border border-gray-300 rounded text-sm min-w-[120px]"
-                >
-                    <option value="">בחר ערך</option>
-                    {valueOptions.map((option: string) => (
-                        <option key={option} value={option}>{option}</option>
-                    ))}
-                </select>
+                    onSelect={(value) => onUpdate({ ...condition, value })}
+                    placeholder="בחר ערך"
+                    allowClear={true}
+                    className="min-w-[120px]"
+                />
             )
         }
 
@@ -97,21 +95,20 @@ const FilterCondition = ({
     }
 
     return (
-        <div className="flex items-center gap-2 p-3 bg-white border border-gray-200 rounded-md">
-            <select
+        <div className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
+            <Autocomplete
+                options={fieldOptions}
                 value={condition.field}
-                onChange={(e) => onUpdate({ ...condition, field: e.target.value, value: null })}
-                className="px-2 py-1 border border-gray-300 rounded text-sm min-w-[140px]"
-            >
-                {fieldOptions.map(option => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-            </select>
+                onSelect={(value) => onUpdate({ ...condition, field: value, value: null })}
+                placeholder="בחר שדה"
+                allowClear={false}
+                className="min-w-[140px]"
+            />
 
             <select
                 value={condition.operator}
                 onChange={(e) => onUpdate({ ...condition, operator: e.target.value as any })}
-                className="px-2 py-1 border border-gray-300 rounded text-sm min-w-[100px]"
+                className="px-3 py-2 border border-gray-300 rounded-md text-sm min-w-[100px] bg-white"
             >
                 {operatorOptions.map(option => (
                     <option key={option.value} value={option.value}>{option.label}</option>
@@ -122,7 +119,7 @@ const FilterCondition = ({
 
             <button
                 onClick={onDelete}
-                className="p-1 text-gray-400 hover:text-red-500"
+                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
             >
                 <X className="h-4 w-4" />
             </button>
@@ -161,14 +158,14 @@ const FilterGroup = ({
     }
 
     return (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
                     <span className="text-sm font-medium text-gray-700">קבוצת תנאים</span>
                     <select
                         value={group.operator}
                         onChange={(e) => onUpdate({ ...group, operator: e.target.value as 'AND' | 'OR' })}
-                        className="px-2 py-1 border border-gray-300 rounded text-sm"
+                        className="px-3 py-1 border border-gray-300 rounded-md text-sm bg-white"
                     >
                         <option value="AND">וגם (AND)</option>
                         <option value="OR">או (OR)</option>
@@ -176,18 +173,18 @@ const FilterGroup = ({
                 </div>
                 <button
                     onClick={onDelete}
-                    className="p-1 text-gray-400 hover:text-red-500"
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
                 >
                     <X className="h-4 w-4" />
                 </button>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
                 {group.conditions.map((condition: FilterCondition, index: number) => (
                     <div key={condition.id}>
                         {index > 0 && (
                             <div className="flex items-center justify-center py-2">
-                                <span className="text-sm text-gray-500 bg-white px-2 py-1 rounded border">
+                                <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded-md border shadow-sm">
                                     {group.operator}
                                 </span>
                             </div>
@@ -206,7 +203,7 @@ const FilterGroup = ({
 
             <button
                 onClick={onAddCondition}
-                className="mt-3 flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
+                className="mt-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
             >
                 <span className="text-lg">+</span>
                 הוסף תנאי
@@ -252,6 +249,9 @@ const App: React.FC = () => {
     })
 
     const [filterGroups, setFilterGroups] = useState<FilterGroup[]>([])
+
+    // Inter-group operator (AND/OR between groups)
+    const [interGroupOperator, setInterGroupOperator] = useState<'AND' | 'OR'>('AND')
 
     // Field options for filter conditions
     const fieldOptions = [
@@ -386,8 +386,10 @@ const App: React.FC = () => {
                             : conditionResults.some(result => result)
                     })
 
-                    // All groups must pass (AND between groups)
-                    return groupResults.every(result => result)
+                    // Apply inter-group operator (AND/OR between groups)
+                    return interGroupOperator === 'AND'
+                        ? groupResults.every(result => result)
+                        : groupResults.some(result => result)
                 }
 
                 // Fallback to old advanced filters if no groups
@@ -490,7 +492,7 @@ const App: React.FC = () => {
         }
 
         return filtered
-    }, [registrations, filters, sortConfig, searchQuery, isAdvancedMode, advancedFilters, filterGroups])
+    }, [registrations, filters, sortConfig, searchQuery, isAdvancedMode, advancedFilters, filterGroups, interGroupOperator])
 
     // Pagination calculations
     const totalPages = Math.ceil(filteredRegistrations.length / itemsPerPage)
@@ -708,20 +710,20 @@ const App: React.FC = () => {
 
                                 {filterGroups.length === 0 ? (
                                     <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                                        <div className="text-gray-500 mb-4">
+                                        <div className="text-gray-500 mb-6 text-sm">
                                             גרור תנאים לכאן כדי להוסיף אותם לקבוצה זו
                                         </div>
                                         <div className="flex items-center justify-center gap-4">
                                             <button
                                                 onClick={addFilterGroup}
-                                                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
+                                                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors"
                                             >
                                                 <span className="text-lg">+</span>
                                                 הוסף תנאי
                                             </button>
                                             <button
                                                 onClick={addFilterGroup}
-                                                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
+                                                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors"
                                             >
                                                 <span className="text-lg">+</span>
                                                 הוסף קבוצת תנאים
@@ -734,9 +736,17 @@ const App: React.FC = () => {
                                             <div key={group.id}>
                                                 {index > 0 && (
                                                     <div className="flex items-center justify-center py-2">
-                                                        <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded border">
-                                                            וגם (AND)
-                                                        </span>
+                                                        <div className="flex items-center gap-2 bg-white px-3 py-1 rounded border shadow-sm">
+                                                            <span className="text-sm text-gray-600">לוגיקה בין קבוצות:</span>
+                                                            <select
+                                                                value={interGroupOperator}
+                                                                onChange={(e) => setInterGroupOperator(e.target.value as 'AND' | 'OR')}
+                                                                className="px-2 py-1 border border-gray-300 rounded text-sm bg-white"
+                                                            >
+                                                                <option value="AND">וגם (AND)</option>
+                                                                <option value="OR">או (OR)</option>
+                                                            </select>
+                                                        </div>
                                                     </div>
                                                 )}
                                                 <FilterGroup
@@ -751,17 +761,17 @@ const App: React.FC = () => {
                                             </div>
                                         ))}
 
-                                        <div className="flex items-center gap-4 pt-2">
+                                        <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
                                             <button
                                                 onClick={addFilterGroup}
-                                                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
+                                                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors"
                                             >
                                                 <span className="text-lg">+</span>
                                                 הוסף תנאי
                                             </button>
                                             <button
                                                 onClick={addFilterGroup}
-                                                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
+                                                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors"
                                             >
                                                 <span className="text-lg">+</span>
                                                 הוסף קבוצת תנאים
@@ -854,7 +864,7 @@ const App: React.FC = () => {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={isAdvancedMode ? (filterGroups.length > 0 ? clearFilterGroups : clearAdvancedFilters) : clearAllFilters}
+                                    onClick={isAdvancedMode ? (filterGroups.length > 0 ? () => { clearFilterGroups(); setInterGroupOperator('AND') } : clearAdvancedFilters) : clearAllFilters}
                                     className="text-gray-600 hover:text-gray-800"
                                 >
                                     נקה הכל
