@@ -87,8 +87,8 @@ serve(async (req) => {
     const schoolMap = new Map()
     schoolsData.records.forEach((record: any) => {
       const schoolId = record.fields["מזהה בית ספר"]
-      const schoolName = record.fields.Name || record.fields.שם || record.fields["שם בית ספר"] || record.id
-      if (schoolId) {
+      const schoolName = record.fields["בית ספר"]
+      if (schoolId && schoolName) {
         schoolMap.set(schoolId, schoolName)
       }
     })
@@ -96,8 +96,8 @@ serve(async (req) => {
     const cycleMap = new Map()
     cyclesData.records.forEach((record: any) => {
       const cycleId = record.fields["מזהה מחזור"]
-      const cycleName = record.fields.Name || record.fields.שם || record.fields["שם מחזור"] || record.id
-      if (cycleId) {
+      const cycleName = record.fields["שם מחזור לתצוגה"]
+      if (cycleId && cycleName) {
         cycleMap.set(cycleId, cycleName)
       }
     })
@@ -105,8 +105,8 @@ serve(async (req) => {
     const courseMap = new Map()
     coursesData.records.forEach((record: any) => {
       const courseId = record.fields["מזהה חוג"]
-      const courseName = record.fields.Name || record.fields.שם || record.fields["שם חוג"] || record.id
-      if (courseId) {
+      const courseName = record.fields["שם החוג"]
+      if (courseId && courseName) {
         courseMap.set(courseId, courseName)
       }
     })
