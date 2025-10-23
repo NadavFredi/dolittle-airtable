@@ -3,6 +3,7 @@ import { Filter, Zap, Check, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Sear
 import { Button } from '@/components/ui/button'
 import { Autocomplete } from '@/components/ui/autocomplete'
 import { Popover } from '@/components/ui/popover'
+import { AppFooter } from '@/components/AppFooter'
 
 interface Registration {
     id: string
@@ -260,7 +261,6 @@ const App: React.FC = () => {
     const [registrationLink, setRegistrationLink] = useState('')
     const [messageContent, setMessageContent] = useState('')
     const [flowId, setFlowId] = useState('')
-    const [isSending, setIsSending] = useState(false)
     const [isSendingLink, setIsSendingLink] = useState(false)
     const [trackingUrl, setTrackingUrl] = useState('')
 
@@ -695,9 +695,11 @@ const App: React.FC = () => {
                 <div className="max-w-7xl mx-auto px-6 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                                <span className="text-white font-bold text-sm">D</span>
-                            </div>
+                            <img
+                                src="/easyflow-logo.png"
+                                alt="EasyFlow logo"
+                                className="h-8 w-auto"
+                            />
                             <div>
                                 <h1 className="text-xl font-semibold text-gray-900">Dolittle</h1>
                                 <p className="text-sm text-gray-500">ניהול הרשמות</p>
@@ -1485,6 +1487,9 @@ const App: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Footer */}
+            <AppFooter />
         </div>
     )
 }
