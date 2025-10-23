@@ -251,335 +251,299 @@ const App: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            {/* Header */}
-            <div className="border-b bg-white shadow-sm">
-                <div className="max-w-7xl mx-auto px-6 py-4">
-                    <div className="flex items-center justify-between">
+
+            {/* Filter Bar */}
+            <div className="border-b bg-white">
+                <div className="max-w-7xl mx-auto px-6 py-3">
+                    <div className="flex items-center gap-4 flex-wrap">
                         <div className="flex items-center gap-2">
-                            <h1 className="text-xl font-semibold">הרשמות לפי קבוצות - {filteredRegistrations.length}</h1>
-                            <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">הרשמות</span>
+                            <Filter className="h-4 w-4 text-gray-500" />
+                            <span className="text-sm font-medium text-gray-700">סינון:</span>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" className="flex items-center gap-2">
-                                Group
-                                <span className="bg-primary text-primary-foreground rounded-full px-2 py-1 text-xs">2</span>
-                            </Button>
-                            <Button variant="outline" className="flex items-center gap-2">
-                                <Filter className="h-4 w-4" />
-                                Filter
-                            </Button>
-                            <Button variant="outline" className="flex items-center gap-2">
-                                <ArrowUpDown className="h-4 w-4" />
-                                Sort
-                            </Button>
-                            <Button variant="outline" size="icon">
-                                <div className="h-4 w-4 bg-muted-foreground rounded-sm"></div>
-                            </Button>
-                            <Button variant="outline" size="icon">
-                                <Search className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
+                        <div className="flex items-center gap-3 flex-wrap">
+                            <Autocomplete
+                                options={filterOptions.schools.map(school => ({ label: school, value: school }))}
+                                value={filters.school}
+                                onSelect={(value) => handleFilterChange('school', value)}
+                                placeholder="בית ספר"
+                                allowClear={true}
+                                className="min-w-[70px]"
+                            />
+
+                            <Autocomplete
+                                options={filterOptions.cycles.map(cycle => ({ label: cycle, value: cycle }))}
+                                value={filters.cycle}
+                                onSelect={(value) => handleFilterChange('cycle', value)}
+                                placeholder="מחזור"
+                                allowClear={true}
+                                className="min-w-[200px]"
+                            />
+
+                            <Autocomplete
+                                options={filterOptions.courses.map(course => ({ label: course, value: course }))}
+                                value={filters.course}
+                                onSelect={(value) => handleFilterChange('course', value)}
+                                placeholder="חוג"
+                                allowClear={true}
+                                className="min-w-[140px]"
+                            />
+
+                            <Autocomplete
+                                options={filterOptions.classes.map(cls => ({ label: cls, value: cls }))}
+                                value={filters.class}
+                                onSelect={(value) => handleFilterChange('class', value)}
+                                placeholder="כיתה"
+                                allowClear={true}
+                                className="min-w-[100px]"
+                            />
+
+                            <Autocomplete
+                                options={[
+                                    { label: "כן", value: "true" },
+                                    { label: "לא", value: "false" }
+                                ]}
+                                value={filters.needsPickup}
+                                onSelect={(value) => handleFilterChange('needsPickup', value)}
+                                placeholder="איסוף מהצהרון"
+                                allowClear={true}
+                                className="min-w-[140px]"
+                            />
+
+                            <Autocomplete
+                                options={[
+                                    { label: "כן", value: "true" },
+                                    { label: "לא", value: "false" }
+                                ]}
+                                value={filters.inWhatsAppGroup}
+                                onSelect={(value) => handleFilterChange('inWhatsAppGroup', value)}
+                                placeholder="קבוצת וואטסאפ"
+                                allowClear={true}
+                                className="min-w-[140px]"
+                            />
+
+                            <Autocomplete
+                                options={filterOptions.registrationStatuses.map(status => ({ label: status, value: status }))}
+                                value={filters.registrationStatus}
+                                onSelect={(value) => handleFilterChange('registrationStatus', value)}
+                                placeholder="סטטוס רישום"
+                                allowClear={true}
+                                className="min-w-[140px]"
+                            />
                         </div>
+
+                        {(filters.school || filters.cycle || filters.course || filters.class || filters.needsPickup || filters.inWhatsAppGroup || filters.registrationStatus) && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={clearAllFilters}
+                                className="text-gray-600 hover:text-gray-800"
+                            >
+                                נקה הכל
+                            </Button>
+                        )}
                     </div>
                 </div>
+            </div>
 
-                {/* Filter Bar */}
-                <div className="border-b bg-white">
-                    <div className="max-w-7xl mx-auto px-6 py-3">
-                        <div className="flex items-center gap-4 flex-wrap">
-                            <div className="flex items-center gap-2">
-                                <Filter className="h-4 w-4 text-gray-500" />
-                                <span className="text-sm font-medium text-gray-700">סינון:</span>
+            {/* Grouping Section */}
+            <div className="bg-white border-b">
+                <div className="max-w-7xl mx-auto px-6 py-3">
+                    <div className="flex items-center gap-4 flex-wrap">
+                        {filters.course && (
+                            <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1 rounded-md">
+                                <Zap className="h-4 w-4 text-yellow-600" />
+                                <span className="text-sm font-medium">{filters.course}</span>
+                                <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">
+                                    {filteredRegistrations.filter(r => r.course === filters.course).length}
+                                </span>
                             </div>
+                        )}
 
-                            <div className="flex items-center gap-3 flex-wrap">
-                                <Autocomplete
-                                    options={filterOptions.schools.map(school => ({ label: school, value: school }))}
-                                    value={filters.school}
-                                    onSelect={(value) => handleFilterChange('school', value)}
-                                    placeholder="בית ספר"
-                                    allowClear={true}
-                                    className="min-w-[70px]"
-                                />
-
-                                <Autocomplete
-                                    options={filterOptions.cycles.map(cycle => ({ label: cycle, value: cycle }))}
-                                    value={filters.cycle}
-                                    onSelect={(value) => handleFilterChange('cycle', value)}
-                                    placeholder="מחזור"
-                                    allowClear={true}
-                                    className="min-w-[200px]"
-                                />
-
-                                <Autocomplete
-                                    options={filterOptions.courses.map(course => ({ label: course, value: course }))}
-                                    value={filters.course}
-                                    onSelect={(value) => handleFilterChange('course', value)}
-                                    placeholder="חוג"
-                                    allowClear={true}
-                                    className="min-w-[140px]"
-                                />
-
-                                <Autocomplete
-                                    options={filterOptions.classes.map(cls => ({ label: cls, value: cls }))}
-                                    value={filters.class}
-                                    onSelect={(value) => handleFilterChange('class', value)}
-                                    placeholder="כיתה"
-                                    allowClear={true}
-                                    className="min-w-[100px]"
-                                />
-
-                                <Autocomplete
-                                    options={[
-                                        { label: "כן", value: "true" },
-                                        { label: "לא", value: "false" }
-                                    ]}
-                                    value={filters.needsPickup}
-                                    onSelect={(value) => handleFilterChange('needsPickup', value)}
-                                    placeholder="איסוף מהצהרון"
-                                    allowClear={true}
-                                    className="min-w-[140px]"
-                                />
-
-                                <Autocomplete
-                                    options={[
-                                        { label: "כן", value: "true" },
-                                        { label: "לא", value: "false" }
-                                    ]}
-                                    value={filters.inWhatsAppGroup}
-                                    onSelect={(value) => handleFilterChange('inWhatsAppGroup', value)}
-                                    placeholder="קבוצת וואטסאפ"
-                                    allowClear={true}
-                                    className="min-w-[140px]"
-                                />
-
-                                <Autocomplete
-                                    options={filterOptions.registrationStatuses.map(status => ({ label: status, value: status }))}
-                                    value={filters.registrationStatus}
-                                    onSelect={(value) => handleFilterChange('registrationStatus', value)}
-                                    placeholder="סטטוס רישום"
-                                    allowClear={true}
-                                    className="min-w-[140px]"
-                                />
+                        {filters.cycle && (
+                            <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-md">
+                                <span className="text-sm">{filters.cycle}</span>
+                                <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full">
+                                    {filteredRegistrations.filter(r => r.cycle === filters.cycle).length}
+                                </span>
                             </div>
+                        )}
 
-                            {(filters.school || filters.cycle || filters.course || filters.class || filters.needsPickup || filters.inWhatsAppGroup || filters.registrationStatus) && (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={clearAllFilters}
-                                    className="text-gray-600 hover:text-gray-800"
-                                >
-                                    נקה הכל
-                                </Button>
-                            )}
-                        </div>
+                        {filters.school && (
+                            <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-md">
+                                <span className="text-sm">{filters.school}</span>
+                                <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded-full">
+                                    {filteredRegistrations.filter(r => r.school === filters.school).length}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
+            </div>
 
-                {/* Grouping Section */}
-                <div className="bg-white border-b">
-                    <div className="max-w-7xl mx-auto px-6 py-3">
-                        <div className="flex items-center gap-4 flex-wrap">
-                            {filters.course && (
-                                <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1 rounded-md">
-                                    <Zap className="h-4 w-4 text-yellow-600" />
-                                    <span className="text-sm font-medium">{filters.course}</span>
-                                    <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">
-                                        {filteredRegistrations.filter(r => r.course === filters.course).length}
-                                    </span>
-                                </div>
-                            )}
-
-                            {filters.cycle && (
-                                <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-md">
-                                    <span className="text-sm">{filters.cycle}</span>
-                                    <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full">
-                                        {filteredRegistrations.filter(r => r.cycle === filters.cycle).length}
-                                    </span>
-                                </div>
-                            )}
-
-                            {filters.school && (
-                                <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-md">
-                                    <span className="text-sm">{filters.school}</span>
-                                    <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded-full">
-                                        {filteredRegistrations.filter(r => r.school === filters.school).length}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Data Table */}
-                <div className="bg-white">
-                    <div className="max-w-7xl mx-auto px-6">
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="bg-gray-50">
-                                        <TableHead
-                                            className="text-center font-semibold text-gray-700 min-w-[140px] cursor-pointer hover:bg-gray-100 select-none"
-                                            onClick={() => handleSort('trialDate')}
-                                        >
-                                            <div className="flex items-center justify-center gap-2">
-                                                תאריך הגעה לשיעור ניסיון
-                                                {sortConfig.key === 'trialDate' && (
-                                                    sortConfig.direction === 'asc' ?
-                                                        <ArrowUp className="h-4 w-4" /> :
-                                                        <ArrowDown className="h-4 w-4" />
-                                                )}
-                                            </div>
-                                        </TableHead>
-                                        <TableHead
-                                            className="text-center font-semibold text-gray-700 min-w-[100px] cursor-pointer hover:bg-gray-100 select-none"
-                                            onClick={() => handleSort('needsPickup')}
-                                        >
-                                            <div className="flex items-center justify-center gap-2">
-                                                איסוף מהצהרון
-                                                {sortConfig.key === 'needsPickup' && (
-                                                    sortConfig.direction === 'asc' ?
-                                                        <ArrowUp className="h-4 w-4" /> :
-                                                        <ArrowDown className="h-4 w-4" />
-                                                )}
-                                            </div>
-                                        </TableHead>
-                                        <TableHead
-                                            className="text-center font-semibold text-gray-700 min-w-[70px] cursor-pointer hover:bg-gray-100 select-none"
-                                            onClick={() => handleSort('class')}
-                                        >
-                                            <div className="flex items-center justify-center gap-2">
-                                                כיתה
-                                                {sortConfig.key === 'class' && (
-                                                    sortConfig.direction === 'asc' ?
-                                                        <ArrowUp className="h-4 w-4" /> :
-                                                        <ArrowDown className="h-4 w-4" />
-                                                )}
-                                            </div>
-                                        </TableHead>
-                                        <TableHead
-                                            className="text-center font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
-                                            onClick={() => handleSort('school')}
-                                        >
-                                            <div className="flex items-center justify-center gap-2">
-                                                בית ספר
-                                                {sortConfig.key === 'school' && (
-                                                    sortConfig.direction === 'asc' ?
-                                                        <ArrowUp className="h-4 w-4" /> :
-                                                        <ArrowDown className="h-4 w-4" />
-                                                )}
-                                            </div>
-                                        </TableHead>
-                                        <TableHead
-                                            className="text-center font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
-                                            onClick={() => handleSort('course')}
-                                        >
-                                            <div className="flex items-center justify-center gap-2">
-                                                חוג
-                                                {sortConfig.key === 'course' && (
-                                                    sortConfig.direction === 'asc' ?
-                                                        <ArrowUp className="h-4 w-4" /> :
-                                                        <ArrowDown className="h-4 w-4" />
-                                                )}
-                                            </div>
-                                        </TableHead>
-                                        <TableHead
-                                            className="text-center font-semibold text-gray-700 min-w-[140px] cursor-pointer hover:bg-gray-100 select-none"
-                                            onClick={() => handleSort('parentName')}
-                                        >
-                                            <div className="flex items-center justify-center gap-2">
-                                                שם מלא הורה
-                                                {sortConfig.key === 'parentName' && (
-                                                    sortConfig.direction === 'asc' ?
-                                                        <ArrowUp className="h-4 w-4" /> :
-                                                        <ArrowDown className="h-4 w-4" />
-                                                )}
-                                            </div>
-                                        </TableHead>
-                                        <TableHead
-                                            className="text-center font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
-                                            onClick={() => handleSort('parentPhone')}
-                                        >
-                                            <div className="flex items-center justify-center gap-2">
-                                                טלפון הורה
-                                                {sortConfig.key === 'parentPhone' && (
-                                                    sortConfig.direction === 'asc' ?
-                                                        <ArrowUp className="h-4 w-4" /> :
-                                                        <ArrowDown className="h-4 w-4" />
-                                                )}
-                                            </div>
-                                        </TableHead>
-                                        <TableHead
-                                            className="text-center font-semibold text-gray-700 min-w-[200px] cursor-pointer hover:bg-gray-100 select-none"
-                                            onClick={() => handleSort('cycle')}
-                                        >
-                                            <div className="flex items-center justify-center gap-2">
-                                                מחזור
-                                                {sortConfig.key === 'cycle' && (
-                                                    sortConfig.direction === 'asc' ?
-                                                        <ArrowUp className="h-4 w-4" /> :
-                                                        <ArrowDown className="h-4 w-4" />
-                                                )}
-                                            </div>
-                                        </TableHead>
-                                        <TableHead
-                                            className="text-center font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
-                                            onClick={() => handleSort('childName')}
-                                        >
-                                            <div className="flex items-center justify-center gap-2">
-                                                שם הילד
-                                                {sortConfig.key === 'childName' && (
-                                                    sortConfig.direction === 'asc' ?
-                                                        <ArrowUp className="h-4 w-4" /> :
-                                                        <ArrowDown className="h-4 w-4" />
-                                                )}
-                                            </div>
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredRegistrations.map((registration, index) => (
-                                        <TableRow key={registration.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                            <TableCell className="font-medium text-gray-900 whitespace-nowrap">{registration.trialDate}</TableCell>
-                                            <TableCell className="text-center">
-                                                {registration.needsPickup && (
-                                                    <div className="flex items-center justify-center w-6 h-6 bg-green-100 rounded-full mx-auto">
-                                                        <Check className="h-4 w-4 text-green-600" />
-                                                    </div>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap">
-                                                    {registration.class}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="text-gray-700 whitespace-nowrap">{registration.school}</TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2 whitespace-nowrap">
-                                                    <Zap className="h-4 w-4 text-yellow-600" />
-                                                    <span className="text-gray-700">{registration.course}</span>
+            {/* Data Table */}
+            <div className="bg-white">
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-gray-50">
+                                    <TableHead
+                                        className="text-center font-semibold text-gray-700 min-w-[140px] cursor-pointer hover:bg-gray-100 select-none"
+                                        onClick={() => handleSort('trialDate')}
+                                    >
+                                        <div className="flex items-center justify-center gap-2">
+                                            תאריך הגעה לשיעור ניסיון
+                                            {sortConfig.key === 'trialDate' && (
+                                                sortConfig.direction === 'asc' ?
+                                                    <ArrowUp className="h-4 w-4" /> :
+                                                    <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </TableHead>
+                                    <TableHead
+                                        className="text-center font-semibold text-gray-700 min-w-[100px] cursor-pointer hover:bg-gray-100 select-none"
+                                        onClick={() => handleSort('needsPickup')}
+                                    >
+                                        <div className="flex items-center justify-center gap-2">
+                                            איסוף מהצהרון
+                                            {sortConfig.key === 'needsPickup' && (
+                                                sortConfig.direction === 'asc' ?
+                                                    <ArrowUp className="h-4 w-4" /> :
+                                                    <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </TableHead>
+                                    <TableHead
+                                        className="text-center font-semibold text-gray-700 min-w-[70px] cursor-pointer hover:bg-gray-100 select-none"
+                                        onClick={() => handleSort('class')}
+                                    >
+                                        <div className="flex items-center justify-center gap-2">
+                                            כיתה
+                                            {sortConfig.key === 'class' && (
+                                                sortConfig.direction === 'asc' ?
+                                                    <ArrowUp className="h-4 w-4" /> :
+                                                    <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </TableHead>
+                                    <TableHead
+                                        className="text-center font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
+                                        onClick={() => handleSort('school')}
+                                    >
+                                        <div className="flex items-center justify-center gap-2">
+                                            בית ספר
+                                            {sortConfig.key === 'school' && (
+                                                sortConfig.direction === 'asc' ?
+                                                    <ArrowUp className="h-4 w-4" /> :
+                                                    <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </TableHead>
+                                    <TableHead
+                                        className="text-center font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
+                                        onClick={() => handleSort('course')}
+                                    >
+                                        <div className="flex items-center justify-center gap-2">
+                                            חוג
+                                            {sortConfig.key === 'course' && (
+                                                sortConfig.direction === 'asc' ?
+                                                    <ArrowUp className="h-4 w-4" /> :
+                                                    <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </TableHead>
+                                    <TableHead
+                                        className="text-center font-semibold text-gray-700 min-w-[140px] cursor-pointer hover:bg-gray-100 select-none"
+                                        onClick={() => handleSort('parentName')}
+                                    >
+                                        <div className="flex items-center justify-center gap-2">
+                                            שם מלא הורה
+                                            {sortConfig.key === 'parentName' && (
+                                                sortConfig.direction === 'asc' ?
+                                                    <ArrowUp className="h-4 w-4" /> :
+                                                    <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </TableHead>
+                                    <TableHead
+                                        className="text-center font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
+                                        onClick={() => handleSort('parentPhone')}
+                                    >
+                                        <div className="flex items-center justify-center gap-2">
+                                            טלפון הורה
+                                            {sortConfig.key === 'parentPhone' && (
+                                                sortConfig.direction === 'asc' ?
+                                                    <ArrowUp className="h-4 w-4" /> :
+                                                    <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </TableHead>
+                                    <TableHead
+                                        className="text-center font-semibold text-gray-700 min-w-[200px] cursor-pointer hover:bg-gray-100 select-none"
+                                        onClick={() => handleSort('cycle')}
+                                    >
+                                        <div className="flex items-center justify-center gap-2">
+                                            מחזור
+                                            {sortConfig.key === 'cycle' && (
+                                                sortConfig.direction === 'asc' ?
+                                                    <ArrowUp className="h-4 w-4" /> :
+                                                    <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </TableHead>
+                                    <TableHead
+                                        className="text-center font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
+                                        onClick={() => handleSort('childName')}
+                                    >
+                                        <div className="flex items-center justify-center gap-2">
+                                            שם הילד
+                                            {sortConfig.key === 'childName' && (
+                                                sortConfig.direction === 'asc' ?
+                                                    <ArrowUp className="h-4 w-4" /> :
+                                                    <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredRegistrations.map((registration, index) => (
+                                    <TableRow key={registration.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                        <TableCell className="font-medium text-gray-900 whitespace-nowrap">{registration.trialDate}</TableCell>
+                                        <TableCell className="text-center">
+                                            {registration.needsPickup && (
+                                                <div className="flex items-center justify-center w-6 h-6 bg-green-100 rounded-full mx-auto">
+                                                    <Check className="h-4 w-4 text-green-600" />
                                                 </div>
-                                            </TableCell>
-                                            <TableCell className="text-gray-700 whitespace-nowrap">{registration.parentName}</TableCell>
-                                            <TableCell className="text-gray-700 font-mono whitespace-nowrap">{registration.parentPhone}</TableCell>
-                                            <TableCell>
-                                                <Popover content={registration.cycle}>
-                                                    <Button variant="outline" size="sm" className="text-xs bg-gray-100 hover:bg-gray-200 border-gray-300 whitespace-nowrap max-w-[180px] truncate">
-                                                        {registration.cycle}
-                                                    </Button>
-                                                </Popover>
-                                            </TableCell>
-                                            <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{registration.childName}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap">
+                                                {registration.class}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="text-gray-700 whitespace-nowrap">{registration.school}</TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2 whitespace-nowrap">
+                                                <Zap className="h-4 w-4 text-yellow-600" />
+                                                <span className="text-gray-700">{registration.course}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-gray-700 whitespace-nowrap">{registration.parentName}</TableCell>
+                                        <TableCell className="text-gray-700 font-mono whitespace-nowrap">{registration.parentPhone}</TableCell>
+                                        <TableCell>
+                                            <Popover content={registration.cycle}>
+                                                <Button variant="outline" size="sm" className="text-xs bg-gray-100 hover:bg-gray-200 border-gray-300 whitespace-nowrap max-w-[180px] truncate">
+                                                    {registration.cycle}
+                                                </Button>
+                                            </Popover>
+                                        </TableCell>
+                                        <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{registration.childName}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
                     </div>
                 </div>
             </div>
