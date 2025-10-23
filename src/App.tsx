@@ -83,53 +83,6 @@ const App: React.FC = () => {
             } catch (err) {
                 console.error('Error fetching registrations:', err)
                 setError(err instanceof Error ? err.message : 'An unknown error occurred')
-
-                // Fallback to mock data if API fails
-                console.log('Falling back to mock data...')
-                setRegistrations([
-                    {
-                        id: '1',
-                        childName: 'גיל',
-                        cycle: 'רוניקה א-ב - ראשון - 16:15',
-                        parentPhone: '0505518585',
-                        parentName: 'אריאל אלבז',
-                        course: 'אלקטרוניקה',
-                        school: 'גורדון',
-                        class: 'א',
-                        needsPickup: true,
-                        trialDate: '14/9/2025',
-                        inWhatsAppGroup: true,
-                        registrationStatus: 'מאושר'
-                    },
-                    {
-                        id: '2',
-                        childName: 'ליאם יורמן',
-                        cycle: 'רוניקה א-ב - ראשון - 16:15',
-                        parentPhone: '0505518586',
-                        parentName: 'דניאלה יורמן',
-                        course: 'אלקטרוניקה',
-                        school: 'גורדון',
-                        class: 'ב',
-                        needsPickup: true,
-                        trialDate: '14/9/2025',
-                        inWhatsAppGroup: true,
-                        registrationStatus: 'מאושר'
-                    },
-                    {
-                        id: '3',
-                        childName: 'פלא ניב',
-                        cycle: 'רוניקה א-ב - ראשון - 16:15',
-                        parentPhone: '0505518587',
-                        parentName: 'מיכל ניב',
-                        course: 'אלקטרוניקה',
-                        school: 'גורדון',
-                        class: 'א',
-                        needsPickup: true,
-                        trialDate: '14/9/2025',
-                        inWhatsAppGroup: false,
-                        registrationStatus: 'מאושר'
-                    }
-                ])
             } finally {
                 setLoading(false)
             }
