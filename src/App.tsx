@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { ChevronDown, ChevronLeft, Filter, ArrowUpDown, Search, MoreHorizontal, Zap, Check, ArrowUp, ArrowDown } from 'lucide-react'
+import { Filter, Zap, Check, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Autocomplete, AutocompleteOption } from '@/components/ui/autocomplete'
+import { Autocomplete } from '@/components/ui/autocomplete'
 import { Popover } from '@/components/ui/popover'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 interface Registration {
     id: string
@@ -19,6 +18,7 @@ interface Registration {
     inWhatsAppGroup: boolean
     registrationStatus: string
 }
+
 
 const App: React.FC = () => {
     const [registrations, setRegistrations] = useState<Registration[]>([])
@@ -48,6 +48,10 @@ const App: React.FC = () => {
         key: keyof Registration | null;
         direction: 'asc' | 'desc';
     }>({ key: null, direction: 'asc' })
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1)
+    const itemsPerPage = 50
 
     // Fetch real data from Supabase edge function
     useEffect(() => {
@@ -110,7 +114,10 @@ const App: React.FC = () => {
 
     // Filter and sort data
     const filteredRegistrations = useMemo(() => {
-        let filtered = registrations.filter(reg => {
+        // Ensure registrations is always an array
+        const safeRegistrations = Array.isArray(registrations) ? registrations : []
+
+        let filtered = safeRegistrations.filter(reg => {
             if (filters.school && reg.school !== filters.school) return false
             if (filters.cycle && reg.cycle !== filters.cycle) return false
             if (filters.course && reg.course !== filters.course) return false
@@ -147,6 +154,17 @@ const App: React.FC = () => {
         return filtered
     }, [registrations, filters, sortConfig])
 
+    // Pagination calculations
+    const totalPages = Math.ceil(filteredRegistrations.length / itemsPerPage)
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    const paginatedRegistrations = filteredRegistrations.slice(startIndex, endIndex)
+
+    // Reset to first page when filters change
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [filters])
+
 
     const handleFilterChange = (filterName: string, value: string) => {
         setFilters(prev => ({ ...prev, [filterName]: value }))
@@ -164,9 +182,6 @@ const App: React.FC = () => {
         })
     }
 
-    const clearFilter = (filterName: string) => {
-        setFilters(prev => ({ ...prev, [filterName]: '' }))
-    }
 
     if (loading) {
         return (
@@ -372,166 +387,169 @@ const App: React.FC = () => {
             {/* Data Table */}
             <div className="bg-white">
                 <div className="max-w-7xl mx-auto px-6">
+                    {/* Table Header */}
+                    <div className="flex items-center border-b bg-gray-50 py-3">
+                        <div className="flex-1 min-w-[140px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('trialDate')}>
+                            <div className="flex items-center justify-center gap-2">
+                                תאריך הגעה לשיעור ניסיון
+                                {sortConfig.key === 'trialDate' && (
+                                    sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex-1 min-w-[100px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('needsPickup')}>
+                            <div className="flex items-center justify-center gap-2">
+                                איסוף מהצהרון
+                                {sortConfig.key === 'needsPickup' && (
+                                    sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex-1 min-w-[70px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('class')}>
+                            <div className="flex items-center justify-center gap-2">
+                                כיתה
+                                {sortConfig.key === 'class' && (
+                                    sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex-1 min-w-[120px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('school')}>
+                            <div className="flex items-center justify-center gap-2">
+                                בית ספר
+                                {sortConfig.key === 'school' && (
+                                    sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex-1 min-w-[120px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('course')}>
+                            <div className="flex items-center justify-center gap-2">
+                                חוג
+                                {sortConfig.key === 'course' && (
+                                    sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex-1 min-w-[140px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('parentName')}>
+                            <div className="flex items-center justify-center gap-2">
+                                שם מלא הורה
+                                {sortConfig.key === 'parentName' && (
+                                    sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex-1 min-w-[120px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('parentPhone')}>
+                            <div className="flex items-center justify-center gap-2">
+                                טלפון הורה
+                                {sortConfig.key === 'parentPhone' && (
+                                    sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex-1 min-w-[200px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('cycle')}>
+                            <div className="flex items-center justify-center gap-2">
+                                מחזור
+                                {sortConfig.key === 'cycle' && (
+                                    sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex-1 min-w-[120px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('childName')}>
+                            <div className="flex items-center justify-center gap-2">
+                                שם הילד
+                                {sortConfig.key === 'childName' && (
+                                    sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Paginated Table Body */}
                     <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-gray-50">
-                                    <TableHead
-                                        className="text-center font-semibold text-gray-700 min-w-[140px] cursor-pointer hover:bg-gray-100 select-none"
-                                        onClick={() => handleSort('trialDate')}
-                                    >
-                                        <div className="flex items-center justify-center gap-2">
-                                            תאריך הגעה לשיעור ניסיון
-                                            {sortConfig.key === 'trialDate' && (
-                                                sortConfig.direction === 'asc' ?
-                                                    <ArrowUp className="h-4 w-4" /> :
-                                                    <ArrowDown className="h-4 w-4" />
-                                            )}
+                        {paginatedRegistrations.length > 0 ? (
+                            <>
+                                {paginatedRegistrations.map((registration, index) => (
+                                    <div key={registration.id} className={`flex items-center border-b ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                                        <div className="flex-1 min-w-[140px] px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
+                                            {registration.trialDate}
                                         </div>
-                                    </TableHead>
-                                    <TableHead
-                                        className="text-center font-semibold text-gray-700 min-w-[100px] cursor-pointer hover:bg-gray-100 select-none"
-                                        onClick={() => handleSort('needsPickup')}
-                                    >
-                                        <div className="flex items-center justify-center gap-2">
-                                            איסוף מהצהרון
-                                            {sortConfig.key === 'needsPickup' && (
-                                                sortConfig.direction === 'asc' ?
-                                                    <ArrowUp className="h-4 w-4" /> :
-                                                    <ArrowDown className="h-4 w-4" />
-                                            )}
-                                        </div>
-                                    </TableHead>
-                                    <TableHead
-                                        className="text-center font-semibold text-gray-700 min-w-[70px] cursor-pointer hover:bg-gray-100 select-none"
-                                        onClick={() => handleSort('class')}
-                                    >
-                                        <div className="flex items-center justify-center gap-2">
-                                            כיתה
-                                            {sortConfig.key === 'class' && (
-                                                sortConfig.direction === 'asc' ?
-                                                    <ArrowUp className="h-4 w-4" /> :
-                                                    <ArrowDown className="h-4 w-4" />
-                                            )}
-                                        </div>
-                                    </TableHead>
-                                    <TableHead
-                                        className="text-center font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
-                                        onClick={() => handleSort('school')}
-                                    >
-                                        <div className="flex items-center justify-center gap-2">
-                                            בית ספר
-                                            {sortConfig.key === 'school' && (
-                                                sortConfig.direction === 'asc' ?
-                                                    <ArrowUp className="h-4 w-4" /> :
-                                                    <ArrowDown className="h-4 w-4" />
-                                            )}
-                                        </div>
-                                    </TableHead>
-                                    <TableHead
-                                        className="text-center font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
-                                        onClick={() => handleSort('course')}
-                                    >
-                                        <div className="flex items-center justify-center gap-2">
-                                            חוג
-                                            {sortConfig.key === 'course' && (
-                                                sortConfig.direction === 'asc' ?
-                                                    <ArrowUp className="h-4 w-4" /> :
-                                                    <ArrowDown className="h-4 w-4" />
-                                            )}
-                                        </div>
-                                    </TableHead>
-                                    <TableHead
-                                        className="text-center font-semibold text-gray-700 min-w-[140px] cursor-pointer hover:bg-gray-100 select-none"
-                                        onClick={() => handleSort('parentName')}
-                                    >
-                                        <div className="flex items-center justify-center gap-2">
-                                            שם מלא הורה
-                                            {sortConfig.key === 'parentName' && (
-                                                sortConfig.direction === 'asc' ?
-                                                    <ArrowUp className="h-4 w-4" /> :
-                                                    <ArrowDown className="h-4 w-4" />
-                                            )}
-                                        </div>
-                                    </TableHead>
-                                    <TableHead
-                                        className="text-center font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
-                                        onClick={() => handleSort('parentPhone')}
-                                    >
-                                        <div className="flex items-center justify-center gap-2">
-                                            טלפון הורה
-                                            {sortConfig.key === 'parentPhone' && (
-                                                sortConfig.direction === 'asc' ?
-                                                    <ArrowUp className="h-4 w-4" /> :
-                                                    <ArrowDown className="h-4 w-4" />
-                                            )}
-                                        </div>
-                                    </TableHead>
-                                    <TableHead
-                                        className="text-center font-semibold text-gray-700 min-w-[200px] cursor-pointer hover:bg-gray-100 select-none"
-                                        onClick={() => handleSort('cycle')}
-                                    >
-                                        <div className="flex items-center justify-center gap-2">
-                                            מחזור
-                                            {sortConfig.key === 'cycle' && (
-                                                sortConfig.direction === 'asc' ?
-                                                    <ArrowUp className="h-4 w-4" /> :
-                                                    <ArrowDown className="h-4 w-4" />
-                                            )}
-                                        </div>
-                                    </TableHead>
-                                    <TableHead
-                                        className="text-center font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
-                                        onClick={() => handleSort('childName')}
-                                    >
-                                        <div className="flex items-center justify-center gap-2">
-                                            שם הילד
-                                            {sortConfig.key === 'childName' && (
-                                                sortConfig.direction === 'asc' ?
-                                                    <ArrowUp className="h-4 w-4" /> :
-                                                    <ArrowDown className="h-4 w-4" />
-                                            )}
-                                        </div>
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredRegistrations.map((registration, index) => (
-                                    <TableRow key={registration.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                        <TableCell className="font-medium text-gray-900 whitespace-nowrap">{registration.trialDate}</TableCell>
-                                        <TableCell className="text-center">
+                                        <div className="flex-1 min-w-[100px] px-4 py-3 text-center">
                                             {registration.needsPickup && (
                                                 <div className="flex items-center justify-center w-6 h-6 bg-green-100 rounded-full mx-auto">
                                                     <Check className="h-4 w-4 text-green-600" />
                                                 </div>
                                             )}
-                                        </TableCell>
-                                        <TableCell>
+                                        </div>
+                                        <div className="flex-1 min-w-[70px] px-4 py-3">
                                             <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap">
                                                 {registration.class}
                                             </span>
-                                        </TableCell>
-                                        <TableCell className="text-gray-700 whitespace-nowrap">{registration.school}</TableCell>
-                                        <TableCell>
+                                        </div>
+                                        <div className="flex-1 min-w-[120px] px-4 py-3 text-gray-700 whitespace-nowrap">
+                                            {registration.school}
+                                        </div>
+                                        <div className="flex-1 min-w-[120px] px-4 py-3">
                                             <div className="flex items-center gap-2 whitespace-nowrap">
                                                 <Zap className="h-4 w-4 text-yellow-600" />
                                                 <span className="text-gray-700">{registration.course}</span>
                                             </div>
-                                        </TableCell>
-                                        <TableCell className="text-gray-700 whitespace-nowrap">{registration.parentName}</TableCell>
-                                        <TableCell className="text-gray-700 font-mono whitespace-nowrap">{registration.parentPhone}</TableCell>
-                                        <TableCell>
+                                        </div>
+                                        <div className="flex-1 min-w-[140px] px-4 py-3 text-gray-700 whitespace-nowrap">
+                                            {registration.parentName}
+                                        </div>
+                                        <div className="flex-1 min-w-[120px] px-4 py-3 text-gray-700 font-mono whitespace-nowrap">
+                                            {registration.parentPhone}
+                                        </div>
+                                        <div className="flex-1 min-w-[200px] px-4 py-3">
                                             <Popover content={registration.cycle}>
                                                 <Button variant="outline" size="sm" className="text-xs bg-gray-100 hover:bg-gray-200 border-gray-300 whitespace-nowrap max-w-[180px] truncate">
                                                     {registration.cycle}
                                                 </Button>
                                             </Popover>
-                                        </TableCell>
-                                        <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{registration.childName}</TableCell>
-                                    </TableRow>
+                                        </div>
+                                        <div className="flex-1 min-w-[120px] px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">
+                                            {registration.childName}
+                                        </div>
+                                    </div>
                                 ))}
-                            </TableBody>
-                        </Table>
+
+                                {/* Pagination Controls */}
+                                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t">
+                                    <div className="text-sm text-gray-700">
+                                        מציג {startIndex + 1}-{Math.min(endIndex, filteredRegistrations.length)} מתוך {filteredRegistrations.length} רשומות
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                            disabled={currentPage === 1}
+                                        >
+                                            <ChevronRight className="h-4 w-4" />
+                                            הקודם
+                                        </Button>
+                                        <span className="text-sm text-gray-700">
+                                            עמוד {currentPage} מתוך {totalPages}
+                                        </span>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                            disabled={currentPage === totalPages}
+                                        >
+                                            הבא
+                                            <ChevronLeft className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="flex items-center justify-center h-96 text-gray-500">
+                                <div className="text-center">
+                                    <p className="text-lg font-medium">אין נתונים להצגה</p>
+                                    <p className="text-sm">לא נמצאו הרשמות התואמות לסינון הנוכחי</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
