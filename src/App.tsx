@@ -140,10 +140,19 @@ const App: React.FC = () => {
 
     // Handle sorting
     const handleSort = (key: keyof Registration) => {
-        setSortConfig(prev => ({
-            key,
-            direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
-        }))
+        setSortConfig(prev => {
+            // If clicking the same column
+            if (prev.key === key) {
+                // First click: asc, second click: desc, third click: unsort
+                if (prev.direction === 'asc') {
+                    return { key, direction: 'desc' }
+                } else if (prev.direction === 'desc') {
+                    return { key: null, direction: 'asc' } // Unsort
+                }
+            }
+            // If clicking a different column, start with asc
+            return { key, direction: 'asc' }
+        })
     }
 
     // Filter and sort data
@@ -294,7 +303,7 @@ const App: React.FC = () => {
                                     onSelect={(value) => handleFilterChange('school', value)}
                                     placeholder="בית ספר"
                                     allowClear={true}
-                                    className="min-w-[140px]"
+                                    className="min-w-[70px]"
                                 />
 
                                 <Autocomplete
@@ -409,16 +418,16 @@ const App: React.FC = () => {
 
                 {/* Data Table */}
                 <div className="bg-white">
-                    <div className="max-w-full mx-auto px-6">
+                    <div className="max-w-7xl mx-auto px-6">
                         <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-gray-50">
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[160px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-center font-semibold text-gray-700 min-w-[140px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('trialDate')}
                                         >
-                                            <div className="flex items-center justify-end gap-2">
+                                            <div className="flex items-center justify-center gap-2">
                                                 תאריך הגעה לשיעור ניסיון
                                                 {sortConfig.key === 'trialDate' && (
                                                     sortConfig.direction === 'asc' ?
@@ -428,10 +437,10 @@ const App: React.FC = () => {
                                             </div>
                                         </TableHead>
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-center font-semibold text-gray-700 min-w-[100px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('needsPickup')}
                                         >
-                                            <div className="flex items-center justify-end gap-2">
+                                            <div className="flex items-center justify-center gap-2">
                                                 איסוף מהצהרון
                                                 {sortConfig.key === 'needsPickup' && (
                                                     sortConfig.direction === 'asc' ?
@@ -441,10 +450,10 @@ const App: React.FC = () => {
                                             </div>
                                         </TableHead>
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[80px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-center font-semibold text-gray-700 min-w-[70px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('class')}
                                         >
-                                            <div className="flex items-center justify-end gap-2">
+                                            <div className="flex items-center justify-center gap-2">
                                                 כיתה
                                                 {sortConfig.key === 'class' && (
                                                     sortConfig.direction === 'asc' ?
@@ -454,10 +463,10 @@ const App: React.FC = () => {
                                             </div>
                                         </TableHead>
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[140px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-center font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('school')}
                                         >
-                                            <div className="flex items-center justify-end gap-2">
+                                            <div className="flex items-center justify-center gap-2">
                                                 בית ספר
                                                 {sortConfig.key === 'school' && (
                                                     sortConfig.direction === 'asc' ?
@@ -467,10 +476,10 @@ const App: React.FC = () => {
                                             </div>
                                         </TableHead>
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[140px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-center font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('course')}
                                         >
-                                            <div className="flex items-center justify-end gap-2">
+                                            <div className="flex items-center justify-center gap-2">
                                                 חוג
                                                 {sortConfig.key === 'course' && (
                                                     sortConfig.direction === 'asc' ?
@@ -480,10 +489,10 @@ const App: React.FC = () => {
                                             </div>
                                         </TableHead>
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[160px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-center font-semibold text-gray-700 min-w-[140px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('parentName')}
                                         >
-                                            <div className="flex items-center justify-end gap-2">
+                                            <div className="flex items-center justify-center gap-2">
                                                 שם מלא הורה
                                                 {sortConfig.key === 'parentName' && (
                                                     sortConfig.direction === 'asc' ?
@@ -493,10 +502,10 @@ const App: React.FC = () => {
                                             </div>
                                         </TableHead>
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[130px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-center font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('parentPhone')}
                                         >
-                                            <div className="flex items-center justify-end gap-2">
+                                            <div className="flex items-center justify-center gap-2">
                                                 טלפון הורה
                                                 {sortConfig.key === 'parentPhone' && (
                                                     sortConfig.direction === 'asc' ?
@@ -506,10 +515,10 @@ const App: React.FC = () => {
                                             </div>
                                         </TableHead>
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[250px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-center font-semibold text-gray-700 min-w-[200px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('cycle')}
                                         >
-                                            <div className="flex items-center justify-end gap-2">
+                                            <div className="flex items-center justify-center gap-2">
                                                 מחזור
                                                 {sortConfig.key === 'cycle' && (
                                                     sortConfig.direction === 'asc' ?
@@ -519,10 +528,10 @@ const App: React.FC = () => {
                                             </div>
                                         </TableHead>
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[140px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-center font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('childName')}
                                         >
-                                            <div className="flex items-center justify-end gap-2">
+                                            <div className="flex items-center justify-center gap-2">
                                                 שם הילד
                                                 {sortConfig.key === 'childName' && (
                                                     sortConfig.direction === 'asc' ?
@@ -560,7 +569,7 @@ const App: React.FC = () => {
                                             <TableCell className="text-gray-700 font-mono whitespace-nowrap">{registration.parentPhone}</TableCell>
                                             <TableCell>
                                                 <Popover content={registration.cycle}>
-                                                    <Button variant="outline" size="sm" className="text-xs bg-gray-100 hover:bg-gray-200 border-gray-300 whitespace-nowrap max-w-[230px] truncate">
+                                                    <Button variant="outline" size="sm" className="text-xs bg-gray-100 hover:bg-gray-200 border-gray-300 whitespace-nowrap max-w-[180px] truncate">
                                                         {registration.cycle}
                                                     </Button>
                                                 </Popover>
