@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { ChevronDown, ChevronLeft, Filter, ArrowUpDown, Search, MoreHorizontal, Zap, Check, ArrowUp, ArrowDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Autocomplete, AutocompleteOption } from '@/components/ui/autocomplete'
+import { Popover } from '@/components/ui/popover'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 interface Registration {
@@ -408,13 +409,13 @@ const App: React.FC = () => {
 
                 {/* Data Table */}
                 <div className="bg-white">
-                    <div className="max-w-7xl mx-auto">
+                    <div className="max-w-full mx-auto px-6">
                         <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-gray-50">
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[140px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-right font-semibold text-gray-700 min-w-[160px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('trialDate')}
                                         >
                                             <div className="flex items-center justify-end gap-2">
@@ -427,7 +428,7 @@ const App: React.FC = () => {
                                             </div>
                                         </TableHead>
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[100px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-right font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('needsPickup')}
                                         >
                                             <div className="flex items-center justify-end gap-2">
@@ -440,7 +441,7 @@ const App: React.FC = () => {
                                             </div>
                                         </TableHead>
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[60px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-right font-semibold text-gray-700 min-w-[80px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('class')}
                                         >
                                             <div className="flex items-center justify-end gap-2">
@@ -453,7 +454,7 @@ const App: React.FC = () => {
                                             </div>
                                         </TableHead>
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-right font-semibold text-gray-700 min-w-[140px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('school')}
                                         >
                                             <div className="flex items-center justify-end gap-2">
@@ -466,7 +467,7 @@ const App: React.FC = () => {
                                             </div>
                                         </TableHead>
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-right font-semibold text-gray-700 min-w-[140px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('course')}
                                         >
                                             <div className="flex items-center justify-end gap-2">
@@ -479,7 +480,7 @@ const App: React.FC = () => {
                                             </div>
                                         </TableHead>
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[130px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-right font-semibold text-gray-700 min-w-[160px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('parentName')}
                                         >
                                             <div className="flex items-center justify-end gap-2">
@@ -492,7 +493,7 @@ const App: React.FC = () => {
                                             </div>
                                         </TableHead>
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[110px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-right font-semibold text-gray-700 min-w-[130px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('parentPhone')}
                                         >
                                             <div className="flex items-center justify-end gap-2">
@@ -505,7 +506,7 @@ const App: React.FC = () => {
                                             </div>
                                         </TableHead>
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[200px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-right font-semibold text-gray-700 min-w-[250px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('cycle')}
                                         >
                                             <div className="flex items-center justify-end gap-2">
@@ -518,7 +519,7 @@ const App: React.FC = () => {
                                             </div>
                                         </TableHead>
                                         <TableHead
-                                            className="text-right font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
+                                            className="text-right font-semibold text-gray-700 min-w-[140px] cursor-pointer hover:bg-gray-100 select-none"
                                             onClick={() => handleSort('childName')}
                                         >
                                             <div className="flex items-center justify-end gap-2">
@@ -558,9 +559,11 @@ const App: React.FC = () => {
                                             <TableCell className="text-gray-700 whitespace-nowrap">{registration.parentName}</TableCell>
                                             <TableCell className="text-gray-700 font-mono whitespace-nowrap">{registration.parentPhone}</TableCell>
                                             <TableCell>
-                                                <Button variant="outline" size="sm" className="text-xs bg-gray-100 hover:bg-gray-200 border-gray-300 whitespace-nowrap max-w-[180px] truncate">
-                                                    {registration.cycle}
-                                                </Button>
+                                                <Popover content={registration.cycle}>
+                                                    <Button variant="outline" size="sm" className="text-xs bg-gray-100 hover:bg-gray-200 border-gray-300 whitespace-nowrap max-w-[230px] truncate">
+                                                        {registration.cycle}
+                                                    </Button>
+                                                </Popover>
                                             </TableCell>
                                             <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{registration.childName}</TableCell>
                                         </TableRow>
