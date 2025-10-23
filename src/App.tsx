@@ -631,7 +631,19 @@ const App: React.FC = () => {
             })
 
             if (response.ok) {
-                alert(`הודעות נשלחו בהצלחה ל-${uniquePhones.length} מספרים`)
+                const result = await response.json()
+
+                // Show success message with Google Sheets link
+                if (result.url) {
+                    const confirmMessage = `הודעות נשלחו בהצלחה ל-${uniquePhones.length} מספרים!\n\nאתה יכול לבדוק את הסטטוס כאן:\n${result.url}\n\nהאם לפתוח את הקישור?`
+
+                    if (confirm(confirmMessage)) {
+                        window.open(result.url, '_blank')
+                    }
+                } else {
+                    alert(`הודעות נשלחו בהצלחה ל-${uniquePhones.length} מספרים`)
+                }
+
                 setShowBulkMessaging(false)
                 setBulkMessagingStep('config')
                 setRegistrationLink('')
