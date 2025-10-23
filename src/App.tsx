@@ -256,8 +256,10 @@ const App: React.FC = () => {
     // Bulk messaging state
     const [showBulkMessaging, setShowBulkMessaging] = useState(false)
     const [bulkMessagingStep, setBulkMessagingStep] = useState<'config' | 'confirm' | 'sending'>('config')
+    const [messagingMode, setMessagingMode] = useState<'formal' | 'informal'>('formal')
     const [registrationLink, setRegistrationLink] = useState('')
     const [messageContent, setMessageContent] = useState('')
+    const [flowId, setFlowId] = useState('')
     const [isSending, setIsSending] = useState(false)
 
     // Field options for filter conditions
@@ -609,12 +611,15 @@ const App: React.FC = () => {
                     course: reg.course,
                     cycle: reg.cycle,
                     registrationLink: registrationLink ? `${registrationLink}?id=${reg.id}` : null,
-                    messageContent: messageContent
+                    messageContent: messageContent,
+                    flowId: flowId
                 })),
                 totalUsers: filteredRegistrations.length,
                 uniqueNumbers: uniquePhones.length,
                 registrationLink: registrationLink,
-                messageContent: messageContent
+                messageContent: messageContent,
+                messagingMode: messagingMode,
+                flowId: flowId
             }
 
             const response = await fetch(webhookUrl, {
@@ -631,6 +636,8 @@ const App: React.FC = () => {
                 setBulkMessagingStep('config')
                 setRegistrationLink('')
                 setMessageContent('')
+                setFlowId('')
+                setMessagingMode('formal')
             } else {
                 throw new Error('Failed to send messages')
             }
@@ -1178,6 +1185,8 @@ const App: React.FC = () => {
                                         setBulkMessagingStep('config')
                                         setRegistrationLink('')
                                         setMessageContent('')
+                                        setFlowId('')
+                                        setMessagingMode('formal')
                                     }}
                                     className="p-2 text-gray-400 hover:text-gray-600"
                                 >
@@ -1201,41 +1210,114 @@ const App: React.FC = () => {
 
                             {bulkMessagingStep === 'config' && (
                                 <div className="space-y-6">
+                                    {/* Mode Selection */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            האם לשלוח קישור הרשמה?
+                                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                                            בחר סוג הודעה
                                         </label>
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    קישור בסיס (עם פרמטר שאילתה)
-                                                </label>
-                                                <input
-                                                    type="url"
-                                                    value={registrationLink}
-                                                    onChange={(e) => setRegistrationLink(e.target.value)}
-                                                    placeholder="https://example.com/register?id="
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                />
-                                                <p className="text-xs text-gray-500 mt-1">
-                                                    הקישור יושלם עם מזהה כל רשומה: {registrationLink ? `${registrationLink}123` : 'https://example.com/register?id=123'}
-                                                </p>
-                                            </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button
+                                                onClick={() => setMessagingMode('formal')}
+                                                className={`p-4 rounded-lg border-2 transition-colors ${messagingMode === 'formal'
+                                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                                                    }`}
+                                            >
+                                                <div className="text-center">
+                                                    <div className="font-medium mb-1">רשמי</div>
+                                                    <div className="text-xs text-gray-500">WhatsApp Business API</div>
+                                                </div>
+                                            </button>
+                                            <button
+                                                onClick={() => setMessagingMode('informal')}
+                                                className={`p-4 rounded-lg border-2 transition-colors ${messagingMode === 'informal'
+                                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                                                    }`}
+                                            >
+                                                <div className="text-center">
+                                                    <div className="font-medium mb-1">לא רשמי</div>
+                                                    <div className="text-xs text-gray-500">הודעות ארוכות</div>
+                                                </div>
+                                            </button>
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            תוכן ההודעה
-                                        </label>
-                                        <textarea
-                                            value={messageContent}
-                                            onChange={(e) => setMessageContent(e.target.value)}
-                                            placeholder="הזן את תוכן ההודעה שתישלח..."
-                                            rows={4}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </div>
+                                    {/* Formal Mode Fields */}
+                                    {messagingMode === 'formal' && (
+                                        <>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Flow ID
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={flowId}
+                                                    onChange={(e) => setFlowId(e.target.value)}
+                                                    placeholder="content20250910073225_988996"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    הזן את מזהה ה-Flow מה-WhatsApp Business API
+                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    האם לשלוח קישור הרשמה?
+                                                </label>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        קישור בסיס (עם פרמטר שאילתה)
+                                                    </label>
+                                                    <input
+                                                        type="url"
+                                                        value={registrationLink}
+                                                        onChange={(e) => setRegistrationLink(e.target.value)}
+                                                        placeholder="https://example.com/register?id="
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    />
+                                                    <p className="text-xs text-gray-500 mt-1">
+                                                        הקישור יושלם עם מזהה כל רשומה: {registrationLink ? `${registrationLink}123` : 'https://example.com/register?id=123'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {/* Informal Mode Fields */}
+                                    {messagingMode === 'informal' && (
+                                        <>
+                                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <div className="w-5 h-5 bg-yellow-100 rounded-full flex items-center justify-center">
+                                                        <span className="text-yellow-600 text-sm">!</span>
+                                                    </div>
+                                                    <h3 className="font-medium text-yellow-800">שירות זמנית לא זמין</h3>
+                                                </div>
+                                                <p className="text-sm text-yellow-700">
+                                                    אנו עדיין לא תומכים בהודעות WhatsApp לא רשמיות. אנא בחר במצב רשמי.
+                                                </p>
+                                            </div>
+
+                                            <div className="opacity-50">
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    תוכן ההודעה הארוכה
+                                                </label>
+                                                <textarea
+                                                    value={messageContent}
+                                                    onChange={(e) => setMessageContent(e.target.value)}
+                                                    placeholder="הזן את תוכן ההודעה הארוכה שתישלח..."
+                                                    rows={6}
+                                                    disabled
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                                                />
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    שדה זה יהיה זמין בעתיד
+                                                </p>
+                                            </div>
+                                        </>
+                                    )}
 
                                     <div className="flex items-center justify-end gap-3 pt-4">
                                         <Button
@@ -1246,7 +1328,7 @@ const App: React.FC = () => {
                                         </Button>
                                         <Button
                                             onClick={() => setBulkMessagingStep('confirm')}
-                                            disabled={!messageContent.trim()}
+                                            disabled={messagingMode === 'formal' ? !flowId.trim() : true}
                                             className="bg-green-600 hover:bg-green-700"
                                         >
                                             המשך
@@ -1273,15 +1355,27 @@ const App: React.FC = () => {
                                         <h4 className="font-medium text-gray-900 mb-3">תצוגה מקדימה:</h4>
                                         <div className="space-y-2">
                                             <p className="text-sm text-gray-600">
-                                                <span className="font-medium">מספר נמענים:</span> {getUniquePhoneNumbers().length}
+                                                <span className="font-medium">סוג הודעה:</span> {messagingMode === 'formal' ? 'רשמי (WhatsApp Business API)' : 'לא רשמי (הודעות ארוכות)'}
                                             </p>
                                             <p className="text-sm text-gray-600">
-                                                <span className="font-medium">קישור הרשמה:</span> {registrationLink ? 'כן' : 'לא'}
+                                                <span className="font-medium">מספר נמענים:</span> {getUniquePhoneNumbers().length}
                                             </p>
-                                            <div className="mt-3 p-3 bg-white rounded border">
-                                                <p className="text-sm font-medium text-gray-700 mb-1">תוכן ההודעה:</p>
-                                                <p className="text-sm text-gray-600 whitespace-pre-wrap">{messageContent}</p>
-                                            </div>
+                                            {messagingMode === 'formal' && (
+                                                <>
+                                                    <p className="text-sm text-gray-600">
+                                                        <span className="font-medium">Flow ID:</span> {flowId}
+                                                    </p>
+                                                    <p className="text-sm text-gray-600">
+                                                        <span className="font-medium">קישור הרשמה:</span> {registrationLink ? 'כן' : 'לא'}
+                                                    </p>
+                                                </>
+                                            )}
+                                            {messagingMode === 'informal' && messageContent && (
+                                                <div className="mt-3 p-3 bg-white rounded border">
+                                                    <p className="text-sm font-medium text-gray-700 mb-1">תוכן ההודעה:</p>
+                                                    <p className="text-sm text-gray-600 whitespace-pre-wrap">{messageContent}</p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
