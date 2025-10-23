@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { ChevronDown, ChevronLeft, Filter, ArrowUpDown, Search, MoreHorizontal, Zap, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Select } from '@/components/ui/select'
+import { Autocomplete, AutocompleteOption } from '@/components/ui/autocomplete'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 interface Registration {
@@ -150,6 +150,22 @@ const App: React.FC = () => {
         setFilters(prev => ({ ...prev, [filterName]: value }))
     }
 
+    const clearAllFilters = () => {
+        setFilters({
+            school: '',
+            cycle: '',
+            course: '',
+            class: '',
+            needsPickup: '',
+            inWhatsAppGroup: '',
+            registrationStatus: ''
+        })
+    }
+
+    const clearFilter = (filterName: string) => {
+        setFilters(prev => ({ ...prev, [filterName]: '' }))
+    }
+
     if (loading) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
@@ -225,55 +241,93 @@ const App: React.FC = () => {
                 {/* Filter Bar */}
                 <div className="border-b bg-white">
                     <div className="max-w-7xl mx-auto px-6 py-3">
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-                            <Select
-                                placeholder="בית ספר"
-                                options={filterOptions.schools.map(school => ({ value: school, label: school }))}
-                                value={filters.school}
-                                onValueChange={(value) => handleFilterChange('school', value)}
-                            />
-                            <Select
-                                placeholder="מחזור"
-                                options={filterOptions.cycles.map(cycle => ({ value: cycle, label: cycle }))}
-                                value={filters.cycle}
-                                onValueChange={(value) => handleFilterChange('cycle', value)}
-                            />
-                            <Select
-                                placeholder="חוג"
-                                options={filterOptions.courses.map(course => ({ value: course, label: course }))}
-                                value={filters.course}
-                                onValueChange={(value) => handleFilterChange('course', value)}
-                            />
-                            <Select
-                                placeholder="כיתה"
-                                options={filterOptions.classes.map(cls => ({ value: cls, label: cls }))}
-                                value={filters.class}
-                                onValueChange={(value) => handleFilterChange('class', value)}
-                            />
-                            <Select
-                                placeholder="איסוף מהצהרון"
-                                options={[
-                                    { value: 'true', label: 'כן' },
-                                    { value: 'false', label: 'לא' }
-                                ]}
-                                value={filters.needsPickup}
-                                onValueChange={(value) => handleFilterChange('needsPickup', value)}
-                            />
-                            <Select
-                                placeholder="קבוצת וואטסאפ"
-                                options={[
-                                    { value: 'true', label: 'כן' },
-                                    { value: 'false', label: 'לא' }
-                                ]}
-                                value={filters.inWhatsAppGroup}
-                                onValueChange={(value) => handleFilterChange('inWhatsAppGroup', value)}
-                            />
-                            <Select
-                                placeholder="סטטוס רישום"
-                                options={filterOptions.registrationStatuses.map(status => ({ value: status, label: status }))}
-                                value={filters.registrationStatus}
-                                onValueChange={(value) => handleFilterChange('registrationStatus', value)}
-                            />
+                        <div className="flex items-center gap-4 flex-wrap">
+                            <div className="flex items-center gap-2">
+                                <Filter className="h-4 w-4 text-gray-500" />
+                                <span className="text-sm font-medium text-gray-700">סינון:</span>
+                            </div>
+
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <Autocomplete
+                                    options={filterOptions.schools.map(school => ({ label: school, value: school }))}
+                                    value={filters.school}
+                                    onSelect={(value) => handleFilterChange('school', value)}
+                                    placeholder="בית ספר"
+                                    allowClear={true}
+                                    className="min-w-[140px]"
+                                />
+
+                                <Autocomplete
+                                    options={filterOptions.cycles.map(cycle => ({ label: cycle, value: cycle }))}
+                                    value={filters.cycle}
+                                    onSelect={(value) => handleFilterChange('cycle', value)}
+                                    placeholder="מחזור"
+                                    allowClear={true}
+                                    className="min-w-[200px]"
+                                />
+
+                                <Autocomplete
+                                    options={filterOptions.courses.map(course => ({ label: course, value: course }))}
+                                    value={filters.course}
+                                    onSelect={(value) => handleFilterChange('course', value)}
+                                    placeholder="חוג"
+                                    allowClear={true}
+                                    className="min-w-[140px]"
+                                />
+
+                                <Autocomplete
+                                    options={filterOptions.classes.map(cls => ({ label: cls, value: cls }))}
+                                    value={filters.class}
+                                    onSelect={(value) => handleFilterChange('class', value)}
+                                    placeholder="כיתה"
+                                    allowClear={true}
+                                    className="min-w-[100px]"
+                                />
+
+                                <Autocomplete
+                                    options={[
+                                        { label: "כן", value: "true" },
+                                        { label: "לא", value: "false" }
+                                    ]}
+                                    value={filters.needsPickup}
+                                    onSelect={(value) => handleFilterChange('needsPickup', value)}
+                                    placeholder="איסוף מהצהרון"
+                                    allowClear={true}
+                                    className="min-w-[140px]"
+                                />
+
+                                <Autocomplete
+                                    options={[
+                                        { label: "כן", value: "true" },
+                                        { label: "לא", value: "false" }
+                                    ]}
+                                    value={filters.inWhatsAppGroup}
+                                    onSelect={(value) => handleFilterChange('inWhatsAppGroup', value)}
+                                    placeholder="קבוצת וואטסאפ"
+                                    allowClear={true}
+                                    className="min-w-[140px]"
+                                />
+
+                                <Autocomplete
+                                    options={filterOptions.registrationStatuses.map(status => ({ label: status, value: status }))}
+                                    value={filters.registrationStatus}
+                                    onSelect={(value) => handleFilterChange('registrationStatus', value)}
+                                    placeholder="סטטוס רישום"
+                                    allowClear={true}
+                                    className="min-w-[140px]"
+                                />
+                            </div>
+
+                            {(filters.school || filters.cycle || filters.course || filters.class || filters.needsPickup || filters.inWhatsAppGroup || filters.registrationStatus) && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={clearAllFilters}
+                                    className="text-gray-600 hover:text-gray-800"
+                                >
+                                    נקה הכל
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>
