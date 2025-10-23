@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { Filter, Zap, Check, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Search, Settings, X } from 'lucide-react'
+import { Filter, Zap, Check, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Search, Settings, X, MessageCircle, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Autocomplete } from '@/components/ui/autocomplete'
 import { Popover } from '@/components/ui/popover'
@@ -252,6 +252,13 @@ const App: React.FC = () => {
 
     // Inter-group operator (AND/OR between groups)
     const [interGroupOperator, setInterGroupOperator] = useState<'AND' | 'OR'>('AND')
+
+    // Bulk messaging state
+    const [showBulkMessaging, setShowBulkMessaging] = useState(false)
+    const [bulkMessagingStep, setBulkMessagingStep] = useState<'config' | 'confirm' | 'sending'>('config')
+    const [registrationLink, setRegistrationLink] = useState('')
+    const [messageContent, setMessageContent] = useState('')
+    const [isSending, setIsSending] = useState(false)
 
     // Field options for filter conditions
     const fieldOptions = [
@@ -578,6 +585,63 @@ const App: React.FC = () => {
         setFilterGroups([])
     }
 
+    // Bulk messaging functions
+    const getUniquePhoneNumbers = () => {
+        const phones = filteredRegistrations.map(reg => reg.parentPhone).filter(phone => phone)
+        return [...new Set(phones)]
+    }
+
+    const sendBulkMessages = async () => {
+        setIsSending(true)
+        setBulkMessagingStep('sending')
+
+        try {
+            const uniquePhones = getUniquePhoneNumbers()
+            const webhookUrl = 'https://hook.eu2.make.com/pdvxq3rh5t1zb054fyyzgiw3ade6gvrb'
+
+            const payload = {
+                registrations: filteredRegistrations.map(reg => ({
+                    id: reg.id,
+                    childName: reg.childName,
+                    parentName: reg.parentName,
+                    parentPhone: reg.parentPhone,
+                    school: reg.school,
+                    course: reg.course,
+                    cycle: reg.cycle,
+                    registrationLink: registrationLink ? `${registrationLink}?id=${reg.id}` : null,
+                    messageContent: messageContent
+                })),
+                totalUsers: filteredRegistrations.length,
+                uniqueNumbers: uniquePhones.length,
+                registrationLink: registrationLink,
+                messageContent: messageContent
+            }
+
+            const response = await fetch(webhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            })
+
+            if (response.ok) {
+                alert(`הודעות נשלחו בהצלחה ל-${uniquePhones.length} מספרים`)
+                setShowBulkMessaging(false)
+                setBulkMessagingStep('config')
+                setRegistrationLink('')
+                setMessageContent('')
+            } else {
+                throw new Error('Failed to send messages')
+            }
+        } catch (error) {
+            console.error('Error sending bulk messages:', error)
+            alert('שגיאה בשליחת ההודעות')
+        } finally {
+            setIsSending(false)
+        }
+    }
+
 
     if (loading) {
         return (
@@ -635,6 +699,20 @@ const App: React.FC = () => {
                                 <p className="text-2xl font-bold text-blue-600">{filteredRegistrations.length}</p>
                             </div>
                             <div className="w-px h-8 bg-gray-300"></div>
+
+                            {/* WhatsApp Bulk Messaging Button */}
+                            {filteredRegistrations.length > 0 && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowBulkMessaging(true)}
+                                    className="flex items-center gap-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                >
+                                    <MessageCircle className="w-4 h-4" />
+                                    שליחת הודעות
+                                </Button>
+                            )}
+
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -1078,6 +1156,166 @@ const App: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Bulk Messaging Modal */}
+            {showBulkMessaging && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                        <MessageCircle className="w-5 h-5 text-green-600" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-semibold text-gray-900">שליחת הודעות WhatsApp</h2>
+                                        <p className="text-sm text-gray-500">שליחת הודעות למשתמשים מסוננים</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setShowBulkMessaging(false)
+                                        setBulkMessagingStep('config')
+                                        setRegistrationLink('')
+                                        setMessageContent('')
+                                    }}
+                                    className="p-2 text-gray-400 hover:text-gray-600"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {/* Statistics */}
+                            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="text-center">
+                                        <p className="text-2xl font-bold text-blue-600">{filteredRegistrations.length}</p>
+                                        <p className="text-sm text-gray-600">סה"כ משתמשים</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-2xl font-bold text-green-600">{getUniquePhoneNumbers().length}</p>
+                                        <p className="text-sm text-gray-600">מספרים ייחודיים</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {bulkMessagingStep === 'config' && (
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            האם לשלוח קישור הרשמה?
+                                        </label>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    קישור בסיס (עם פרמטר שאילתה)
+                                                </label>
+                                                <input
+                                                    type="url"
+                                                    value={registrationLink}
+                                                    onChange={(e) => setRegistrationLink(e.target.value)}
+                                                    placeholder="https://example.com/register?id="
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    הקישור יושלם עם מזהה כל רשומה: {registrationLink ? `${registrationLink}123` : 'https://example.com/register?id=123'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            תוכן ההודעה
+                                        </label>
+                                        <textarea
+                                            value={messageContent}
+                                            onChange={(e) => setMessageContent(e.target.value)}
+                                            placeholder="הזן את תוכן ההודעה שתישלח..."
+                                            rows={4}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center justify-end gap-3 pt-4">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setShowBulkMessaging(false)}
+                                        >
+                                            ביטול
+                                        </Button>
+                                        <Button
+                                            onClick={() => setBulkMessagingStep('confirm')}
+                                            disabled={!messageContent.trim()}
+                                            className="bg-green-600 hover:bg-green-700"
+                                        >
+                                            המשך
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {bulkMessagingStep === 'confirm' && (
+                                <div className="space-y-6">
+                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="w-5 h-5 bg-yellow-100 rounded-full flex items-center justify-center">
+                                                <span className="text-yellow-600 text-sm">!</span>
+                                            </div>
+                                            <h3 className="font-medium text-yellow-800">אישור שליחה</h3>
+                                        </div>
+                                        <p className="text-sm text-yellow-700">
+                                            אתה עומד לשלוח הודעה ל-{getUniquePhoneNumbers().length} מספרים ייחודיים.
+                                        </p>
+                                    </div>
+
+                                    <div className="bg-gray-50 rounded-lg p-4">
+                                        <h4 className="font-medium text-gray-900 mb-3">תצוגה מקדימה:</h4>
+                                        <div className="space-y-2">
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">מספר נמענים:</span> {getUniquePhoneNumbers().length}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                <span className="font-medium">קישור הרשמה:</span> {registrationLink ? 'כן' : 'לא'}
+                                            </p>
+                                            <div className="mt-3 p-3 bg-white rounded border">
+                                                <p className="text-sm font-medium text-gray-700 mb-1">תוכן ההודעה:</p>
+                                                <p className="text-sm text-gray-600 whitespace-pre-wrap">{messageContent}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-end gap-3 pt-4">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setBulkMessagingStep('config')}
+                                        >
+                                            חזור
+                                        </Button>
+                                        <Button
+                                            onClick={sendBulkMessages}
+                                            className="bg-green-600 hover:bg-green-700"
+                                        >
+                                            <Send className="w-4 h-4 mr-2" />
+                                            שלח הודעות
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {bulkMessagingStep === 'sending' && (
+                                <div className="text-center py-8">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                                    <h3 className="text-lg font-medium text-gray-900 mb-2">שולח הודעות...</h3>
+                                    <p className="text-sm text-gray-600">
+                                        נא להמתין בזמן שליחת ההודעות ל-{getUniquePhoneNumbers().length} מספרים
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
