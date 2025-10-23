@@ -303,7 +303,7 @@ const App: React.FC = () => {
                                 onSelect={(value) => handleFilterChange('school', value)}
                                 placeholder="בית ספר"
                                 allowClear={true}
-                                className="min-w-[70px]"
+                                className="min-w-[120px]"
                             />
 
                             <Autocomplete
@@ -312,7 +312,7 @@ const App: React.FC = () => {
                                 onSelect={(value) => handleFilterChange('cycle', value)}
                                 placeholder="מחזור"
                                 allowClear={true}
-                                className="min-w-[200px]"
+                                className="min-w-[250px]"
                             />
 
                             <Autocomplete
@@ -321,7 +321,7 @@ const App: React.FC = () => {
                                 onSelect={(value) => handleFilterChange('course', value)}
                                 placeholder="חוג"
                                 allowClear={true}
-                                className="min-w-[140px]"
+                                className="min-w-[180px]"
                             />
 
                             <Autocomplete
