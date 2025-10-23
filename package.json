@@ -9,9 +9,14 @@
         "build:dev": "vite build --mode development",
         "lint": "eslint .",
         "preview": "vite preview",
-        "linkProject": "supabase link --project-ref YOUR_PROJECT_REF",
+        "linkProject": "supabase link --project-ref uekhhyifmomnppmbigqz",
         "db:reset": "supabase db reset --local",
-        "functions:local": "supabase functions serve --env-file .env.local"
+        "functions:local": "supabase functions serve --env-file .env.local",
+        "functions:fetch": "./scripts/fetch-functions.sh",
+        "functions:deploy": "./scripts/deploy-functions.sh",
+        "functions:deploy:single": "./scripts/deploy-functions.sh",
+        "deploy": "npm run build && npm run functions:deploy",
+        "deploy:functions": "node scripts/deploy-functions.js"
     },
     "dependencies": {
         "@hookform/resolvers": "^3.9.0",
