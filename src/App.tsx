@@ -748,6 +748,11 @@ const App: React.FC = () => {
                                 src="/easyflow-site-logo.png"
                                 alt="EasyFlow logo"
                                 className="h-10 w-auto object-contain"
+                                onError={(e) => {
+                                    console.error('Logo failed to load:', e.target.src);
+                                    // Fallback to the other logo
+                                    e.target.src = '/easyflow-logo.png';
+                                }}
                             />
                             <div>
                                 <h1 className="text-xl font-semibold text-gray-900">Dolittle</h1>
