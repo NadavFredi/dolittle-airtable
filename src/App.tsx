@@ -317,6 +317,25 @@ const App: React.FC = () => {
                 setLoading(true)
                 setError(null)
 
+                // Check if we have cached data (valid for 5 minutes)
+                const cacheKey = 'registrations-cache'
+                const cachedData = localStorage.getItem(cacheKey)
+                const cacheTimestamp = localStorage.getItem(`${cacheKey}-timestamp`)
+
+                if (cachedData && cacheTimestamp) {
+                    const cacheAge = Date.now() - parseInt(cacheTimestamp)
+                    const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
+                    if (cacheAge < CACHE_DURATION) {
+                        console.log('Using cached data')
+                        const parsedData = JSON.parse(cachedData)
+                        setRegistrations(parsedData.registrations)
+                        setFilterOptions(parsedData.filterOptions)
+                        setLoading(false)
+                        return
+                    }
+                }
+
                 // Get Supabase URL from environment
                 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || 'http://127.0.0.1:54321'
 
@@ -328,6 +347,7 @@ const App: React.FC = () => {
                     throw new Error('No authentication token available')
                 }
 
+                console.log('Fetching fresh data from server...')
                 const response = await fetch(`${supabaseUrl}/functions/v1/get-registrations`, {
                     method: 'GET',
                     headers: {
@@ -347,6 +367,14 @@ const App: React.FC = () => {
                     if (result.filterOptions) {
                         setFilterOptions(result.filterOptions)
                     }
+
+                    // Cache the data
+                    const dataToCache = {
+                        registrations: result.data,
+                        filterOptions: result.filterOptions
+                    }
+                    localStorage.setItem(cacheKey, JSON.stringify(dataToCache))
+                    localStorage.setItem(`${cacheKey}-timestamp`, Date.now().toString())
                 } else {
                     throw new Error(result.error || 'Failed to fetch registrations')
                 }
@@ -716,7 +744,69 @@ const App: React.FC = () => {
     }
 
     const handleRefresh = () => {
-        window.location.reload()
+        // Clear cache and reload data
+        localStorage.removeItem('registrations-cache')
+        localStorage.removeItem('registrations-cache-timestamp')
+
+        // Trigger data refetch by updating a dummy state
+        setLoading(true)
+
+        // Get fresh data
+        const fetchRegistrations = async () => {
+            try {
+                setError(null)
+
+                // Get Supabase URL from environment
+                const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || 'http://127.0.0.1:54321'
+
+                // Get the current session token
+                const { data: { session } } = await supabase.auth.getSession()
+                const token = session?.access_token
+
+                if (!token) {
+                    throw new Error('No authentication token available')
+                }
+
+                console.log('Manual refresh - fetching fresh data...')
+                const response = await fetch(`${supabaseUrl}/functions/v1/get-registrations`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                })
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`)
+                }
+
+                const result = await response.json()
+
+                if (result.success) {
+                    setRegistrations(result.data)
+                    if (result.filterOptions) {
+                        setFilterOptions(result.filterOptions)
+                    }
+
+                    // Cache the fresh data
+                    const dataToCache = {
+                        registrations: result.data,
+                        filterOptions: result.filterOptions
+                    }
+                    localStorage.setItem('registrations-cache', JSON.stringify(dataToCache))
+                    localStorage.setItem('registrations-cache-timestamp', Date.now().toString())
+                } else {
+                    throw new Error(result.error || 'Failed to fetch registrations')
+                }
+            } catch (err) {
+                console.error('Error refreshing registrations:', err)
+                setError(err instanceof Error ? err.message : 'An unknown error occurred')
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchRegistrations()
     }
 
     if (error) {

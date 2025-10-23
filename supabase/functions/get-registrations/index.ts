@@ -6,6 +6,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 }
 
+// Simple in-memory cache
+let cache: { data: any; timestamp: number } | null = null
+const CACHE_DURATION = 2 * 60 * 1000 // 2 minutes
+
 interface RegistrationRecord {
   id: string
   fields: {
@@ -30,6 +34,22 @@ serve(async (req) => {
   }
 
   try {
+    // Check cache first
+    if (cache && Date.now() - cache.timestamp < CACHE_DURATION) {
+      console.log("Returning cached data")
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: cache.data.registrations,
+          filterOptions: cache.data.filterOptions,
+          cached: true,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      )
+    }
     // Get Airtable PAT from environment
     const AIRTABLE_PAT = Deno.env.get("AIRTABLE_PAT")
     const AIRTABLE_BASE_ID = Deno.env.get("AIRTABLE_BASE_ID")
@@ -178,12 +198,22 @@ serve(async (req) => {
       registrationStatuses: [...new Set(registrations.map((r) => r.registrationStatus))].filter(Boolean),
     }
 
+    // Update cache
+    cache = {
+      data: {
+        registrations,
+        filterOptions,
+      },
+      timestamp: Date.now(),
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         data: registrations,
         total: registrations.length,
         filterOptions: filterOptions,
+        cached: false,
       }),
       {
         headers: {
