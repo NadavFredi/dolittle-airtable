@@ -42,46 +42,76 @@ serve(async (req) => {
       throw new Error("AIRTABLE_BASE_ID environment variable is not set")
     }
 
-    // Fetch registrations data
-    const registrationsResponse = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/הרשמה לניסיון`, {
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_PAT}`,
-        "Content-Type": "application/json",
-      },
-    })
+    // Fetch ALL registrations data with pagination
+    const allRegistrations: any[] = []
+    let offset: string | undefined = undefined
 
-    if (!registrationsResponse.ok) {
-      throw new Error(`Airtable API error: ${registrationsResponse.status} ${registrationsResponse.statusText}`)
+    while (true) {
+      const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/הרשמה לניסיון${offset ? `?offset=${offset}` : ""}`
+
+      const registrationsResponse = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${AIRTABLE_PAT}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!registrationsResponse.ok) {
+        throw new Error(`Airtable API error: ${registrationsResponse.status} ${registrationsResponse.statusText}`)
+      }
+
+      const registrationsData = await registrationsResponse.json()
+      allRegistrations.push(...registrationsData.records)
+
+      // Check if there are more records
+      if (registrationsData.offset) {
+        offset = registrationsData.offset
+      } else {
+        break // No more records
+      }
     }
 
-    const registrationsData = await registrationsResponse.json()
+    const registrationsData = { records: allRegistrations }
 
-    // Fetch lookup tables
-    const [schoolsResponse, cyclesResponse, coursesResponse] = await Promise.all([
-      fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/בתי ספר`, {
-        headers: {
-          Authorization: `Bearer ${AIRTABLE_PAT}`,
-          "Content-Type": "application/json",
-        },
-      }),
-      fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/מחזורים`, {
-        headers: {
-          Authorization: `Bearer ${AIRTABLE_PAT}`,
-          "Content-Type": "application/json",
-        },
-      }),
-      fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/חוגים`, {
-        headers: {
-          Authorization: `Bearer ${AIRTABLE_PAT}`,
-          "Content-Type": "application/json",
-        },
-      }),
+    // Helper function to fetch all records from a table with pagination
+    const fetchAllRecords = async (tableName: string) => {
+      const allRecords: any[] = []
+      let offset: string | undefined = undefined
+
+      while (true) {
+        const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${tableName}${offset ? `?offset=${offset}` : ""}`
+
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${AIRTABLE_PAT}`,
+            "Content-Type": "application/json",
+          },
+        })
+
+        if (!response.ok) {
+          console.warn(`Failed to fetch ${tableName}: ${response.status}`)
+          break
+        }
+
+        const data = await response.json()
+        allRecords.push(...data.records)
+
+        if (data.offset) {
+          offset = data.offset
+        } else {
+          break
+        }
+      }
+
+      return { records: allRecords }
+    }
+
+    // Fetch ALL lookup tables with pagination
+    const [schoolsData, cyclesData, coursesData] = await Promise.all([
+      fetchAllRecords("בתי ספר"),
+      fetchAllRecords("מחזורים"),
+      fetchAllRecords("חוגים"),
     ])
-
-    // Parse lookup data
-    const schoolsData = schoolsResponse.ok ? await schoolsResponse.json() : { records: [] }
-    const cyclesData = cyclesResponse.ok ? await cyclesResponse.json() : { records: [] }
-    const coursesData = coursesResponse.ok ? await coursesResponse.json() : { records: [] }
 
     // Create lookup maps using record.id as the key and display names as values
     const schoolMap = new Map()
