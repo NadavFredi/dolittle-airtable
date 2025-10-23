@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { Filter, Zap, Check, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Filter, Zap, Check, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Autocomplete } from '@/components/ui/autocomplete'
 import { Popover } from '@/components/ui/popover'
@@ -52,6 +52,9 @@ const App: React.FC = () => {
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 50
+
+    // Search state
+    const [searchQuery, setSearchQuery] = useState('')
 
     // Fetch real data from Supabase edge function
     useEffect(() => {
@@ -128,6 +131,24 @@ const App: React.FC = () => {
             return true
         })
 
+        // Apply search filter
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase().trim()
+            filtered = filtered.filter(reg => {
+                return (
+                    reg.childName.toLowerCase().includes(query) ||
+                    reg.parentName.toLowerCase().includes(query) ||
+                    reg.parentPhone.includes(query) ||
+                    reg.school.toLowerCase().includes(query) ||
+                    reg.course.toLowerCase().includes(query) ||
+                    reg.class.toLowerCase().includes(query) ||
+                    reg.cycle.toLowerCase().includes(query) ||
+                    reg.trialDate.includes(query) ||
+                    reg.registrationStatus.toLowerCase().includes(query)
+                )
+            })
+        }
+
         // Apply sorting
         if (sortConfig.key) {
             filtered.sort((a, b) => {
@@ -152,7 +173,7 @@ const App: React.FC = () => {
         }
 
         return filtered
-    }, [registrations, filters, sortConfig])
+    }, [registrations, filters, sortConfig, searchQuery])
 
     // Pagination calculations
     const totalPages = Math.ceil(filteredRegistrations.length / itemsPerPage)
@@ -160,10 +181,10 @@ const App: React.FC = () => {
     const endIndex = startIndex + itemsPerPage
     const paginatedRegistrations = filteredRegistrations.slice(startIndex, endIndex)
 
-    // Reset to first page when filters change
+    // Reset to first page when filters or search change
     useEffect(() => {
         setCurrentPage(1)
-    }, [filters])
+    }, [filters, searchQuery])
 
 
     const handleFilterChange = (filterName: string, value: string) => {
@@ -254,6 +275,36 @@ const App: React.FC = () => {
                     </div>
                 </div>
             </nav>
+
+            {/* Search Bar */}
+            <div className="bg-white border-b">
+                <div className="max-w-7xl mx-auto px-6 py-4">
+                    <div className="flex items-center gap-4">
+                        <div className="flex-1">
+                            <div className="relative">
+                                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder="חיפוש בכל השדות..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-right"
+                                />
+                            </div>
+                        </div>
+                        {searchQuery && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSearchQuery('')}
+                                className="text-gray-600 hover:text-gray-800"
+                            >
+                                נקה חיפוש
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            </div>
 
             {/* Filter Bar */}
             <div className="border-b bg-white">
