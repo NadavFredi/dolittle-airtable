@@ -10,6 +10,72 @@ export interface AutocompleteOption {
     disabled?: boolean
 }
 
+// Component to handle truncated text with hover tooltip
+const TruncatedText = ({ text, className }: { text: string; className?: string }) => {
+    const [isTruncated, setIsTruncated] = React.useState(false)
+    const [showTooltip, setShowTooltip] = React.useState(false)
+    const [tooltipPosition, setTooltipPosition] = React.useState({ x: 0, y: 0 })
+    const textRef = React.useRef<HTMLSpanElement>(null)
+
+    React.useEffect(() => {
+        const checkTruncation = () => {
+            if (textRef.current) {
+                setIsTruncated(textRef.current.scrollWidth > textRef.current.clientWidth)
+            }
+        }
+
+        checkTruncation()
+        window.addEventListener('resize', checkTruncation)
+        return () => window.removeEventListener('resize', checkTruncation)
+    }, [text])
+
+    const handleMouseEnter = (e: React.MouseEvent) => {
+        if (isTruncated) {
+            const rect = textRef.current?.getBoundingClientRect()
+            if (rect) {
+                setTooltipPosition({
+                    x: rect.left + rect.width / 2,
+                    y: rect.top - 10
+                })
+                setShowTooltip(true)
+            }
+        }
+    }
+
+    const handleMouseLeave = () => {
+        setShowTooltip(false)
+    }
+
+    return (
+        <>
+            <span
+                ref={textRef}
+                className={cn("truncate", isTruncated && "cursor-help", className)}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+            >
+                {text}
+            </span>
+
+            {showTooltip && isTruncated && (
+                <div
+                    className="fixed z-[9999] pointer-events-none"
+                    style={{
+                        left: `${tooltipPosition.x}px`,
+                        top: `${tooltipPosition.y}px`,
+                        transform: 'translateX(-50%) translateY(-100%)'
+                    }}
+                >
+                    <div className="bg-gray-900 text-white text-sm px-3 py-2 rounded-md shadow-lg max-w-md whitespace-normal break-words">
+                        {text}
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                </div>
+            )}
+        </>
+    )
+}
+
 interface AutocompleteProps {
     options: AutocompleteOption[]
     value?: string
@@ -100,9 +166,10 @@ const Autocomplete = React.forwardRef<HTMLButtonElement, AutocompleteProps>(
                         )}
                         {...props}
                     >
-                        <span className="truncate">
-                            {selectedOption ? selectedOption.label : placeholder}
-                        </span>
+                        <TruncatedText
+                            text={selectedOption ? selectedOption.label : placeholder}
+                            className="text-left"
+                        />
                         <div className="flex items-center gap-1">
                             {allowClear && selectedOption && (
                                 <button
@@ -161,7 +228,7 @@ const Autocomplete = React.forwardRef<HTMLButtonElement, AutocompleteProps>(
                                                     }}
                                                     className="w-full flex items-center justify-between cursor-pointer hover:bg-gray-100 px-3 py-2 text-left disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
-                                                    <span className="truncate">{option.label}</span>
+                                                    <TruncatedText text={option.label} />
                                                     <Check
                                                         className={cn(
                                                             "h-4 w-4",
