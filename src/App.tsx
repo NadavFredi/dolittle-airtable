@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { ChevronDown, ChevronLeft, Filter, ArrowUpDown, Search, MoreHorizontal, Zap, Check } from 'lucide-react'
+import { ChevronDown, ChevronLeft, Filter, ArrowUpDown, Search, MoreHorizontal, Zap, Check, ArrowUp, ArrowDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Autocomplete, AutocompleteOption } from '@/components/ui/autocomplete'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -41,6 +41,12 @@ const App: React.FC = () => {
         inWhatsAppGroup: '',
         registrationStatus: ''
     })
+
+    // Sorting state
+    const [sortConfig, setSortConfig] = useState<{
+        key: keyof Registration | null;
+        direction: 'asc' | 'desc';
+    }>({ key: null, direction: 'asc' })
 
     // Fetch real data from Supabase edge function
     useEffect(() => {
@@ -131,9 +137,17 @@ const App: React.FC = () => {
         fetchRegistrations()
     }, [])
 
-    // Filter and process data
+    // Handle sorting
+    const handleSort = (key: keyof Registration) => {
+        setSortConfig(prev => ({
+            key,
+            direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+        }))
+    }
+
+    // Filter and sort data
     const filteredRegistrations = useMemo(() => {
-        return registrations.filter(reg => {
+        let filtered = registrations.filter(reg => {
             if (filters.school && reg.school !== filters.school) return false
             if (filters.cycle && reg.cycle !== filters.cycle) return false
             if (filters.course && reg.course !== filters.course) return false
@@ -143,7 +157,32 @@ const App: React.FC = () => {
             if (filters.registrationStatus && reg.registrationStatus !== filters.registrationStatus) return false
             return true
         })
-    }, [registrations, filters])
+
+        // Apply sorting
+        if (sortConfig.key) {
+            filtered.sort((a, b) => {
+                const aValue = a[sortConfig.key!]
+                const bValue = b[sortConfig.key!]
+
+                // Handle different data types
+                if (typeof aValue === 'string' && typeof bValue === 'string') {
+                    const comparison = aValue.localeCompare(bValue, 'he')
+                    return sortConfig.direction === 'asc' ? comparison : -comparison
+                }
+
+                if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
+                    const comparison = aValue === bValue ? 0 : aValue ? 1 : -1
+                    return sortConfig.direction === 'asc' ? comparison : -comparison
+                }
+
+                // Fallback to string comparison
+                const comparison = String(aValue).localeCompare(String(bValue), 'he')
+                return sortConfig.direction === 'asc' ? comparison : -comparison
+            })
+        }
+
+        return filtered
+    }, [registrations, filters, sortConfig])
 
 
     const handleFilterChange = (filterName: string, value: string) => {
@@ -374,15 +413,123 @@ const App: React.FC = () => {
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-gray-50">
-                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[140px]">תאריך הגעה לשיעור ניסיון</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[100px]">איסוף מהצהרון</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[60px]">כיתה</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[120px]">בית ספר</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[120px]">חוג</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[130px]">שם מלא הורה</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[110px]">טלפון הורה</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[200px]">מחזור</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[120px]">שם הילד</TableHead>
+                                        <TableHead
+                                            className="text-right font-semibold text-gray-700 min-w-[140px] cursor-pointer hover:bg-gray-100 select-none"
+                                            onClick={() => handleSort('trialDate')}
+                                        >
+                                            <div className="flex items-center justify-end gap-2">
+                                                תאריך הגעה לשיעור ניסיון
+                                                {sortConfig.key === 'trialDate' && (
+                                                    sortConfig.direction === 'asc' ?
+                                                        <ArrowUp className="h-4 w-4" /> :
+                                                        <ArrowDown className="h-4 w-4" />
+                                                )}
+                                            </div>
+                                        </TableHead>
+                                        <TableHead
+                                            className="text-right font-semibold text-gray-700 min-w-[100px] cursor-pointer hover:bg-gray-100 select-none"
+                                            onClick={() => handleSort('needsPickup')}
+                                        >
+                                            <div className="flex items-center justify-end gap-2">
+                                                איסוף מהצהרון
+                                                {sortConfig.key === 'needsPickup' && (
+                                                    sortConfig.direction === 'asc' ?
+                                                        <ArrowUp className="h-4 w-4" /> :
+                                                        <ArrowDown className="h-4 w-4" />
+                                                )}
+                                            </div>
+                                        </TableHead>
+                                        <TableHead
+                                            className="text-right font-semibold text-gray-700 min-w-[60px] cursor-pointer hover:bg-gray-100 select-none"
+                                            onClick={() => handleSort('class')}
+                                        >
+                                            <div className="flex items-center justify-end gap-2">
+                                                כיתה
+                                                {sortConfig.key === 'class' && (
+                                                    sortConfig.direction === 'asc' ?
+                                                        <ArrowUp className="h-4 w-4" /> :
+                                                        <ArrowDown className="h-4 w-4" />
+                                                )}
+                                            </div>
+                                        </TableHead>
+                                        <TableHead
+                                            className="text-right font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
+                                            onClick={() => handleSort('school')}
+                                        >
+                                            <div className="flex items-center justify-end gap-2">
+                                                בית ספר
+                                                {sortConfig.key === 'school' && (
+                                                    sortConfig.direction === 'asc' ?
+                                                        <ArrowUp className="h-4 w-4" /> :
+                                                        <ArrowDown className="h-4 w-4" />
+                                                )}
+                                            </div>
+                                        </TableHead>
+                                        <TableHead
+                                            className="text-right font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
+                                            onClick={() => handleSort('course')}
+                                        >
+                                            <div className="flex items-center justify-end gap-2">
+                                                חוג
+                                                {sortConfig.key === 'course' && (
+                                                    sortConfig.direction === 'asc' ?
+                                                        <ArrowUp className="h-4 w-4" /> :
+                                                        <ArrowDown className="h-4 w-4" />
+                                                )}
+                                            </div>
+                                        </TableHead>
+                                        <TableHead
+                                            className="text-right font-semibold text-gray-700 min-w-[130px] cursor-pointer hover:bg-gray-100 select-none"
+                                            onClick={() => handleSort('parentName')}
+                                        >
+                                            <div className="flex items-center justify-end gap-2">
+                                                שם מלא הורה
+                                                {sortConfig.key === 'parentName' && (
+                                                    sortConfig.direction === 'asc' ?
+                                                        <ArrowUp className="h-4 w-4" /> :
+                                                        <ArrowDown className="h-4 w-4" />
+                                                )}
+                                            </div>
+                                        </TableHead>
+                                        <TableHead
+                                            className="text-right font-semibold text-gray-700 min-w-[110px] cursor-pointer hover:bg-gray-100 select-none"
+                                            onClick={() => handleSort('parentPhone')}
+                                        >
+                                            <div className="flex items-center justify-end gap-2">
+                                                טלפון הורה
+                                                {sortConfig.key === 'parentPhone' && (
+                                                    sortConfig.direction === 'asc' ?
+                                                        <ArrowUp className="h-4 w-4" /> :
+                                                        <ArrowDown className="h-4 w-4" />
+                                                )}
+                                            </div>
+                                        </TableHead>
+                                        <TableHead
+                                            className="text-right font-semibold text-gray-700 min-w-[200px] cursor-pointer hover:bg-gray-100 select-none"
+                                            onClick={() => handleSort('cycle')}
+                                        >
+                                            <div className="flex items-center justify-end gap-2">
+                                                מחזור
+                                                {sortConfig.key === 'cycle' && (
+                                                    sortConfig.direction === 'asc' ?
+                                                        <ArrowUp className="h-4 w-4" /> :
+                                                        <ArrowDown className="h-4 w-4" />
+                                                )}
+                                            </div>
+                                        </TableHead>
+                                        <TableHead
+                                            className="text-right font-semibold text-gray-700 min-w-[120px] cursor-pointer hover:bg-gray-100 select-none"
+                                            onClick={() => handleSort('childName')}
+                                        >
+                                            <div className="flex items-center justify-end gap-2">
+                                                שם הילד
+                                                {sortConfig.key === 'childName' && (
+                                                    sortConfig.direction === 'asc' ?
+                                                        <ArrowUp className="h-4 w-4" /> :
+                                                        <ArrowDown className="h-4 w-4" />
+                                                )}
+                                            </div>
+                                        </TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
