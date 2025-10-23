@@ -7,6 +7,7 @@ import { AppFooter } from '@/components/AppFooter'
 import { Login } from '@/components/Login'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/hooks/useAuth'
+import easyflowLogo from '@/assets/easyflow-site-logo.png'
 
 interface Registration {
     id: string
@@ -745,7 +746,7 @@ const App: React.FC = () => {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <img
-                                src="/easyflow-site-logo.png"
+                                src={easyflowLogo}
                                 alt="EasyFlow logo"
                                 className="h-10 w-auto object-contain"
                                 onError={(e) => {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react'
+import easyflowLogo from '@/assets/easyflow-site-logo.png'
 
 interface LoginProps {
     onLogin: (email: string, password: string) => Promise<boolean>
@@ -25,7 +26,7 @@ export function Login({ onLogin, isLoading, error }: LoginProps) {
             <div className="max-w-md w-full space-y-8">
                 <div className="text-center">
                     <img
-                        src="/easyflow-site-logo.png"
+                        src={easyflowLogo}
                         alt="EasyFlow logo"
                         className="h-16 w-auto mx-auto mb-4"
                     />
