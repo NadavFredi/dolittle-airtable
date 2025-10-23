@@ -83,49 +83,80 @@ serve(async (req) => {
     const cyclesData = cyclesResponse.ok ? await cyclesResponse.json() : { records: [] }
     const coursesData = coursesResponse.ok ? await coursesResponse.json() : { records: [] }
 
-    // Create lookup maps using the correct field names
+    // Create lookup maps using record.id as the key and display names as values
     const schoolMap = new Map()
     schoolsData.records.forEach((record: any) => {
-      const schoolId = record.fields["מזהה בית ספר"]
       const schoolName = record.fields["בית ספר"]
-      if (schoolId && schoolName) {
-        schoolMap.set(schoolId, schoolName)
+      if (record.id && schoolName) {
+        schoolMap.set(record.id, schoolName)
       }
     })
 
     const cycleMap = new Map()
     cyclesData.records.forEach((record: any) => {
-      const cycleId = record.fields["מזהה מחזור"]
       const cycleName = record.fields["שם מחזור לתצוגה"]
-      if (cycleId && cycleName) {
-        cycleMap.set(cycleId, cycleName)
+      if (record.id && cycleName) {
+        cycleMap.set(record.id, cycleName)
       }
     })
 
     const courseMap = new Map()
     coursesData.records.forEach((record: any) => {
-      const courseId = record.fields["מזהה חוג"]
       const courseName = record.fields["שם החוג"]
-      if (courseId && courseName) {
-        courseMap.set(courseId, courseName)
+      if (record.id && courseName) {
+        courseMap.set(record.id, courseName)
       }
     })
 
+    // Debug: Log the first few mappings to see what's happening
+    console.log("Debug - Sample mappings:")
+    console.log("School map size:", schoolMap.size)
+    console.log("Cycle map size:", cycleMap.size)
+    console.log("Course map size:", courseMap.size)
+
+    // Show first few entries from each map
+    console.log("First 3 school entries:", Array.from(schoolMap.entries()).slice(0, 3))
+    console.log("First 3 cycle entries:", Array.from(cycleMap.entries()).slice(0, 3))
+    console.log("First 3 course entries:", Array.from(courseMap.entries()).slice(0, 3))
+
     // Transform the data to match our UI structure
-    const registrations = registrationsData.records.map((record: RegistrationRecord) => ({
-      id: record.id,
-      childName: record.fields["שם הילד"] || "",
-      cycle: cycleMap.get(record.fields["מחזור"]) || record.fields["מחזור"] || "",
-      parentPhone: record.fields["טלפון הורה"] || "",
-      parentName: record.fields["שם מלא הורה"] || "",
-      course: courseMap.get(record.fields["חוג"]) || record.fields["חוג"] || "",
-      school: schoolMap.get(record.fields["בית ספר"]) || record.fields["בית ספר"] || "",
-      class: record.fields["כיתה"] || "",
-      needsPickup: record.fields["האם צריך איסוף מהצהרון"] || false,
-      trialDate: record.fields["תאריך הגעה לשיעור ניסיון"] || "",
-      inWhatsAppGroup: record.fields["האם בקבוצת הוואטסאפ"] || false,
-      registrationStatus: record.fields["סטטוס רישום לחוג"] || "",
-    }))
+    const registrations = registrationsData.records.map((record: RegistrationRecord) => {
+      // Helper function to get the first value from an array or return the value itself
+      const getFirstValue = (value: any) => {
+        if (Array.isArray(value)) {
+          return value[0] || ""
+        }
+        return value || ""
+      }
+
+      // Get the actual IDs from the registration record
+      const cycleId = getFirstValue(record.fields["מחזור"])
+      const courseId = getFirstValue(record.fields["חוג"])
+      const schoolId = getFirstValue(record.fields["בית ספר"])
+
+      // Debug: Log the first record's mapping
+      if (record.id === "rec04GNSh905jiQM9") {
+        console.log("Debug - First record mapping:")
+        console.log("Cycle ID:", cycleId, "-> Name:", cycleMap.get(cycleId))
+        console.log("Course ID:", courseId, "-> Name:", courseMap.get(courseId))
+        console.log("School ID:", schoolId, "-> Name:", schoolMap.get(schoolId))
+      }
+
+      return {
+        id: record.id,
+        childName: getFirstValue(record.fields["שם הילד"]),
+        cycle: cycleMap.get(cycleId) || cycleId,
+        parentPhone: record.fields["טלפון הורה"] || "",
+        parentName: record.fields["שם מלא הורה"] || "",
+        course: courseMap.get(courseId) || courseId,
+        school: schoolMap.get(schoolId) || schoolId,
+        class: record.fields["כיתה"] || "",
+        needsPickup: record.fields["האם צריך איסוף מהצהרון"] || false,
+        trialDate: record.fields["תאריך הגעה לשיעור ניסיון"] || "",
+        inWhatsAppGroup: record.fields["האם בקבוצת הוואטסאפ"] || false,
+        registrationStatus: record.fields["סטטוס רישום לחוג"] || "",
+      }
+    })
 
     // Get unique values for filters
     const filterOptions = {
