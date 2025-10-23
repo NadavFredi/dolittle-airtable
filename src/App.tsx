@@ -261,6 +261,8 @@ const App: React.FC = () => {
     const [messageContent, setMessageContent] = useState('')
     const [flowId, setFlowId] = useState('')
     const [isSending, setIsSending] = useState(false)
+    const [isSendingLink, setIsSendingLink] = useState(false)
+    const [trackingUrl, setTrackingUrl] = useState('')
 
     // Field options for filter conditions
     const fieldOptions = [
@@ -633,23 +635,16 @@ const App: React.FC = () => {
             if (response.ok) {
                 const result = await response.json()
 
-                // Show success message with Google Sheets link
+                // Store tracking URL and show success
                 if (result.url) {
-                    const confirmMessage = `הודעות נשלחו בהצלחה ל-${uniquePhones.length} מספרים!\n\nאתה יכול לבדוק את הסטטוס כאן:\n${result.url}\n\nהאם לפתוח את הקישור?`
-
-                    if (confirm(confirmMessage)) {
-                        window.open(result.url, '_blank')
-                    }
+                    setTrackingUrl(result.url)
+                    alert(`הודעות נשלחו בהצלחה ל-${uniquePhones.length} מספרים!`)
                 } else {
                     alert(`הודעות נשלחו בהצלחה ל-${uniquePhones.length} מספרים`)
                 }
 
-                setShowBulkMessaging(false)
-                setBulkMessagingStep('config')
-                setRegistrationLink('')
-                setMessageContent('')
-                setFlowId('')
-                setMessagingMode('formal')
+                // Don't close modal yet - user can see tracking link
+                setBulkMessagingStep('confirm')
             } else {
                 throw new Error('Failed to send messages')
             }
@@ -1199,6 +1194,8 @@ const App: React.FC = () => {
                                         setMessageContent('')
                                         setFlowId('')
                                         setMessagingMode('formal')
+                                        setIsSendingLink(false)
+                                        setTrackingUrl('')
                                     }}
                                     className="p-2 text-gray-400 hover:text-gray-600"
                                 >
@@ -1275,24 +1272,36 @@ const App: React.FC = () => {
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    האם לשלוח קישור הרשמה?
-                                                </label>
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                        קישור בסיס (עם פרמטר שאילתה)
-                                                    </label>
+                                                <div className="flex items-center gap-2 mb-3">
                                                     <input
-                                                        type="url"
-                                                        value={registrationLink}
-                                                        onChange={(e) => setRegistrationLink(e.target.value)}
-                                                        placeholder="https://example.com/register?id="
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                        type="checkbox"
+                                                        id="sendingLink"
+                                                        checked={isSendingLink}
+                                                        onChange={(e) => setIsSendingLink(e.target.checked)}
+                                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                                     />
-                                                    <p className="text-xs text-gray-500 mt-1">
-                                                        הקישור יושלם עם מזהה כל רשומה: {registrationLink ? `${registrationLink}123` : 'https://example.com/register?id=123'}
-                                                    </p>
+                                                    <label htmlFor="sendingLink" className="text-sm font-medium text-gray-700">
+                                                        אני שולח קישור הרשמה
+                                                    </label>
                                                 </div>
+
+                                                {isSendingLink && (
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            קישור בסיס (עם פרמטר שאילתה)
+                                                        </label>
+                                                        <input
+                                                            type="url"
+                                                            value={registrationLink}
+                                                            onChange={(e) => setRegistrationLink(e.target.value)}
+                                                            placeholder="https://example.com/register?id="
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                        />
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            הקישור יושלם עם מזהה כל רשומה: {registrationLink ? `${registrationLink}123` : 'https://example.com/register?id=123'}
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </>
                                     )}
@@ -1378,7 +1387,7 @@ const App: React.FC = () => {
                                                         <span className="font-medium">Flow ID:</span> {flowId}
                                                     </p>
                                                     <p className="text-sm text-gray-600">
-                                                        <span className="font-medium">קישור הרשמה:</span> {registrationLink ? 'כן' : 'לא'}
+                                                        <span className="font-medium">קישור הרשמה:</span> {isSendingLink ? (registrationLink ? 'כן' : 'לא מוגדר') : 'לא'}
                                                     </p>
                                                 </>
                                             )}
@@ -1391,6 +1400,44 @@ const App: React.FC = () => {
                                         </div>
                                     </div>
 
+                                    {/* Tracking URL Section - shown after successful send */}
+                                    {trackingUrl && (
+                                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+                                                    <span className="text-green-600 text-sm">✓</span>
+                                                </div>
+                                                <h3 className="font-medium text-green-800">הודעות נשלחו בהצלחה!</h3>
+                                            </div>
+                                            <p className="text-sm text-green-700 mb-3">
+                                                אתה יכול לבדוק את הסטטוס כאן:
+                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={trackingUrl}
+                                                    readOnly
+                                                    className="flex-1 px-3 py-2 border border-green-300 rounded-md bg-white text-sm font-mono"
+                                                />
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => navigator.clipboard.writeText(trackingUrl)}
+                                                    className="text-green-600 hover:text-green-700 border-green-300 hover:bg-green-50"
+                                                >
+                                                    העתק
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => window.open(trackingUrl, '_blank')}
+                                                    className="bg-green-600 hover:bg-green-700"
+                                                >
+                                                    פתח
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="flex items-center justify-end gap-3 pt-4">
                                         <Button
                                             variant="outline"
@@ -1398,13 +1445,32 @@ const App: React.FC = () => {
                                         >
                                             חזור
                                         </Button>
-                                        <Button
-                                            onClick={sendBulkMessages}
-                                            className="bg-green-600 hover:bg-green-700"
-                                        >
-                                            <Send className="w-4 h-4 mr-2" />
-                                            שלח הודעות
-                                        </Button>
+                                        {!trackingUrl && (
+                                            <Button
+                                                onClick={sendBulkMessages}
+                                                className="bg-green-600 hover:bg-green-700"
+                                            >
+                                                <Send className="w-4 h-4 mr-2" />
+                                                שלח הודעות
+                                            </Button>
+                                        )}
+                                        {trackingUrl && (
+                                            <Button
+                                                onClick={() => {
+                                                    setShowBulkMessaging(false)
+                                                    setBulkMessagingStep('config')
+                                                    setRegistrationLink('')
+                                                    setMessageContent('')
+                                                    setFlowId('')
+                                                    setMessagingMode('formal')
+                                                    setIsSendingLink(false)
+                                                    setTrackingUrl('')
+                                                }}
+                                                className="bg-blue-600 hover:bg-blue-700"
+                                            >
+                                                סגור
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                             )}
