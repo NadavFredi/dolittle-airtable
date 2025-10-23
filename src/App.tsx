@@ -635,12 +635,9 @@ const App: React.FC = () => {
             if (response.ok) {
                 const result = await response.json()
 
-                // Store tracking URL and show success
+                // Store tracking URL - no ugly browser alerts!
                 if (result.url) {
                     setTrackingUrl(result.url)
-                    alert(`הודעות נשלחו בהצלחה ל-${uniquePhones.length} מספרים!`)
-                } else {
-                    alert(`הודעות נשלחו בהצלחה ל-${uniquePhones.length} מספרים`)
                 }
 
                 // Don't close modal yet - user can see tracking link
