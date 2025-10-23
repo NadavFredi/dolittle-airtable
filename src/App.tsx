@@ -321,12 +321,12 @@ const App: React.FC = () => {
                                 <TableHeader>
                                     <TableRow className="bg-gray-50">
                                         <TableHead className="text-right font-semibold text-gray-700 min-w-[140px]">תאריך הגעה לשיעור ניסיון</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[80px]">האם צריך איסוף מהצהרון</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[100px]">איסוף מהצהרון</TableHead>
                                         <TableHead className="text-right font-semibold text-gray-700 min-w-[60px]">כיתה</TableHead>
                                         <TableHead className="text-right font-semibold text-gray-700 min-w-[120px]">בית ספר</TableHead>
                                         <TableHead className="text-right font-semibold text-gray-700 min-w-[120px]">חוג</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[150px]">שם מלא הורה</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[120px]">טלפון הורה</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[130px]">שם מלא הורה</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[110px]">טלפון הורה</TableHead>
                                         <TableHead className="text-right font-semibold text-gray-700 min-w-[200px]">מחזור</TableHead>
                                         <TableHead className="text-right font-semibold text-gray-700 min-w-[120px]">שם הילד</TableHead>
                                     </TableRow>
