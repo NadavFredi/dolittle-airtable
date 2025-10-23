@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { Filter, Zap, Check, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Search, Settings, X, MessageCircle, Send } from 'lucide-react'
+import { Filter, Zap, Check, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Search, Settings, X, MessageCircle, Send, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Autocomplete } from '@/components/ui/autocomplete'
 import { Popover } from '@/components/ui/popover'
 import { AppFooter } from '@/components/AppFooter'
+import { Login } from '@/components/Login'
+import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/hooks/useAuth'
 
 interface Registration {
     id: string
@@ -215,6 +218,7 @@ const FilterGroup = ({
 
 
 const App: React.FC = () => {
+    const { user, loading: authLoading, error: authError, signIn, signOut } = useAuth()
     const [registrations, setRegistrations] = useState<Registration[]>([])
     const [filterOptions, setFilterOptions] = useState({
         schools: [] as string[],
@@ -303,20 +307,31 @@ const App: React.FC = () => {
     // Advanced filtering mode
     const [isAdvancedMode, setIsAdvancedMode] = useState(false)
 
-    // Fetch real data from Supabase edge function
+    // Fetch real data from Supabase edge function - only when user is authenticated
     useEffect(() => {
+        if (!user) return // Don't fetch data if user is not authenticated
+
         const fetchRegistrations = async () => {
             try {
                 setLoading(true)
                 setError(null)
 
                 // Get Supabase URL from environment
-                const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || 'http://localhost:54321'
+                const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || 'http://127.0.0.1:54321'
+
+                // Get the current session token
+                const { data: { session } } = await supabase.auth.getSession()
+                const token = session?.access_token
+
+                if (!token) {
+                    throw new Error('No authentication token available')
+                }
 
                 const response = await fetch(`${supabaseUrl}/functions/v1/get-registrations`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
                     },
                 })
 
@@ -343,7 +358,7 @@ const App: React.FC = () => {
         }
 
         fetchRegistrations()
-    }, [])
+    }, [user]) // Depend on user state
 
     // Handle sorting
     const handleSort = (key: keyof Registration) => {
@@ -596,7 +611,6 @@ const App: React.FC = () => {
     }
 
     const sendBulkMessages = async () => {
-        setIsSending(true)
         setBulkMessagingStep('sending')
 
         try {
@@ -623,11 +637,19 @@ const App: React.FC = () => {
                 flowId: flowId
             }
 
-            const response = await fetch(`${(import.meta as any).env.VITE_SUPABASE_URL}/functions/v1/send-bulk-messages`, {
+            // Get the current session token
+            const { data: { session } } = await supabase.auth.getSession()
+            const token = session?.access_token
+
+            if (!token) {
+                throw new Error('No authentication token available')
+            }
+
+            const response = await fetch(`${(import.meta as any).env.VITE_SUPABASE_URL || 'http://127.0.0.1:54321'}/functions/v1/send-bulk-messages`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${(import.meta as any).env.VITE_SUPABASE_ANON_KEY}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(payload)
             })
@@ -649,12 +671,39 @@ const App: React.FC = () => {
             console.error('Error sending bulk messages:', error)
             alert('שגיאה בשליחת ההודעות')
         } finally {
-            setIsSending(false)
+            setBulkMessagingStep('confirm')
         }
     }
 
 
+    // Show loading while checking authentication
+    if (authLoading) {
+        console.log('Showing auth loading...')
+        return (
+            <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">טוען...</p>
+                </div>
+            </div>
+        )
+    }
+
+    // Show login if not authenticated
+    if (!user) {
+        console.log('Showing login page - no user found')
+        return (
+            <Login
+                onLogin={signIn}
+                isLoading={authLoading}
+                error={authError}
+            />
+        )
+    }
+
+    // Show data loading only when user is authenticated
     if (loading) {
+        console.log('Showing data loading...')
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="text-center">
@@ -725,6 +774,16 @@ const App: React.FC = () => {
                                     שליחת הודעות
                                 </Button>
                             )}
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => signOut()}
+                                className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                התנתק
+                            </Button>
 
                             <Button
                                 variant="outline"

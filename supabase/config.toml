@@ -102,10 +102,10 @@ enable_confirmations = false
 # Edge Functions configuration
 [functions.get-registrations]
 enabled = true
-verify_jwt = false
+verify_jwt = true
 entrypoint = "./functions/get-registrations/index.ts"
 
 [functions.send-bulk-messages]
 enabled = true
-verify_jwt = false
+verify_jwt = true
 entrypoint = "./functions/send-bulk-messages/index.ts"
