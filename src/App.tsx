@@ -696,9 +696,9 @@ const App: React.FC = () => {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <img
-                                src="/easyflow-logo.png"
+                                src="/easyflow-site-logo.png"
                                 alt="EasyFlow logo"
-                                className="h-8 w-auto"
+                                className="h-10 w-auto object-contain"
                             />
                             <div>
                                 <h1 className="text-xl font-semibold text-gray-900">Dolittle</h1>
