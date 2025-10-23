@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { Filter, Zap, Check, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { Filter, Zap, Check, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Search, Settings, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Autocomplete } from '@/components/ui/autocomplete'
 import { Popover } from '@/components/ui/popover'
@@ -17,6 +17,202 @@ interface Registration {
     trialDate: string
     inWhatsAppGroup: boolean
     registrationStatus: string
+}
+
+// Filter groups system
+interface FilterCondition {
+    id: string
+    field: string
+    operator: 'contains' | 'equals' | 'not_equals' | 'is_empty' | 'is_not_empty'
+    value: string | boolean | null
+}
+
+interface FilterGroup {
+    id: string
+    conditions: FilterCondition[]
+    operator: 'AND' | 'OR'
+}
+
+// Filter Condition Component
+const FilterCondition = ({
+    condition,
+    fieldOptions,
+    operatorOptions,
+    filterOptions,
+    onUpdate,
+    onDelete
+}: {
+    condition: FilterCondition
+    fieldOptions: Array<{ value: string, label: string }>
+    operatorOptions: Array<{ value: string, label: string }>
+    filterOptions: any
+    onUpdate: (condition: FilterCondition) => void
+    onDelete: () => void
+}) => {
+    const getValueOptions = (field: string) => {
+        switch (field) {
+            case 'school': return filterOptions.schools
+            case 'course': return filterOptions.courses
+            case 'cycle': return filterOptions.cycles
+            case 'class': return filterOptions.classes
+            case 'registrationStatus': return filterOptions.registrationStatuses
+            case 'needsPickup':
+            case 'inWhatsAppGroup': return ['כן', 'לא']
+            default: return []
+        }
+    }
+
+    const renderValueInput = () => {
+        const valueOptions = getValueOptions(condition.field)
+        const isEmptyOperator = condition.operator === 'is_empty' || condition.operator === 'is_not_empty'
+
+        if (isEmptyOperator) {
+            return <span className="text-gray-500 text-sm">אין צורך בערך</span>
+        }
+
+        if (valueOptions.length > 0) {
+            return (
+                <select
+                    value={condition.value as string || ''}
+                    onChange={(e) => onUpdate({ ...condition, value: e.target.value })}
+                    className="px-2 py-1 border border-gray-300 rounded text-sm min-w-[120px]"
+                >
+                    <option value="">בחר ערך</option>
+                    {valueOptions.map((option: string) => (
+                        <option key={option} value={option}>{option}</option>
+                    ))}
+                </select>
+            )
+        }
+
+        return (
+            <input
+                type="text"
+                value={condition.value as string || ''}
+                onChange={(e) => onUpdate({ ...condition, value: e.target.value })}
+                placeholder="הזן ערך"
+                className="px-2 py-1 border border-gray-300 rounded text-sm min-w-[120px]"
+            />
+        )
+    }
+
+    return (
+        <div className="flex items-center gap-2 p-3 bg-white border border-gray-200 rounded-md">
+            <select
+                value={condition.field}
+                onChange={(e) => onUpdate({ ...condition, field: e.target.value, value: null })}
+                className="px-2 py-1 border border-gray-300 rounded text-sm min-w-[140px]"
+            >
+                {fieldOptions.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+            </select>
+
+            <select
+                value={condition.operator}
+                onChange={(e) => onUpdate({ ...condition, operator: e.target.value as any })}
+                className="px-2 py-1 border border-gray-300 rounded text-sm min-w-[100px]"
+            >
+                {operatorOptions.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+            </select>
+
+            {renderValueInput()}
+
+            <button
+                onClick={onDelete}
+                className="p-1 text-gray-400 hover:text-red-500"
+            >
+                <X className="h-4 w-4" />
+            </button>
+        </div>
+    )
+}
+
+// Filter Group Component
+const FilterGroup = ({
+    group,
+    fieldOptions,
+    operatorOptions,
+    filterOptions,
+    onUpdate,
+    onDelete,
+    onAddCondition
+}: {
+    group: FilterGroup
+    fieldOptions: Array<{ value: string, label: string }>
+    operatorOptions: Array<{ value: string, label: string }>
+    filterOptions: any
+    onUpdate: (group: FilterGroup) => void
+    onDelete: () => void
+    onAddCondition: () => void
+}) => {
+    const updateCondition = (condition: FilterCondition) => {
+        const updatedConditions = group.conditions.map((c: FilterCondition) =>
+            c.id === condition.id ? condition : c
+        )
+        onUpdate({ ...group, conditions: updatedConditions })
+    }
+
+    const deleteCondition = (conditionId: string) => {
+        const updatedConditions = group.conditions.filter((c: FilterCondition) => c.id !== conditionId)
+        onUpdate({ ...group, conditions: updatedConditions })
+    }
+
+    return (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-700">קבוצת תנאים</span>
+                    <select
+                        value={group.operator}
+                        onChange={(e) => onUpdate({ ...group, operator: e.target.value as 'AND' | 'OR' })}
+                        className="px-2 py-1 border border-gray-300 rounded text-sm"
+                    >
+                        <option value="AND">וגם (AND)</option>
+                        <option value="OR">או (OR)</option>
+                    </select>
+                </div>
+                <button
+                    onClick={onDelete}
+                    className="p-1 text-gray-400 hover:text-red-500"
+                >
+                    <X className="h-4 w-4" />
+                </button>
+            </div>
+
+            <div className="space-y-2">
+                {group.conditions.map((condition: FilterCondition, index: number) => (
+                    <div key={condition.id}>
+                        {index > 0 && (
+                            <div className="flex items-center justify-center py-2">
+                                <span className="text-sm text-gray-500 bg-white px-2 py-1 rounded border">
+                                    {group.operator}
+                                </span>
+                            </div>
+                        )}
+                        <FilterCondition
+                            condition={condition}
+                            fieldOptions={fieldOptions}
+                            operatorOptions={operatorOptions}
+                            filterOptions={filterOptions}
+                            onUpdate={updateCondition}
+                            onDelete={() => deleteCondition(condition.id)}
+                        />
+                    </div>
+                ))}
+            </div>
+
+            <button
+                onClick={onAddCondition}
+                className="mt-3 flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
+            >
+                <span className="text-lg">+</span>
+                הוסף תנאי
+            </button>
+        </div>
+    )
 }
 
 
@@ -43,6 +239,43 @@ const App: React.FC = () => {
         registrationStatus: ''
     })
 
+    // Advanced filter states
+    const [advancedFilters, setAdvancedFilters] = useState({
+        schools: [] as string[],
+        cycles: [] as string[],
+        courses: [] as string[],
+        classes: [] as string[],
+        needsPickup: null as boolean | null,
+        inWhatsAppGroup: null as boolean | null,
+        registrationStatuses: [] as string[],
+        operator: 'AND' as 'AND' | 'OR'
+    })
+
+    const [filterGroups, setFilterGroups] = useState<FilterGroup[]>([])
+
+    // Field options for filter conditions
+    const fieldOptions = [
+        { value: 'childName', label: 'שם הילד' },
+        { value: 'parentName', label: 'שם מלא הורה' },
+        { value: 'parentPhone', label: 'טלפון הורה' },
+        { value: 'school', label: 'בית ספר' },
+        { value: 'course', label: 'חוג' },
+        { value: 'class', label: 'כיתה' },
+        { value: 'cycle', label: 'מחזור' },
+        { value: 'trialDate', label: 'תאריך הגעה לשיעור ניסיון' },
+        { value: 'needsPickup', label: 'איסוף מהצהרון' },
+        { value: 'inWhatsAppGroup', label: 'בקבוצת הוואטסאפ' },
+        { value: 'registrationStatus', label: 'סטטוס רישום' }
+    ]
+
+    const operatorOptions = [
+        { value: 'contains', label: 'מכיל' },
+        { value: 'equals', label: 'שווה ל' },
+        { value: 'not_equals', label: 'לא שווה ל' },
+        { value: 'is_empty', label: 'ריק' },
+        { value: 'is_not_empty', label: 'לא ריק' }
+    ]
+
     // Sorting state
     const [sortConfig, setSortConfig] = useState<{
         key: keyof Registration | null;
@@ -56,6 +289,9 @@ const App: React.FC = () => {
     // Search state
     const [searchQuery, setSearchQuery] = useState('')
 
+    // Advanced filtering mode
+    const [isAdvancedMode, setIsAdvancedMode] = useState(false)
+
     // Fetch real data from Supabase edge function
     useEffect(() => {
         const fetchRegistrations = async () => {
@@ -64,7 +300,7 @@ const App: React.FC = () => {
                 setError(null)
 
                 // Get Supabase URL from environment
-                const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'http://localhost:54321'
+                const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || 'http://localhost:54321'
 
                 const response = await fetch(`${supabaseUrl}/functions/v1/get-registrations`, {
                     method: 'GET',
@@ -121,14 +357,95 @@ const App: React.FC = () => {
         const safeRegistrations = Array.isArray(registrations) ? registrations : []
 
         let filtered = safeRegistrations.filter(reg => {
-            if (filters.school && reg.school !== filters.school) return false
-            if (filters.cycle && reg.cycle !== filters.cycle) return false
-            if (filters.course && reg.course !== filters.course) return false
-            if (filters.class && reg.class !== filters.class) return false
-            if (filters.needsPickup && reg.needsPickup.toString() !== filters.needsPickup) return false
-            if (filters.inWhatsAppGroup && reg.inWhatsAppGroup.toString() !== filters.inWhatsAppGroup) return false
-            if (filters.registrationStatus && reg.registrationStatus !== filters.registrationStatus) return false
-            return true
+            if (isAdvancedMode) {
+                // Filter groups logic
+                if (filterGroups.length > 0) {
+                    const groupResults = filterGroups.map(group => {
+                        const conditionResults = group.conditions.map(condition => {
+                            const fieldValue = reg[condition.field as keyof Registration]
+
+                            switch (condition.operator) {
+                                case 'contains':
+                                    return String(fieldValue).toLowerCase().includes(String(condition.value).toLowerCase())
+                                case 'equals':
+                                    return String(fieldValue) === String(condition.value)
+                                case 'not_equals':
+                                    return String(fieldValue) !== String(condition.value)
+                                case 'is_empty':
+                                    return !fieldValue || String(fieldValue).trim() === ''
+                                case 'is_not_empty':
+                                    return fieldValue && String(fieldValue).trim() !== ''
+                                default:
+                                    return true
+                            }
+                        })
+
+                        // Apply group operator (AND/OR within group)
+                        return group.operator === 'AND'
+                            ? conditionResults.every(result => result)
+                            : conditionResults.some(result => result)
+                    })
+
+                    // All groups must pass (AND between groups)
+                    return groupResults.every(result => result)
+                }
+
+                // Fallback to old advanced filters if no groups
+                const conditions = []
+
+                // Schools filter (OR within schools)
+                if (advancedFilters.schools.length > 0) {
+                    conditions.push(advancedFilters.schools.includes(reg.school))
+                }
+
+                // Cycles filter (OR within cycles)
+                if (advancedFilters.cycles.length > 0) {
+                    conditions.push(advancedFilters.cycles.includes(reg.cycle))
+                }
+
+                // Courses filter (OR within courses)
+                if (advancedFilters.courses.length > 0) {
+                    conditions.push(advancedFilters.courses.includes(reg.course))
+                }
+
+                // Classes filter (OR within classes)
+                if (advancedFilters.classes.length > 0) {
+                    conditions.push(advancedFilters.classes.includes(reg.class))
+                }
+
+                // Registration statuses filter (OR within statuses)
+                if (advancedFilters.registrationStatuses.length > 0) {
+                    conditions.push(advancedFilters.registrationStatuses.includes(reg.registrationStatus))
+                }
+
+                // Boolean filters
+                if (advancedFilters.needsPickup !== null) {
+                    conditions.push(reg.needsPickup === advancedFilters.needsPickup)
+                }
+
+                if (advancedFilters.inWhatsAppGroup !== null) {
+                    conditions.push(reg.inWhatsAppGroup === advancedFilters.inWhatsAppGroup)
+                }
+
+                // Apply AND/OR logic
+                if (conditions.length === 0) return true
+
+                if (advancedFilters.operator === 'AND') {
+                    return conditions.every(condition => condition)
+                } else {
+                    return conditions.some(condition => condition)
+                }
+            } else {
+                // Simple filtering logic (existing)
+                if (filters.school && reg.school !== filters.school) return false
+                if (filters.cycle && reg.cycle !== filters.cycle) return false
+                if (filters.course && reg.course !== filters.course) return false
+                if (filters.class && reg.class !== filters.class) return false
+                if (filters.needsPickup && reg.needsPickup.toString() !== filters.needsPickup) return false
+                if (filters.inWhatsAppGroup && reg.inWhatsAppGroup.toString() !== filters.inWhatsAppGroup) return false
+                if (filters.registrationStatus && reg.registrationStatus !== filters.registrationStatus) return false
+                return true
+            }
         })
 
         // Apply search filter
@@ -173,7 +490,7 @@ const App: React.FC = () => {
         }
 
         return filtered
-    }, [registrations, filters, sortConfig, searchQuery])
+    }, [registrations, filters, sortConfig, searchQuery, isAdvancedMode, advancedFilters, filterGroups])
 
     // Pagination calculations
     const totalPages = Math.ceil(filteredRegistrations.length / itemsPerPage)
@@ -201,6 +518,62 @@ const App: React.FC = () => {
             inWhatsAppGroup: '',
             registrationStatus: ''
         })
+    }
+
+    const clearAdvancedFilters = () => {
+        setAdvancedFilters({
+            schools: [],
+            cycles: [],
+            courses: [],
+            classes: [],
+            needsPickup: null,
+            inWhatsAppGroup: null,
+            registrationStatuses: [],
+            operator: 'AND'
+        })
+    }
+
+    // Filter groups helper functions
+    const addFilterGroup = () => {
+        const newGroup: FilterGroup = {
+            id: Date.now().toString(),
+            conditions: [{
+                id: Date.now().toString() + '_1',
+                field: 'childName',
+                operator: 'contains',
+                value: ''
+            }],
+            operator: 'AND'
+        }
+        setFilterGroups(prev => [...prev, newGroup])
+    }
+
+    const updateFilterGroup = (groupId: string, updatedGroup: FilterGroup) => {
+        setFilterGroups(prev => prev.map(group =>
+            group.id === groupId ? updatedGroup : group
+        ))
+    }
+
+    const deleteFilterGroup = (groupId: string) => {
+        setFilterGroups(prev => prev.filter(group => group.id !== groupId))
+    }
+
+    const addConditionToGroup = (groupId: string) => {
+        const newCondition: FilterCondition = {
+            id: Date.now().toString(),
+            field: 'childName',
+            operator: 'contains',
+            value: ''
+        }
+        setFilterGroups(prev => prev.map(group =>
+            group.id === groupId
+                ? { ...group, conditions: [...group.conditions, newCondition] }
+                : group
+        ))
+    }
+
+    const clearFilterGroups = () => {
+        setFilterGroups([])
     }
 
 
@@ -315,87 +688,178 @@ const App: React.FC = () => {
                             <span className="text-sm font-medium text-gray-700">סינון:</span>
                         </div>
 
-                        <div className="flex items-center gap-3 flex-wrap">
-                            <Autocomplete
-                                options={filterOptions.schools.map(school => ({ label: school, value: school }))}
-                                value={filters.school}
-                                onSelect={(value) => handleFilterChange('school', value)}
-                                placeholder="בית ספר"
-                                allowClear={true}
-                                className="min-w-[120px]"
-                            />
+                        {/* Mode Toggle */}
+                        <Button
+                            variant={isAdvancedMode ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setIsAdvancedMode(!isAdvancedMode)}
+                            className="flex items-center gap-2"
+                        >
+                            <Settings className="h-4 w-4" />
+                            {isAdvancedMode ? 'מצב מתקדם' : 'מצב פשוט'}
+                        </Button>
 
-                            <Autocomplete
-                                options={filterOptions.cycles.map(cycle => ({ label: cycle, value: cycle }))}
-                                value={filters.cycle}
-                                onSelect={(value) => handleFilterChange('cycle', value)}
-                                placeholder="מחזור"
-                                allowClear={true}
-                                className="min-w-[250px]"
-                            />
+                        {isAdvancedMode ? (
+                            // Filter Groups Interface
+                            <div className="w-full">
+                                <div className="text-sm font-medium text-gray-700 mb-3">
+                                    בתצוגה זו, הצג רשומות
+                                </div>
 
-                            <Autocomplete
-                                options={filterOptions.courses.map(course => ({ label: course, value: course }))}
-                                value={filters.course}
-                                onSelect={(value) => handleFilterChange('course', value)}
-                                placeholder="חוג"
-                                allowClear={true}
-                                className="min-w-[180px]"
-                            />
+                                {filterGroups.length === 0 ? (
+                                    <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                                        <div className="text-gray-500 mb-4">
+                                            גרור תנאים לכאן כדי להוסיף אותם לקבוצה זו
+                                        </div>
+                                        <div className="flex items-center justify-center gap-4">
+                                            <button
+                                                onClick={addFilterGroup}
+                                                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
+                                            >
+                                                <span className="text-lg">+</span>
+                                                הוסף תנאי
+                                            </button>
+                                            <button
+                                                onClick={addFilterGroup}
+                                                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
+                                            >
+                                                <span className="text-lg">+</span>
+                                                הוסף קבוצת תנאים
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {filterGroups.map((group, index) => (
+                                            <div key={group.id}>
+                                                {index > 0 && (
+                                                    <div className="flex items-center justify-center py-2">
+                                                        <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded border">
+                                                            וגם (AND)
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                <FilterGroup
+                                                    group={group}
+                                                    fieldOptions={fieldOptions}
+                                                    operatorOptions={operatorOptions}
+                                                    filterOptions={filterOptions}
+                                                    onUpdate={(updatedGroup) => updateFilterGroup(group.id, updatedGroup)}
+                                                    onDelete={() => deleteFilterGroup(group.id)}
+                                                    onAddCondition={() => addConditionToGroup(group.id)}
+                                                />
+                                            </div>
+                                        ))}
 
-                            <Autocomplete
-                                options={filterOptions.classes.map(cls => ({ label: cls, value: cls }))}
-                                value={filters.class}
-                                onSelect={(value) => handleFilterChange('class', value)}
-                                placeholder="כיתה"
-                                allowClear={true}
-                                className="min-w-[100px]"
-                            />
+                                        <div className="flex items-center gap-4 pt-2">
+                                            <button
+                                                onClick={addFilterGroup}
+                                                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
+                                            >
+                                                <span className="text-lg">+</span>
+                                                הוסף תנאי
+                                            </button>
+                                            <button
+                                                onClick={addFilterGroup}
+                                                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
+                                            >
+                                                <span className="text-lg">+</span>
+                                                הוסף קבוצת תנאים
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            // Simple Filters
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <Autocomplete
+                                    options={filterOptions.schools.map(school => ({ label: school, value: school }))}
+                                    value={filters.school}
+                                    onSelect={(value) => handleFilterChange('school', value)}
+                                    placeholder="בית ספר"
+                                    allowClear={true}
+                                    className="min-w-[120px]"
+                                />
 
-                            <Autocomplete
-                                options={[
-                                    { label: "כן", value: "true" },
-                                    { label: "לא", value: "false" }
-                                ]}
-                                value={filters.needsPickup}
-                                onSelect={(value) => handleFilterChange('needsPickup', value)}
-                                placeholder="איסוף מהצהרון"
-                                allowClear={true}
-                                className="min-w-[140px]"
-                            />
+                                <Autocomplete
+                                    options={filterOptions.cycles.map(cycle => ({ label: cycle, value: cycle }))}
+                                    value={filters.cycle}
+                                    onSelect={(value) => handleFilterChange('cycle', value)}
+                                    placeholder="מחזור"
+                                    allowClear={true}
+                                    className="min-w-[250px]"
+                                />
 
-                            <Autocomplete
-                                options={[
-                                    { label: "כן", value: "true" },
-                                    { label: "לא", value: "false" }
-                                ]}
-                                value={filters.inWhatsAppGroup}
-                                onSelect={(value) => handleFilterChange('inWhatsAppGroup', value)}
-                                placeholder="קבוצת וואטסאפ"
-                                allowClear={true}
-                                className="min-w-[140px]"
-                            />
+                                <Autocomplete
+                                    options={filterOptions.courses.map(course => ({ label: course, value: course }))}
+                                    value={filters.course}
+                                    onSelect={(value) => handleFilterChange('course', value)}
+                                    placeholder="חוג"
+                                    allowClear={true}
+                                    className="min-w-[180px]"
+                                />
 
-                            <Autocomplete
-                                options={filterOptions.registrationStatuses.map(status => ({ label: status, value: status }))}
-                                value={filters.registrationStatus}
-                                onSelect={(value) => handleFilterChange('registrationStatus', value)}
-                                placeholder="סטטוס רישום"
-                                allowClear={true}
-                                className="min-w-[140px]"
-                            />
-                        </div>
+                                <Autocomplete
+                                    options={filterOptions.classes.map(cls => ({ label: cls, value: cls }))}
+                                    value={filters.class}
+                                    onSelect={(value) => handleFilterChange('class', value)}
+                                    placeholder="כיתה"
+                                    allowClear={true}
+                                    className="min-w-[100px]"
+                                />
 
-                        {(filters.school || filters.cycle || filters.course || filters.class || filters.needsPickup || filters.inWhatsAppGroup || filters.registrationStatus) && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={clearAllFilters}
-                                className="text-gray-600 hover:text-gray-800"
-                            >
-                                נקה הכל
-                            </Button>
+                                <Autocomplete
+                                    options={[
+                                        { label: "כן", value: "true" },
+                                        { label: "לא", value: "false" }
+                                    ]}
+                                    value={filters.needsPickup}
+                                    onSelect={(value) => handleFilterChange('needsPickup', value)}
+                                    placeholder="איסוף מהצהרון"
+                                    allowClear={true}
+                                    className="min-w-[140px]"
+                                />
+
+                                <Autocomplete
+                                    options={[
+                                        { label: "כן", value: "true" },
+                                        { label: "לא", value: "false" }
+                                    ]}
+                                    value={filters.inWhatsAppGroup}
+                                    onSelect={(value) => handleFilterChange('inWhatsAppGroup', value)}
+                                    placeholder="קבוצת וואטסאפ"
+                                    allowClear={true}
+                                    className="min-w-[140px]"
+                                />
+
+                                <Autocomplete
+                                    options={filterOptions.registrationStatuses.map(status => ({ label: status, value: status }))}
+                                    value={filters.registrationStatus}
+                                    onSelect={(value) => handleFilterChange('registrationStatus', value)}
+                                    placeholder="סטטוס רישום"
+                                    allowClear={true}
+                                    className="min-w-[140px]"
+                                />
+                            </div>
                         )}
+
+                        {/* Clear Button */}
+                        {(isAdvancedMode ?
+                            (filterGroups.length > 0 || advancedFilters.schools.length > 0 || advancedFilters.cycles.length > 0 || advancedFilters.courses.length > 0 ||
+                                advancedFilters.classes.length > 0 || advancedFilters.registrationStatuses.length > 0 ||
+                                advancedFilters.needsPickup !== null || advancedFilters.inWhatsAppGroup !== null) :
+                            (filters.school || filters.cycle || filters.course || filters.class || filters.needsPickup || filters.inWhatsAppGroup || filters.registrationStatus)
+                        ) && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={isAdvancedMode ? (filterGroups.length > 0 ? clearFilterGroups : clearAdvancedFilters) : clearAllFilters}
+                                    className="text-gray-600 hover:text-gray-800"
+                                >
+                                    נקה הכל
+                                </Button>
+                            )}
                     </div>
                 </div>
             </div>
