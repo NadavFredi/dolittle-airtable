@@ -320,21 +320,21 @@ const App: React.FC = () => {
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-gray-50">
-                                        <TableHead className="text-right font-semibold text-gray-700">תאריך הגעה לשיעור ניסיון</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700">האם צריך איסוף מהצהרון</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700">כיתה</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700">בית ספר</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700">חוג</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700">שם מלא הורה</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700">טלפון הורה</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700">מחזור</TableHead>
-                                        <TableHead className="text-right font-semibold text-gray-700">שם הילד</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[140px]">תאריך הגעה לשיעור ניסיון</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[80px]">האם צריך איסוף מהצהרון</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[60px]">כיתה</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[120px]">בית ספר</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[120px]">חוג</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[150px]">שם מלא הורה</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[120px]">טלפון הורה</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[200px]">מחזור</TableHead>
+                                        <TableHead className="text-right font-semibold text-gray-700 min-w-[120px]">שם הילד</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {filteredRegistrations.map((registration, index) => (
                                         <TableRow key={registration.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                            <TableCell className="font-medium text-gray-900">{registration.trialDate}</TableCell>
+                                            <TableCell className="font-medium text-gray-900 whitespace-nowrap">{registration.trialDate}</TableCell>
                                             <TableCell className="text-center">
                                                 {registration.needsPickup && (
                                                     <div className="flex items-center justify-center w-6 h-6 bg-green-100 rounded-full mx-auto">
@@ -343,25 +343,25 @@ const App: React.FC = () => {
                                                 )}
                                             </TableCell>
                                             <TableCell>
-                                                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap">
                                                     {registration.class}
                                                 </span>
                                             </TableCell>
-                                            <TableCell className="text-gray-700">{registration.school}</TableCell>
+                                            <TableCell className="text-gray-700 whitespace-nowrap">{registration.school}</TableCell>
                                             <TableCell>
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-2 whitespace-nowrap">
                                                     <Zap className="h-4 w-4 text-yellow-600" />
                                                     <span className="text-gray-700">{registration.course}</span>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-gray-700">{registration.parentName}</TableCell>
-                                            <TableCell className="text-gray-700 font-mono">{registration.parentPhone}</TableCell>
+                                            <TableCell className="text-gray-700 whitespace-nowrap">{registration.parentName}</TableCell>
+                                            <TableCell className="text-gray-700 font-mono whitespace-nowrap">{registration.parentPhone}</TableCell>
                                             <TableCell>
-                                                <Button variant="outline" size="sm" className="text-xs bg-gray-100 hover:bg-gray-200 border-gray-300">
+                                                <Button variant="outline" size="sm" className="text-xs bg-gray-100 hover:bg-gray-200 border-gray-300 whitespace-nowrap max-w-[180px] truncate">
                                                     {registration.cycle}
                                                 </Button>
                                             </TableCell>
-                                            <TableCell className="font-semibold text-gray-900">{registration.childName}</TableCell>
+                                            <TableCell className="font-semibold text-gray-900 whitespace-nowrap">{registration.childName}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

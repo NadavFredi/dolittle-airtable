@@ -108,17 +108,6 @@ serve(async (req) => {
       }
     })
 
-    // Debug: Log the first few mappings to see what's happening
-    console.log("Debug - Sample mappings:")
-    console.log("School map size:", schoolMap.size)
-    console.log("Cycle map size:", cycleMap.size)
-    console.log("Course map size:", courseMap.size)
-
-    // Show first few entries from each map
-    console.log("First 3 school entries:", Array.from(schoolMap.entries()).slice(0, 3))
-    console.log("First 3 cycle entries:", Array.from(cycleMap.entries()).slice(0, 3))
-    console.log("First 3 course entries:", Array.from(courseMap.entries()).slice(0, 3))
-
     // Transform the data to match our UI structure
     const registrations = registrationsData.records.map((record: RegistrationRecord) => {
       // Helper function to get the first value from an array or return the value itself
@@ -133,14 +122,6 @@ serve(async (req) => {
       const cycleId = getFirstValue(record.fields["מחזור"])
       const courseId = getFirstValue(record.fields["חוג"])
       const schoolId = getFirstValue(record.fields["בית ספר"])
-
-      // Debug: Log the first record's mapping
-      if (record.id === "rec04GNSh905jiQM9") {
-        console.log("Debug - First record mapping:")
-        console.log("Cycle ID:", cycleId, "-> Name:", cycleMap.get(cycleId))
-        console.log("Course ID:", courseId, "-> Name:", courseMap.get(courseId))
-        console.log("School ID:", schoolId, "-> Name:", schoolMap.get(schoolId))
-      }
 
       return {
         id: record.id,
