@@ -1219,8 +1219,8 @@ const App: React.FC = () => {
                                             <button
                                                 onClick={() => setMessagingMode('formal')}
                                                 className={`p-4 rounded-lg border-2 transition-colors ${messagingMode === 'formal'
-                                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                                                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                                                     }`}
                                             >
                                                 <div className="text-center">
@@ -1231,8 +1231,8 @@ const App: React.FC = () => {
                                             <button
                                                 onClick={() => setMessagingMode('informal')}
                                                 className={`p-4 rounded-lg border-2 transition-colors ${messagingMode === 'informal'
-                                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                                                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                                                     }`}
                                             >
                                                 <div className="text-center">
