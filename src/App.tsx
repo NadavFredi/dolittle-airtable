@@ -3,6 +3,7 @@ import { Filter, Zap, Check, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Sear
 import { Button } from '@/components/ui/button'
 import { Autocomplete } from '@/components/ui/autocomplete'
 import { Popover } from '@/components/ui/popover'
+import { DatePickerInput } from '@/components/ui/date-picker-input'
 import { AppFooter } from '@/components/AppFooter'
 import { Login } from '@/components/Login'
 import { useAuth } from '@/hooks/useAuth'
@@ -28,7 +29,7 @@ interface Registration {
 interface FilterCondition {
     id: string
     field: string
-    operator: 'contains' | 'equals' | 'not_equals' | 'is_empty' | 'is_not_empty'
+    operator: 'contains' | 'equals' | 'not_equals' | 'is_empty' | 'is_not_empty' | 'before' | 'after' | 'on'
     value: string | boolean | null
 }
 
@@ -70,9 +71,22 @@ const FilterCondition = ({
     const renderValueInput = () => {
         const valueOptions = getValueOptions(condition.field)
         const isEmptyOperator = condition.operator === 'is_empty' || condition.operator === 'is_not_empty'
+        const isDateOperator = condition.operator === 'before' || condition.operator === 'after' || condition.operator === 'on'
 
         if (isEmptyOperator) {
             return <span className="text-gray-500 text-sm">אין צורך בערך</span>
+        }
+
+        // Special handling for date fields
+        if (condition.field === 'trialDate' && isDateOperator) {
+            return (
+                <input
+                    type="date"
+                    value={condition.value as string || ''}
+                    onChange={(e) => onUpdate({ ...condition, value: e.target.value })}
+                    className="px-2 py-1 border border-gray-300 rounded text-sm min-w-[140px]"
+                />
+            )
         }
 
         if (valueOptions.length > 0) {
@@ -239,7 +253,8 @@ const App: React.FC = () => {
         class: '',
         needsPickup: '',
         inWhatsAppGroup: '',
-        registrationStatus: ''
+        registrationStatus: '',
+        trialDate: null as Date | null
     })
 
     // Advanced filter states
@@ -289,7 +304,10 @@ const App: React.FC = () => {
         { value: 'equals', label: 'שווה ל' },
         { value: 'not_equals', label: 'לא שווה ל' },
         { value: 'is_empty', label: 'ריק' },
-        { value: 'is_not_empty', label: 'לא ריק' }
+        { value: 'is_not_empty', label: 'לא ריק' },
+        { value: 'before', label: 'לפני' },
+        { value: 'after', label: 'אחרי' },
+        { value: 'on', label: 'בתאריך' }
     ]
 
     // Sorting state
@@ -430,6 +448,27 @@ const App: React.FC = () => {
                                     return !fieldValue || String(fieldValue).trim() === ''
                                 case 'is_not_empty':
                                     return fieldValue && String(fieldValue).trim() !== ''
+                                case 'before':
+                                    if (condition.field === 'trialDate' && fieldValue && condition.value) {
+                                        const fieldDate = new Date(String(fieldValue))
+                                        const compareDate = new Date(String(condition.value))
+                                        return fieldDate < compareDate
+                                    }
+                                    return false
+                                case 'after':
+                                    if (condition.field === 'trialDate' && fieldValue && condition.value) {
+                                        const fieldDate = new Date(String(fieldValue))
+                                        const compareDate = new Date(String(condition.value))
+                                        return fieldDate > compareDate
+                                    }
+                                    return false
+                                case 'on':
+                                    if (condition.field === 'trialDate' && fieldValue && condition.value) {
+                                        const fieldDate = new Date(String(fieldValue))
+                                        const compareDate = new Date(String(condition.value))
+                                        return fieldDate.toDateString() === compareDate.toDateString()
+                                    }
+                                    return false
                                 default:
                                     return true
                             }
@@ -501,6 +540,13 @@ const App: React.FC = () => {
                 if (filters.needsPickup && reg.needsPickup.toString() !== filters.needsPickup) return false
                 if (filters.inWhatsAppGroup && reg.inWhatsAppGroup.toString() !== filters.inWhatsAppGroup) return false
                 if (filters.registrationStatus && reg.registrationStatus !== filters.registrationStatus) return false
+                if (filters.trialDate && reg.trialDate) {
+                    const regDate = new Date(reg.trialDate)
+                    const filterDate = filters.trialDate
+                    if (regDate.toDateString() !== filterDate.toDateString()) return false
+                } else if (filters.trialDate && !reg.trialDate) {
+                    return false
+                }
                 return true
             }
         })
@@ -573,7 +619,8 @@ const App: React.FC = () => {
             class: '',
             needsPickup: '',
             inWhatsAppGroup: '',
-            registrationStatus: ''
+            registrationStatus: '',
+            trialDate: null
         })
     }
 
@@ -1097,6 +1144,19 @@ const App: React.FC = () => {
                                     allowClear={true}
                                     className="min-w-[140px]"
                                 />
+
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-xs text-gray-600 font-medium">
+                                        תאריך הגעה לשיעור ניסיון
+                                    </label>
+                                    <DatePickerInput
+                                        value={filters.trialDate}
+                                        onChange={(date) => setFilters(prev => ({ ...prev, trialDate: date }))}
+                                        placeholder="בחר תאריך"
+                                        className="min-w-[180px]"
+                                        wrapperClassName="min-w-[180px]"
+                                    />
+                                </div>
                             </div>
                         )}
 
@@ -1105,7 +1165,7 @@ const App: React.FC = () => {
                             (filterGroups.length > 0 || advancedFilters.schools.length > 0 || advancedFilters.cycles.length > 0 || advancedFilters.courses.length > 0 ||
                                 advancedFilters.classes.length > 0 || advancedFilters.registrationStatuses.length > 0 ||
                                 advancedFilters.needsPickup !== null || advancedFilters.inWhatsAppGroup !== null) :
-                            (filters.school || filters.cycle || filters.course || filters.class || filters.needsPickup || filters.inWhatsAppGroup || filters.registrationStatus)
+                            (filters.school || filters.cycle || filters.course || filters.class || filters.needsPickup || filters.inWhatsAppGroup || filters.registrationStatus || filters.trialDate)
                         ) && (
                                 <Button
                                     variant="outline"
