@@ -1503,38 +1503,6 @@ const App: React.FC = () => {
                                                 </p>
                                             </div>
 
-                                            <div>
-                                                <div className="flex items-center gap-2 mb-3">
-                                                    <input
-                                                        type="checkbox"
-                                                        id="sendingLink"
-                                                        checked={isSendingLink}
-                                                        onChange={(e) => setIsSendingLink(e.target.checked)}
-                                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                                    />
-                                                    <label htmlFor="sendingLink" className="text-sm font-medium text-gray-700">
-                                                        אני שולח קישור הרשמה
-                                                    </label>
-                                                </div>
-
-                                                {isSendingLink && (
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                            קישור בסיס (עם פרמטר שאילתה)
-                                                        </label>
-                                                        <input
-                                                            type="url"
-                                                            value={registrationLink}
-                                                            onChange={(e) => setRegistrationLink(e.target.value)}
-                                                            placeholder="https://example.com/register?id="
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                        />
-                                                        <p className="text-xs text-gray-500 mt-1">
-                                                            הקישור יושלם עם מזהה כל רשומה: {registrationLink ? `${registrationLink}123` : 'https://example.com/register?id=123'}
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </div>
                                         </>
                                     )}
 
@@ -1669,6 +1637,37 @@ const App: React.FC = () => {
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             />
                                         </div>
+                                    </div>
+
+                                    {/* Registration Link Section */}
+                                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <input
+                                                type="checkbox"
+                                                id="sendingLink"
+                                                checked={isSendingLink}
+                                                onChange={(e) => setIsSendingLink(e.target.checked)}
+                                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            />
+                                            <label htmlFor="sendingLink" className="text-sm font-medium text-gray-700">
+                                                אני שולח קישור הרשמה
+                                            </label>
+                                        </div>
+
+                                        {isSendingLink && (
+                                            <div>
+                                                <input
+                                                    type="url"
+                                                    value={registrationLink}
+                                                    onChange={(e) => setRegistrationLink(e.target.value)}
+                                                    placeholder="קישור בסיס (עם פרמטר שאילתה)"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    הקישור יושלם עם מזהה כל רשומה: {registrationLink ? `${registrationLink}123` : 'https://example.com/register?id=123'}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
