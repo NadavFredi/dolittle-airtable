@@ -354,21 +354,26 @@ const App: React.FC = () => {
 
                 // Check if we have cached data (valid for 5 minutes) - only for initial load
                 if (!isRefresh) {
-                    const cachedData = localStorage.getItem(cacheKey)
-                    const cacheTimestamp = localStorage.getItem(`${cacheKey}-timestamp`)
+                    try {
+                        const cachedData = localStorage.getItem(cacheKey)
+                        const cacheTimestamp = localStorage.getItem(`${cacheKey}-timestamp`)
 
-                    if (cachedData && cacheTimestamp) {
-                        const cacheAge = Date.now() - parseInt(cacheTimestamp)
-                        const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+                        if (cachedData && cacheTimestamp) {
+                            const cacheAge = Date.now() - parseInt(cacheTimestamp)
+                            const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
-                        if (cacheAge < CACHE_DURATION) {
-                            console.log('Using cached data')
-                            const parsedData = JSON.parse(cachedData)
-                            setRegistrations(parsedData.registrations)
-                            setFilterOptions(parsedData.filterOptions)
-                            setLoading(false)
-                            return
+                            if (cacheAge < CACHE_DURATION) {
+                                console.log('Using cached data')
+                                const parsedData = JSON.parse(cachedData)
+                                setRegistrations(parsedData.registrations)
+                                setFilterOptions(parsedData.filterOptions)
+                                setLoading(false)
+                                return
+                            }
                         }
+                    } catch (cacheError) {
+                        console.warn('Failed to read cached data:', cacheError)
+                        // Continue to fetch fresh data
                     }
                 }
 
@@ -404,13 +409,18 @@ const App: React.FC = () => {
                         setFilterOptions(result.filterOptions)
                     }
 
-                    // Cache the data
-                    const dataToCache = {
-                        registrations: result.data,
-                        filterOptions: result.filterOptions
+                    // Cache the data safely
+                    try {
+                        const dataToCache = {
+                            registrations: result.data,
+                            filterOptions: result.filterOptions
+                        }
+                        localStorage.setItem(cacheKey, JSON.stringify(dataToCache))
+                        localStorage.setItem(`${cacheKey}-timestamp`, Date.now().toString())
+                    } catch (cacheError) {
+                        console.warn('Failed to cache data:', cacheError)
+                        // Continue execution even if caching fails
                     }
-                    localStorage.setItem(cacheKey, JSON.stringify(dataToCache))
-                    localStorage.setItem(`${cacheKey}-timestamp`, Date.now().toString())
                 } else {
                     throw new Error(result.error || 'Failed to fetch registrations')
                 }
@@ -840,6 +850,9 @@ const App: React.FC = () => {
             try {
                 setError(null)
 
+                // Define cache key
+                const cacheKey = 'registrations-cache'
+
                 // Get Supabase URL from environment
                 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || 'http://127.0.0.1:54321'
 
@@ -872,13 +885,18 @@ const App: React.FC = () => {
                         setFilterOptions(result.filterOptions)
                     }
 
-                    // Cache the fresh data
-                    const dataToCache = {
-                        registrations: result.data,
-                        filterOptions: result.filterOptions
+                    // Cache the fresh data safely
+                    try {
+                        const dataToCache = {
+                            registrations: result.data,
+                            filterOptions: result.filterOptions
+                        }
+                        localStorage.setItem(cacheKey, JSON.stringify(dataToCache))
+                        localStorage.setItem(`${cacheKey}-timestamp`, Date.now().toString())
+                    } catch (cacheError) {
+                        console.warn('Failed to cache refreshed data:', cacheError)
+                        // Continue execution even if caching fails
                     }
-                    localStorage.setItem('registrations-cache', JSON.stringify(dataToCache))
-                    localStorage.setItem('registrations-cache-timestamp', Date.now().toString())
                 } else {
                     throw new Error(result.error || 'Failed to fetch registrations')
                 }
