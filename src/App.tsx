@@ -243,6 +243,7 @@ const App: React.FC = () => {
         registrationStatuses: [] as string[]
     })
     const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
     // Filter states
@@ -288,7 +289,6 @@ const App: React.FC = () => {
     const [messageParams, setMessageParams] = useState({
         courseName: '',
         paymentReason: '',
-        paymentLink: '',
         arrivalDay: '',
         arrivalTime: ''
     })
@@ -340,27 +340,33 @@ const App: React.FC = () => {
     useEffect(() => {
         if (!user) return // Don't fetch data if user is not authenticated
 
-        const fetchRegistrations = async () => {
+        const fetchRegistrations = async (isRefresh = false) => {
             try {
-                setLoading(true)
+                if (isRefresh) {
+                    setRefreshing(true)
+                } else {
+                    setLoading(true)
+                }
                 setError(null)
 
-                // Check if we have cached data (valid for 5 minutes)
-                const cacheKey = 'registrations-cache'
-                const cachedData = localStorage.getItem(cacheKey)
-                const cacheTimestamp = localStorage.getItem(`${cacheKey}-timestamp`)
+                // Check if we have cached data (valid for 5 minutes) - only for initial load
+                if (!isRefresh) {
+                    const cacheKey = 'registrations-cache'
+                    const cachedData = localStorage.getItem(cacheKey)
+                    const cacheTimestamp = localStorage.getItem(`${cacheKey}-timestamp`)
 
-                if (cachedData && cacheTimestamp) {
-                    const cacheAge = Date.now() - parseInt(cacheTimestamp)
-                    const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+                    if (cachedData && cacheTimestamp) {
+                        const cacheAge = Date.now() - parseInt(cacheTimestamp)
+                        const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
-                    if (cacheAge < CACHE_DURATION) {
-                        console.log('Using cached data')
-                        const parsedData = JSON.parse(cachedData)
-                        setRegistrations(parsedData.registrations)
-                        setFilterOptions(parsedData.filterOptions)
-                        setLoading(false)
-                        return
+                        if (cacheAge < CACHE_DURATION) {
+                            console.log('Using cached data')
+                            const parsedData = JSON.parse(cachedData)
+                            setRegistrations(parsedData.registrations)
+                            setFilterOptions(parsedData.filterOptions)
+                            setLoading(false)
+                            return
+                        }
                     }
                 }
 
@@ -411,10 +417,11 @@ const App: React.FC = () => {
                 setError(err instanceof Error ? err.message : 'An unknown error occurred')
             } finally {
                 setLoading(false)
+                setRefreshing(false)
             }
         }
 
-        fetchRegistrations()
+        fetchRegistrations(false) // Initial load
     }, [user]) // Depend on user state
 
     // Handle sorting
@@ -724,7 +731,6 @@ const App: React.FC = () => {
                 // Add all the message parameters
                 courseName: messageParams.courseName || '',
                 paymentReason: messageParams.paymentReason || '',
-                paymentLink: messageParams.paymentLink || '',
                 arrivalDay: messageParams.arrivalDay || '',
                 arrivalTime: messageParams.arrivalTime || '',
                 isSendingLink: isSendingLink,
@@ -732,7 +738,6 @@ const App: React.FC = () => {
                 debug: {
                     hasCourseName: !!messageParams.courseName,
                     hasPaymentReason: !!messageParams.paymentReason,
-                    hasPaymentLink: !!messageParams.paymentLink,
                     hasArrivalDay: !!messageParams.arrivalDay,
                     hasArrivalTime: !!messageParams.arrivalTime
                 }
@@ -807,8 +812,8 @@ const App: React.FC = () => {
         )
     }
 
-    // Show data loading only when user is authenticated
-    if (loading) {
+    // Show data loading only when user is authenticated and no data is available
+    if (loading && registrations.length === 0) {
         console.log('Showing data loading...')
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
@@ -826,7 +831,7 @@ const App: React.FC = () => {
         localStorage.removeItem('registrations-cache-timestamp')
 
         // Trigger data refetch by updating a dummy state
-        setLoading(true)
+        setRefreshing(true)
 
         // Get fresh data
         const fetchRegistrations = async () => {
@@ -879,7 +884,7 @@ const App: React.FC = () => {
                 console.error('Error refreshing registrations:', err)
                 setError(err instanceof Error ? err.message : 'An unknown error occurred')
             } finally {
-                setLoading(false)
+                setRefreshing(false)
             }
         }
 
@@ -962,12 +967,17 @@ const App: React.FC = () => {
                                 variant="outline"
                                 size="sm"
                                 onClick={handleRefresh}
+                                disabled={refreshing}
                                 className="flex items-center gap-2"
                             >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                                רענן
+                                {refreshing ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                                ) : (
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                )}
+                                {refreshing ? 'מרענן...' : 'רענן'}
                             </Button>
                         </div>
                     </div>
@@ -1440,13 +1450,12 @@ const App: React.FC = () => {
                                         setMessagingMode('formal')
                                         setIsSendingLink(false)
                                         setTrackingUrl('')
-                                        setMessageParams({
-                                            courseName: '',
-                                            paymentReason: '',
-                                            paymentLink: '',
-                                            arrivalDay: '',
-                                            arrivalTime: ''
-                                        })
+            setMessageParams({
+                courseName: '',
+                paymentReason: '',
+                arrivalDay: '',
+                arrivalTime: ''
+            })
                                         setParamsApproved(false)
                                     }}
                                     className="p-2 text-gray-400 hover:text-gray-600"
@@ -1615,19 +1624,6 @@ const App: React.FC = () => {
                                                 value={messageParams.paymentReason}
                                                 onChange={(e) => setMessageParams(prev => ({ ...prev, paymentReason: e.target.value }))}
                                                 placeholder="הזן סיבת בקשת התשלום"
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                לינק לתשלום
-                                            </label>
-                                            <input
-                                                type="url"
-                                                value={messageParams.paymentLink}
-                                                onChange={(e) => setMessageParams(prev => ({ ...prev, paymentLink: e.target.value }))}
-                                                placeholder="https://example.com/payment"
                                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             />
                                         </div>
