@@ -276,13 +276,23 @@ const App: React.FC = () => {
 
     // Bulk messaging state
     const [showBulkMessaging, setShowBulkMessaging] = useState(false)
-    const [bulkMessagingStep, setBulkMessagingStep] = useState<'config' | 'confirm' | 'sending'>('config')
+    const [bulkMessagingStep, setBulkMessagingStep] = useState<'config' | 'params' | 'confirm' | 'sending'>('config')
     const [messagingMode, setMessagingMode] = useState<'formal' | 'informal'>('formal')
     const [registrationLink, setRegistrationLink] = useState('')
     const [messageContent, setMessageContent] = useState('')
     const [flowId, setFlowId] = useState('')
     const [isSendingLink, setIsSendingLink] = useState(false)
     const [trackingUrl, setTrackingUrl] = useState('')
+
+    // Parameter configuration state
+    const [messageParams, setMessageParams] = useState({
+        courseName: '',
+        paymentReason: '',
+        paymentLink: '',
+        arrivalDay: '',
+        arrivalTime: ''
+    })
+    const [paramsApproved, setParamsApproved] = useState(false)
 
     // Field options for filter conditions
     const fieldOptions = [
@@ -1410,6 +1420,14 @@ const App: React.FC = () => {
                                         setMessagingMode('formal')
                                         setIsSendingLink(false)
                                         setTrackingUrl('')
+                                        setMessageParams({
+                                            courseName: '',
+                                            paymentReason: '',
+                                            paymentLink: '',
+                                            arrivalDay: '',
+                                            arrivalTime: ''
+                                        })
+                                        setParamsApproved(false)
                                     }}
                                     className="p-2 text-gray-400 hover:text-gray-600"
                                 >
@@ -1562,11 +1580,135 @@ const App: React.FC = () => {
                                             ביטול
                                         </Button>
                                         <Button
-                                            onClick={() => setBulkMessagingStep('confirm')}
+                                            onClick={() => setBulkMessagingStep('params')}
                                             disabled={messagingMode === 'formal' ? !flowId.trim() : true}
                                             className="bg-green-600 hover:bg-green-700"
                                         >
                                             המשך
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {bulkMessagingStep === 'params' && (
+                                <div className="space-y-6">
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
+                                                <span className="text-blue-600 text-sm">i</span>
+                                            </div>
+                                            <h3 className="font-medium text-blue-800">הגדרת פרמטרים</h3>
+                                        </div>
+                                        <p className="text-sm text-blue-700">
+                                            הגדר את הפרמטרים שיישלחו בהודעה. כל הפרמטרים הם אופציונליים.
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                שם החוג
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={messageParams.courseName}
+                                                onChange={(e) => setMessageParams(prev => ({ ...prev, courseName: e.target.value }))}
+                                                placeholder="הזן שם החוג"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                סיבת בקשת תשלום
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={messageParams.paymentReason}
+                                                onChange={(e) => setMessageParams(prev => ({ ...prev, paymentReason: e.target.value }))}
+                                                placeholder="הזן סיבת בקשת התשלום"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                לינק לתשלום
+                                            </label>
+                                            <input
+                                                type="url"
+                                                value={messageParams.paymentLink}
+                                                onChange={(e) => setMessageParams(prev => ({ ...prev, paymentLink: e.target.value }))}
+                                                placeholder="https://example.com/payment"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                יום הגעה לחוג
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={messageParams.arrivalDay}
+                                                onChange={(e) => setMessageParams(prev => ({ ...prev, arrivalDay: e.target.value }))}
+                                                placeholder="למשל: יום שני"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                שעת הגעה לחוג
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={messageParams.arrivalTime}
+                                                onChange={(e) => setMessageParams(prev => ({ ...prev, arrivalTime: e.target.value }))}
+                                                placeholder="למשל: 16:00"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                        <div className="flex items-start gap-3">
+                                            <input
+                                                type="checkbox"
+                                                id="paramsApproval"
+                                                checked={paramsApproved}
+                                                onChange={(e) => setParamsApproved(e.target.checked)}
+                                                className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            />
+                                            <div className="flex-1">
+                                                <label htmlFor="paramsApproval" className="text-sm font-medium text-gray-700 cursor-pointer">
+                                                    אני מאשר/ת את הפרמטרים הבאים
+                                                </label>
+                                                <ul className="text-xs text-gray-600 mt-2 space-y-1">
+                                                    <li>• סקרתי את ההודעות והפרמטרים הנדרשים</li>
+                                                    <li>• אני יודע/ת שכל פרמטר שלא הגדרתי לא יישלח למשתמש</li>
+                                                    <li>• סקרתי את ה-Flow ומאשר/ת שהכל מוגדר כראוי</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-end gap-3">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => {
+                                                setBulkMessagingStep('config')
+                                                setParamsApproved(false)
+                                            }}
+                                        >
+                                            חזור
+                                        </Button>
+                                        <Button
+                                            onClick={() => setBulkMessagingStep('confirm')}
+                                            disabled={!paramsApproved}
+                                            className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                        >
+                                            המשך לאישור
                                         </Button>
                                     </div>
                                 </div>
