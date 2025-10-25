@@ -349,9 +349,11 @@ const App: React.FC = () => {
                 }
                 setError(null)
 
+                // Define cache key at function level
+                const cacheKey = 'registrations-cache'
+
                 // Check if we have cached data (valid for 5 minutes) - only for initial load
                 if (!isRefresh) {
-                    const cacheKey = 'registrations-cache'
                     const cachedData = localStorage.getItem(cacheKey)
                     const cacheTimestamp = localStorage.getItem(`${cacheKey}-timestamp`)
 
@@ -1450,12 +1452,12 @@ const App: React.FC = () => {
                                         setMessagingMode('formal')
                                         setIsSendingLink(false)
                                         setTrackingUrl('')
-            setMessageParams({
-                courseName: '',
-                paymentReason: '',
-                arrivalDay: '',
-                arrivalTime: ''
-            })
+                                        setMessageParams({
+                                            courseName: '',
+                                            paymentReason: '',
+                                            arrivalDay: '',
+                                            arrivalTime: ''
+                                        })
                                         setParamsApproved(false)
                                     }}
                                     className="p-2 text-gray-400 hover:text-gray-600"
@@ -1836,6 +1838,13 @@ const App: React.FC = () => {
                                                     setMessagingMode('formal')
                                                     setIsSendingLink(false)
                                                     setTrackingUrl('')
+                                                    setMessageParams({
+                                                        courseName: '',
+                                                        paymentReason: '',
+                                                        arrivalDay: '',
+                                                        arrivalTime: ''
+                                                    })
+                                                    setParamsApproved(false)
                                                 }}
                                                 className="bg-blue-600 hover:bg-blue-700"
                                             >

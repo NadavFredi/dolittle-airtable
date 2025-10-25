@@ -12,7 +12,21 @@ serve(async (req) => {
   }
 
   try {
-    const { registrations, totalUsers, uniqueNumbers, messagingMode, flowId } = await req.json()
+    const {
+      registrations,
+      totalUsers,
+      uniqueNumbers,
+      messagingMode,
+      flowId,
+      registrationLink,
+      messageContent,
+      courseName,
+      paymentReason,
+      arrivalDay,
+      arrivalTime,
+      isSendingLink,
+      debug,
+    } = await req.json()
 
     // Validate required fields
     if (!registrations || !Array.isArray(registrations)) {
@@ -29,11 +43,19 @@ serve(async (req) => {
       uniqueNumbers,
       messagingMode,
       flowId: messagingMode === "formal" ? flowId : undefined,
+      registrationLink,
+      messageContent,
+      courseName,
+      paymentReason,
+      arrivalDay,
+      arrivalTime,
+      isSendingLink,
+      debug,
       timestamp: new Date().toISOString(),
     }
 
     // Send to Make.com webhook
-    const webhookResponse = await fetch("https://hook.eu2.make.com/pdvxq3rh5t1zb054fyyzgiw3ade6gvrb", {
+    const webhookResponse = await fetch("https://hook.eu2.make.com/0j0hhqckmph61bmhomt2dl8nphi2xupn", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
