@@ -17,7 +17,8 @@
         "functions:deploy:single": "./scripts/deploy-functions.sh",
         "deploy": "npm run build && npm run functions:deploy",
         "deploy:functions": "node scripts/deploy-functions.js",
-        "deploy:vercel": "npm run build && vercel --prod"
+        "deploy:vercel": "npm run build && vercel --prod",
+        "setup:local": "node scripts/setup-local.js"
     },
     "dependencies": {
         "@hookform/resolvers": "^3.9.0",
