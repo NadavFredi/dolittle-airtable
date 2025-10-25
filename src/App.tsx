@@ -711,7 +711,7 @@ const App: React.FC = () => {
                     school: reg.school,
                     course: reg.course,
                     cycle: reg.cycle,
-                    registrationLink: registrationLink ? `${registrationLink}?id=${reg.id}` : null,
+                    registrationLink: isSendingLink && registrationLink ? `${registrationLink}${reg.id}` : null,
                     messageContent: messageContent,
                     flowId: flowId
                 })),
@@ -720,8 +720,28 @@ const App: React.FC = () => {
                 registrationLink: registrationLink,
                 messageContent: messageContent,
                 messagingMode: messagingMode,
-                flowId: flowId
+                flowId: flowId,
+                // Add all the message parameters
+                courseName: messageParams.courseName || '',
+                paymentReason: messageParams.paymentReason || '',
+                paymentLink: messageParams.paymentLink || '',
+                arrivalDay: messageParams.arrivalDay || '',
+                arrivalTime: messageParams.arrivalTime || '',
+                isSendingLink: isSendingLink,
+                // Additional debug info
+                debug: {
+                    hasCourseName: !!messageParams.courseName,
+                    hasPaymentReason: !!messageParams.paymentReason,
+                    hasPaymentLink: !!messageParams.paymentLink,
+                    hasArrivalDay: !!messageParams.arrivalDay,
+                    hasArrivalTime: !!messageParams.arrivalTime
+                }
             }
+
+            console.log('Sending payload to webhook:', JSON.stringify(payload, null, 2))
+            console.log('Registration link value:', registrationLink)
+            console.log('Is sending link:', isSendingLink)
+            console.log('Message params:', messageParams)
 
             // Get the current session token
             const { data: { session } } = await supabase.auth.getSession()
