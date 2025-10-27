@@ -25,14 +25,16 @@ interface ArrivalSystemPageProps {
 
 export default function ArrivalSystemPage({ registrations, loading }: ArrivalSystemPageProps) {
     return (
-        <>
+        <div className="min-h-screen flex flex-col">
             <Navbar
                 totalCount={registrations.length}
                 showMessagingButton={false}
             />
-            <ArrivalSystem registrations={registrations} loading={loading} />
+            <div className="flex-1">
+                <ArrivalSystem registrations={registrations} loading={loading} />
+            </div>
             <AppFooter />
-        </>
+        </div>
     )
 }
 
