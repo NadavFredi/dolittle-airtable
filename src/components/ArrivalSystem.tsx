@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Autocomplete } from '@/components/ui/autocomplete'
 import { DatePickerInput } from '@/components/ui/date-picker-input'
@@ -32,6 +32,7 @@ interface SelectedFilters {
 }
 
 const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = false }) => {
+    const [viewMode, setViewMode] = useState<'mark' | 'history'>('mark')
     const [selectedFilters, setSelectedFilters] = useState<SelectedFilters>({
         course: '',
         school: '',
@@ -39,6 +40,10 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         date: null
     })
     const [arrivalStatuses, setArrivalStatuses] = useState<Record<string, boolean>>({})
+
+    // For history view - fetch attendance records
+    const [attendanceHistory, setAttendanceHistory] = useState<Record<string, Record<string, boolean>>>({})
+    const [attendanceDates, setAttendanceDates] = useState<string[]>([])
 
     // Extract unique options
     const courses = useMemo(() => {
@@ -145,11 +150,62 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         )
     }
 
+    // Fetch attendance history when in history mode
+    useEffect(() => {
+        if (viewMode === 'history' && allFieldsSelected) {
+            // Mock: In real app, this would fetch from API
+            // For now, generate some sample dates
+            const dates = []
+            const today = new Date()
+            for (let i = 0; i < 14; i++) {
+                const date = new Date(today)
+                date.setDate(date.getDate() - i)
+                dates.push(date.toISOString().split('T')[0])
+            }
+            setAttendanceDates(dates.reverse())
+
+            // Mock attendance data
+            const mockAttendance: Record<string, Record<string, boolean>> = {}
+            filteredRegistrations.forEach(student => {
+                mockAttendance[student.id] = {}
+                dates.forEach(date => {
+                    // Random for demo
+                    mockAttendance[student.id][date] = Math.random() > 0.3
+                })
+            })
+            setAttendanceHistory(mockAttendance)
+        }
+    }, [viewMode, allFieldsSelected, filteredRegistrations])
+
     return (
         <div className="max-w-7xl mx-auto px-6 py-8" dir="rtl">
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">מערכת הגעות</h1>
-                <p className="text-gray-600">נהל הגעות של משתתפים לקורסים</p>
+            <div className="mb-6 flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">מערכת הגעות</h1>
+                    <p className="text-gray-600">נהל הגעות של משתתפים לקורסים</p>
+                </div>
+
+                {/* View Mode Toggle */}
+                <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+                    <button
+                        onClick={() => setViewMode('mark')}
+                        className={`px-4 py-2 rounded-md font-medium transition-colors ${viewMode === 'mark'
+                                ? 'bg-white shadow-sm text-blue-600'
+                                : 'text-gray-600 hover:text-gray-900'
+                            }`}
+                    >
+                        סמן הגעה
+                    </button>
+                    <button
+                        onClick={() => setViewMode('history')}
+                        className={`px-4 py-2 rounded-md font-medium transition-colors ${viewMode === 'history'
+                                ? 'bg-white shadow-sm text-blue-600'
+                                : 'text-gray-600 hover:text-gray-900'
+                            }`}
+                    >
+                        היסטוריית הגעה
+                    </button>
+                </div>
             </div>
 
             {/* Filter Section */}
@@ -214,7 +270,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
             </div>
 
             {/* Results Section */}
-            {allFieldsSelected && (
+            {allFieldsSelected && viewMode === 'mark' && (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                     <div className="p-6 border-b border-gray-200">
                         <div className="flex items-center justify-between">
@@ -314,6 +370,74 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                 <p className="text-gray-500">לא נמצאו הרשמות העונות על הקריטריונים</p>
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* History Matrix View */}
+            {allFieldsSelected && viewMode === 'history' && (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div className="p-6 border-b border-gray-200">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-lg font-semibold text-gray-900">היסטוריית הגעה</h2>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    {filteredRegistrations.length} תלמידים • {attendanceDates.length} תאריכים
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full border-collapse">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    {/* Fixed student name column */}
+                                    <th className="sticky right-0 bg-gray-50 border-b border-gray-200 px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider z-10">
+                                        שם התלמיד
+                                    </th>
+                                    {/* Date columns */}
+                                    {attendanceDates.map((date) => (
+                                        <th
+                                            key={date}
+                                            className="border-b border-gray-200 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                        >
+                                            {new Date(date).toLocaleDateString('he-IL', {
+                                                month: '2-digit',
+                                                day: '2-digit'
+                                            })}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {filteredRegistrations.map((student) => (
+                                    <tr key={student.id} className="hover:bg-gray-50">
+                                        {/* Fixed student name cell */}
+                                        <td className="sticky right-0 bg-white border-b border-gray-200 px-4 py-3 text-sm font-medium text-gray-900 z-10 whitespace-nowrap">
+                                            {student.childName}
+                                        </td>
+                                        {/* Attendance cells */}
+                                        {attendanceDates.map((date) => (
+                                            <td
+                                                key={date}
+                                                className="border-b border-gray-200 px-3 py-3 text-center"
+                                            >
+                                                {attendanceHistory[student.id]?.[date] ? (
+                                                    <div className="flex items-center justify-center">
+                                                        <span className="text-green-600 text-xl">✓</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center justify-center">
+                                                        <span className="text-red-400 text-xl">✗</span>
+                                                    </div>
+                                                )}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             )}
