@@ -44,6 +44,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
     })
     const [arrivalStatuses, setArrivalStatuses] = useState<Record<string, boolean>>({})
     const [isSaving, setIsSaving] = useState(false)
+    const [isLoadingAttendance, setIsLoadingAttendance] = useState(false)
 
     // For history view - fetch attendance records
     const [attendanceHistory, setAttendanceHistory] = useState<Record<string, Record<string, boolean>>>({})
@@ -112,9 +113,11 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         if (selectedFilters.date && allFieldsSelected && filteredRegistrations.length > 0) {
             const fetchAttendanceData = async () => {
                 try {
+                    setIsLoadingAttendance(true)
                     const cohortId = filteredRegistrations[0]?.cohortId
                     if (!cohortId) {
                         console.log('No cohort ID available')
+                        setIsLoadingAttendance(false)
                         return
                     }
 
@@ -126,6 +129,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
 
                     if (error) {
                         console.error('Error calling get-attendance:', error)
+                        setIsLoadingAttendance(false)
                         return
                     }
 
@@ -136,6 +140,8 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                     }
                 } catch (error) {
                     console.error('Error fetching attendance:', error)
+                } finally {
+                    setIsLoadingAttendance(false)
                 }
             }
 
@@ -406,83 +412,92 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                                        הגיע
-                                    </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                                        שם הילד
-                                    </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                                        שם ההורה
-                                    </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                                        טלפון
-                                    </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                                        קורס
-                                    </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                                        בית ספר
-                                    </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                                        קבוצה
-                                    </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                                        סטטוס הרשמה
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {filteredRegistrations.map((registration) => (
-                                    <tr key={registration.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <input
-                                                type="checkbox"
-                                                checked={arrivalStatuses[registration.id] || false}
-                                                onChange={() => handleToggleArrival(registration.id)}
-                                                className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                            />
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {registration.childName}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {registration.parentName}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {registration.parentPhone}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {registration.course}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {registration.school}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {registration.cycle}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${registration.registrationStatus === 'אושר'
-                                                ? 'bg-green-100 text-green-800'
-                                                : registration.registrationStatus === 'נדחה'
-                                                    ? 'bg-red-100 text-red-800'
-                                                    : 'bg-yellow-100 text-yellow-800'
-                                                }`}>
-                                                {registration.registrationStatus}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-
-                        {filteredRegistrations.length === 0 && (
+                        {isLoadingAttendance ? (
                             <div className="text-center py-12">
-                                <p className="text-gray-500">לא נמצאו הרשמות העונות על הקריטריונים</p>
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                <p className="text-gray-600">טוען נתוני הגעה...</p>
                             </div>
+                        ) : (
+                            <>
+                                <table className="w-full">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                                הגיע
+                                            </th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                                שם הילד
+                                            </th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                                שם ההורה
+                                            </th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                                טלפון
+                                            </th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                                קורס
+                                            </th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                                בית ספר
+                                            </th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                                קבוצה
+                                            </th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                                סטטוס הרשמה
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {filteredRegistrations.map((registration) => (
+                                            <tr key={registration.id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={arrivalStatuses[registration.id] || false}
+                                                        onChange={() => handleToggleArrival(registration.id)}
+                                                        className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                    />
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {registration.childName}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {registration.parentName}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {registration.parentPhone}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {registration.course}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {registration.school}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {registration.cycle}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${registration.registrationStatus === 'אושר'
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : registration.registrationStatus === 'נדחה'
+                                                            ? 'bg-red-100 text-red-800'
+                                                            : 'bg-yellow-100 text-yellow-800'
+                                                        }`}>
+                                                        {registration.registrationStatus}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+
+                                {filteredRegistrations.length === 0 && (
+                                    <div className="text-center py-12">
+                                        <p className="text-gray-500">לא נמצאו הרשמות העונות על הקריטריונים</p>
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
