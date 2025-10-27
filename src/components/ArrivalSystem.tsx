@@ -50,14 +50,14 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
     }, [registrations])
 
     const cohorts = useMemo(() => {
-        if (!selectedFilters.school) return []
+        if (!selectedFilters.school || !selectedFilters.course) return []
         return Array.from(new Set(
             registrations
-                .filter(r => r.school === selectedFilters.school)
-                .map(r => r.class)
+                .filter(r => r.school === selectedFilters.school && r.course === selectedFilters.course)
+                .map(r => r.cycle)
                 .filter(Boolean)
         ))
-    }, [registrations, selectedFilters.school])
+    }, [registrations, selectedFilters.school, selectedFilters.course])
 
     // Filter registrations based on selected filters
     const filteredRegistrations = useMemo(() => {
@@ -72,7 +72,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         }
 
         if (selectedFilters.cohort) {
-            filtered = filtered.filter(r => r.class === selectedFilters.cohort)
+            filtered = filtered.filter(r => r.cycle === selectedFilters.cohort)
         }
 
         if (selectedFilters.date) {
@@ -162,7 +162,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                         <Autocomplete
                             options={courses.map(c => ({ label: c, value: c }))}
                             value={selectedFilters.course}
-                            onSelect={(value) => setSelectedFilters(prev => ({ ...prev, course: value }))}
+                            onSelect={(value) => setSelectedFilters(prev => ({ ...prev, course: value, cohort: '' }))}
                             placeholder="בחר קורס"
                             allowClear
                         />
@@ -191,7 +191,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                             onSelect={(value) => setSelectedFilters(prev => ({ ...prev, cohort: value }))}
                             placeholder="בחר קבוצה"
                             allowClear
-                            disabled={!selectedFilters.school}
+                            disabled={!selectedFilters.school || !selectedFilters.course}
                         />
                     </div>
 
@@ -285,14 +285,14 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                             {registration.school}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {registration.class}
+                                            {registration.cycle}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${registration.registrationStatus === 'אושר'
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : registration.registrationStatus === 'נדחה'
-                                                        ? 'bg-red-100 text-red-800'
-                                                        : 'bg-yellow-100 text-yellow-800'
+                                                ? 'bg-green-100 text-green-800'
+                                                : registration.registrationStatus === 'נדחה'
+                                                    ? 'bg-red-100 text-red-800'
+                                                    : 'bg-yellow-100 text-yellow-800'
                                                 }`}>
                                                 {registration.registrationStatus}
                                             </span>
