@@ -14,6 +14,7 @@ interface AttendanceResponse {
 
 interface HistoryResponse {
   history: Record<string, Record<string, boolean>> // studentId -> { date: attended }
+  notes?: Record<string, Record<string, string>> // studentId -> { date: note }
   dates?: string[] // Optional array of dates that have data (only render these)
   cohortId: string
 }

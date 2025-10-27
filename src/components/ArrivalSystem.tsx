@@ -66,6 +66,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
 
     // For history view - fetch attendance records
     const [fullAttendanceHistory, setFullAttendanceHistory] = useState<Record<string, Record<string, boolean>>>({})
+    const [historyNotes, setHistoryNotes] = useState<Record<string, Record<string, string>>>({}) // studentId -> { date: note }
     const [allHistoryDates, setAllHistoryDates] = useState<string[]>([]) // All dates from API
     const [attendanceDates, setAttendanceDates] = useState<string[]>([]) // Current 14-day window to display
     const [attendanceHistory, setAttendanceHistory] = useState<Record<string, Record<string, boolean>>>({}) // Current window data
@@ -326,6 +327,11 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                             setFullAttendanceHistory(data.data.history)
                         }
 
+                        // Load notes if provided
+                        if (data.data.notes) {
+                            setHistoryNotes(data.data.notes)
+                        }
+
                         if (data.data.dates && Array.isArray(data.data.dates) && data.data.dates.length > 0) {
                             setAllHistoryDates(data.data.dates)
                         } else {
@@ -478,6 +484,11 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                             allowClear
                             disabled={!selectedFilters.school || !selectedFilters.course}
                         />
+                        {selectedFilters.cohort && filteredRegistrations.length > 0 && (
+                            <p className="mt-1 text-xs text-gray-500">
+                                ID: {filteredRegistrations[0]?.cohortId || 'N/A'}
+                            </p>
+                        )}
                     </div>
 
                     <div>
@@ -571,9 +582,6 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                                 בית ספר
                                             </th>
                                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                                                קבוצה
-                                            </th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                                                 סטטוס הרשמה
                                             </th>
                                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
@@ -583,7 +591,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
                                         {filteredRegistrations.map((registration) => (
-                                            <tr key={registration.id} className="hover:bg-gray-50">
+                                            <tr key={registration.id} className="hover:bg-gray-50 group">
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <input
                                                         type="checkbox"
@@ -593,7 +601,17 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                                     />
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {registration.childName}
+                                                    <div className="flex items-center gap-2">
+                                                        <span>{registration.childName}</span>
+                                                        {notes[registration.id] && (
+                                                            <div className="relative">
+                                                                <FileText className="w-4 h-4 text-blue-500" />
+                                                                <div className="absolute bottom-full right-0 mb-2 w-64 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                                                    {notes[registration.id]}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {registration.parentName}
@@ -606,9 +624,6 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {registration.school}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {registration.cycle}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${registration.registrationStatus === 'אושר'
@@ -759,28 +774,37 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {filteredRegistrations.map((student) => (
-                                        <tr key={student.id} className="hover:bg-gray-50">
+                                        <tr key={student.id} className="hover:bg-gray-50 group">
                                             {/* Fixed student name cell */}
                                             <td className="sticky right-0 bg-white border-b border-gray-200 px-4 py-3 text-sm font-medium text-gray-900 z-10 whitespace-nowrap">
                                                 {student.childName}
                                             </td>
                                             {/* Attendance cells */}
-                                            {attendanceDates.map((date) => (
-                                                <td
-                                                    key={date}
-                                                    className="border-b border-gray-200 px-3 py-3 text-center"
-                                                >
-                                                    {attendanceHistory[student.id]?.[date] ? (
-                                                        <div className="flex items-center justify-center">
-                                                            <span className="text-green-600 text-xl">✓</span>
+                                            {attendanceDates.map((date) => {
+                                                const hasNote = historyNotes[student.id]?.[date]
+                                                return (
+                                                    <td
+                                                        key={date}
+                                                        className="border-b border-gray-200 px-3 py-3 text-center"
+                                                    >
+                                                        <div className="flex items-center justify-center gap-1">
+                                                            {attendanceHistory[student.id]?.[date] ? (
+                                                                <span className="text-green-600 text-xl">✓</span>
+                                                            ) : (
+                                                                <span className="text-red-400 text-xl">✗</span>
+                                                            )}
+                                                            {hasNote && (
+                                                                <div className="relative">
+                                                                    <FileText className="w-3 h-3 text-blue-500" />
+                                                                    <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                                                        {hasNote}
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    ) : (
-                                                        <div className="flex items-center justify-center">
-                                                            <span className="text-red-400 text-xl">✗</span>
-                                                        </div>
-                                                    )}
-                                                </td>
-                                            ))}
+                                                    </td>
+                                                )
+                                            })}
                                         </tr>
                                     ))}
                                 </tbody>
