@@ -41,7 +41,7 @@ serve(async (req) => {
 
     // Call the webhook to get attendance data
     const webhookUrl = dateRange
-      ? "https://hook.eu2.make.com/0e2cyv1hcdgbvcisfh6hk3sc55lqqjai" // History endpoint
+      ? "https://hook.eu2.make.com/jyzdeo53igp94rjnnw7kq6ntttyc1xa5" // History endpoint
       : "https://hook.eu2.make.com/0e2cyv1hcdgbvcisfh6hk3sc55lqqjai" // Single date endpoint
 
     const webhookResponse = await fetch(webhookUrl, {
