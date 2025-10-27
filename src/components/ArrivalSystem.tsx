@@ -147,6 +147,9 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         handleCloseNotePopup()
     }
 
+    // All required fields for displaying the table (date is optional, for marking attendance)
+    const allFieldsSelected = selectedFilters.course && selectedFilters.school && selectedFilters.cohort
+
     // Handle ESC key to close popup
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
@@ -173,9 +176,6 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
             }
         }
     }, [selectedFilters.cohortId, selectedFilters.cohort, registrations])
-
-    // All required fields for displaying the table (date is optional, for marking attendance)
-    const allFieldsSelected = selectedFilters.course && selectedFilters.school && selectedFilters.cohort
 
     // Early return for loading state - MUST be before all hooks to avoid "Rendered fewer hooks" error
     if (loading) {
