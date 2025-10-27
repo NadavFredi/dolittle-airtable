@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Autocomplete } from '@/components/ui/autocomplete'
 import { DatePickerInput } from '@/components/ui/date-picker-input'
-import { Calendar } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface Registration {
     id: string
@@ -44,6 +44,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
     // For history view - fetch attendance records
     const [attendanceHistory, setAttendanceHistory] = useState<Record<string, Record<string, boolean>>>({})
     const [attendanceDates, setAttendanceDates] = useState<string[]>([])
+    const [currentDateOffset, setCurrentDateOffset] = useState(0) // Days to offset from today
 
     // Extract unique options
     const courses = useMemo(() => {
@@ -154,28 +155,39 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
     useEffect(() => {
         if (viewMode === 'history' && allFieldsSelected) {
             // Mock: In real app, this would fetch from API
-            // For now, generate some sample dates
+            // Generate dates based on current offset (slide window of 14 days)
             const dates = []
             const today = new Date()
+            const startDate = new Date(today)
+            startDate.setDate(startDate.getDate() - currentDateOffset - 13) // Go back to start of window
+
             for (let i = 0; i < 14; i++) {
-                const date = new Date(today)
-                date.setDate(date.getDate() - i)
+                const date = new Date(startDate)
+                date.setDate(date.getDate() + i)
                 dates.push(date.toISOString().split('T')[0])
             }
-            setAttendanceDates(dates.reverse())
+            setAttendanceDates(dates)
 
             // Mock attendance data
             const mockAttendance: Record<string, Record<string, boolean>> = {}
             filteredRegistrations.forEach(student => {
                 mockAttendance[student.id] = {}
                 dates.forEach(date => {
-                    // Random for demo
+                    // Random for demo, but more realistic
                     mockAttendance[student.id][date] = Math.random() > 0.3
                 })
             })
             setAttendanceHistory(mockAttendance)
         }
-    }, [viewMode, allFieldsSelected, filteredRegistrations])
+    }, [viewMode, allFieldsSelected, filteredRegistrations, currentDateOffset])
+
+    const handleDateNavigation = (direction: 'forward' | 'back') => {
+        if (direction === 'forward') {
+            setCurrentDateOffset(prev => Math.max(0, prev - 14))
+        } else {
+            setCurrentDateOffset(prev => prev + 14)
+        }
+    }
 
     return (
         <div className="max-w-7xl mx-auto px-6 py-8" dir="rtl">
@@ -190,8 +202,8 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                     <button
                         onClick={() => setViewMode('mark')}
                         className={`px-4 py-2 rounded-md font-medium transition-colors ${viewMode === 'mark'
-                                ? 'bg-white shadow-sm text-blue-600'
-                                : 'text-gray-600 hover:text-gray-900'
+                            ? 'bg-white shadow-sm text-blue-600'
+                            : 'text-gray-600 hover:text-gray-900'
                             }`}
                     >
                         סמן הגעה
@@ -199,8 +211,8 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                     <button
                         onClick={() => setViewMode('history')}
                         className={`px-4 py-2 rounded-md font-medium transition-colors ${viewMode === 'history'
-                                ? 'bg-white shadow-sm text-blue-600'
-                                : 'text-gray-600 hover:text-gray-900'
+                            ? 'bg-white shadow-sm text-blue-600'
+                            : 'text-gray-600 hover:text-gray-900'
                             }`}
                     >
                         היסטוריית הגעה
@@ -385,6 +397,38 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                     {filteredRegistrations.length} תלמידים • {attendanceDates.length} תאריכים
                                 </p>
                             </div>
+
+                            {/* Date Navigation */}
+                            {attendanceDates.length > 0 && (
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => handleDateNavigation('back')}
+                                        className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                                        title="תאריכים קודמים"
+                                    >
+                                        <ChevronRight className="w-5 h-5 text-gray-600" />
+                                    </button>
+
+                                    <div className="text-sm font-medium text-gray-700 px-3">
+                                        {new Date(attendanceDates[0]).toLocaleDateString('he-IL', {
+                                            day: '2-digit',
+                                            month: '2-digit'
+                                        })} - {new Date(attendanceDates[attendanceDates.length - 1]).toLocaleDateString('he-IL', {
+                                            day: '2-digit',
+                                            month: '2-digit'
+                                        })}
+                                    </div>
+
+                                    <button
+                                        onClick={() => handleDateNavigation('forward')}
+                                        disabled={currentDateOffset === 0}
+                                        className="p-2 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        title="תאריכים הבאים"
+                                    >
+                                        <ChevronLeft className="w-5 h-5 text-gray-600" />
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
 
