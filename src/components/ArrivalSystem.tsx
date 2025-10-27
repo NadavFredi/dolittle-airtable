@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Autocomplete } from '@/components/ui/autocomplete'
 import { DatePickerInput } from '@/components/ui/date-picker-input'
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface Registration {
     id: string
@@ -41,6 +42,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         date: null
     })
     const [arrivalStatuses, setArrivalStatuses] = useState<Record<string, boolean>>({})
+    const [isSaving, setIsSaving] = useState(false)
 
     // For history view - fetch attendance records
     const [attendanceHistory, setAttendanceHistory] = useState<Record<string, Record<string, boolean>>>({})
@@ -125,7 +127,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
 
     const handleSendToWebhook = async () => {
         if (!selectedFilters.cohort || !selectedFilters.date) {
-            alert('נא למלא את כל השדות: cohort ותאריך')
+            toast.error('נא למלא את כל השדות: cohort ותאריך')
             return
         }
 
@@ -133,11 +135,13 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         const date = selectedFilters.date.toISOString().split('T')[0]
 
         try {
+            setIsSaving(true)
+
             // Get cohortId from the first registration (all should have the same cohort)
             const cohortId = filteredRegistrations[0]?.cohortId || ''
 
             if (!cohortId) {
-                alert('לא נמצא מזהה קבוצה - נא לנסות שוב')
+                toast.error('לא נמצא מזהה קבוצה - נא לנסות שוב')
                 return
             }
 
@@ -180,10 +184,16 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                 console.log('Webhook response (text):', textResult)
             }
 
-            alert(`נשלח בהצלחה! Cohort ID: ${cohortId}, Date: ${date}, Records: ${arrivals.length}`)
+            toast.success(`נשלח בהצלחה! ${arrivals.length} תלמידים`, {
+                description: `תאריך: ${date} • קבוצה: ${cohortName.substring(0, 30)}...`
+            })
         } catch (error) {
             console.error('Error sending to webhook:', error)
-            alert('שגיאה בשליחה: ' + (error instanceof Error ? error.message : 'Unknown error'))
+            toast.error('שגיאה בשליחה', {
+                description: error instanceof Error ? error.message : 'Unknown error'
+            })
+        } finally {
+            setIsSaving(false)
         }
     }
 
@@ -360,9 +370,17 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                     </div>
                                     <Button
                                         onClick={handleSendToWebhook}
-                                        className="bg-green-600 hover:bg-green-700"
+                                        disabled={isSaving}
+                                        className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
                                     >
-                                        שמור עדכונים
+                                        {isSaving ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                                שולח...
+                                            </>
+                                        ) : (
+                                            'שמור עדכונים'
+                                        )}
                                     </Button>
                                 </div>
                             )}

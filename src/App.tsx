@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/hooks/useAuth'
 import easyflowLogo from '@/assets/easyflow-site-logo.png'
 import ArrivalSystem from '@/components/ArrivalSystem'
+import { Toaster } from 'sonner'
 
 interface Registration {
     id: string
@@ -1939,6 +1940,7 @@ const AppWrapper = () => {
     return (
         <BrowserRouter>
             <App />
+            <Toaster position="top-right" richColors />
         </BrowserRouter>
     )
 }
