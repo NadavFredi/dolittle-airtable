@@ -13,7 +13,7 @@ interface AttendanceResponse {
 
 interface HistoryResponse {
   history: Record<string, Record<string, boolean>> // studentId -> { date: attended }
-  dates: string[]
+  dates?: string[] // Optional array of dates that have data (only render these)
   cohortId: string
 }
 
@@ -64,7 +64,30 @@ serve(async (req) => {
     if (dateRange) {
       // History response
       try {
-        const historyData = await webhookResponse.json()
+        const historyData: HistoryResponse = await webhookResponse.json()
+
+        // If dates are not provided, extract them from history
+        if (!historyData.dates && historyData.history) {
+          const allDates = new Set<string>()
+          Object.values(historyData.history).forEach((studentDates) => {
+            Object.keys(studentDates).forEach((date) => allDates.add(date))
+          })
+          historyData.dates = Array.from(allDates).sort()
+        }
+
+        // Ensure every student has an entry for every date
+        // Missing dates mean "no attendance marked" (show as false/unmarked)
+        if (historyData.dates && historyData.history) {
+          Object.keys(historyData.history).forEach((studentId) => {
+            historyData.dates!.forEach((date) => {
+              // If student doesn't have data for this date, mark as not attended (false)
+              if (!(date in historyData.history![studentId])) {
+                historyData.history![studentId][date] = false
+              }
+            })
+          })
+        }
+
         return new Response(
           JSON.stringify({
             success: true,

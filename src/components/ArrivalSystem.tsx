@@ -246,7 +246,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                         return
                     }
 
-                    // Generate dates based on current offset (slide window of 14 days)
+                    // Generate date range for the request based on offset
                     const dates: string[] = []
                     const today = new Date()
                     const startDate = new Date(today)
@@ -258,7 +258,6 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                         const dateStr = date.toISOString().split('T')[0]
                         dates.push(dateStr)
                     }
-                    setAttendanceDates(dates)
 
                     // Fetch history from API
                     const { data, error } = await supabase.functions.invoke('get-attendance', {
@@ -279,16 +278,31 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                             emptyHistory[student.id] = {}
                         })
                         setAttendanceHistory(emptyHistory)
+                        setAttendanceDates([])
                         return
                     }
 
-                    if (data?.success && data?.data?.history) {
-                        setAttendanceHistory(data.data.history)
-                    } else if (data?.success && data?.data?.dates && data?.data?.dates.length > 0) {
-                        // If dates are provided separately
-                        setAttendanceHistory(data.data.history || {})
+                    if (data?.success && data?.data) {
+                        // Use dates from API if provided, otherwise use the generated ones
+                        if (data.data.dates && Array.isArray(data.data.dates) && data.data.dates.length > 0) {
+                            setAttendanceDates(data.data.dates)
+                        } else {
+                            setAttendanceDates(dates)
+                        }
+
+                        if (data.data.history) {
+                            setAttendanceHistory(data.data.history)
+                        } else {
+                            // No history data - show empty
+                            const emptyHistory: Record<string, Record<string, boolean>> = {}
+                            filteredRegistrations.forEach(student => {
+                                emptyHistory[student.id] = {}
+                            })
+                            setAttendanceHistory(emptyHistory)
+                        }
                     } else {
                         // No history data - show empty
+                        setAttendanceDates(dates)
                         const emptyHistory: Record<string, Record<string, boolean>> = {}
                         filteredRegistrations.forEach(student => {
                             emptyHistory[student.id] = {}

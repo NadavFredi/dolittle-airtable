@@ -138,25 +138,37 @@ GET /api/attendance-history/{cohortId}?startDate=2025-10-14&endDate=2025-10-27
 
 {
   "cohortId": "גורדון - שח מט - א-ב - - שני - 16:30",
+  "dates": ["2025-10-14", "2025-10-15", "2025-10-17", "2025-10-20", "2025-10-22", "2025-10-24", "2025-10-27"], // All dates to show in columns
   "history": {
     "rec123abc": {
-      "2025-10-27": true,
-      "2025-10-26": true,
-      "2025-10-25": false,
+      "2025-10-14": true,
+      "2025-10-15": false,
+      "2025-10-17": true,
+      "2025-10-20": true,
+      "2025-10-22": false,
       "2025-10-24": true,
-      // ... more dates
+      "2025-10-27": true
     },
     "rec456def": {
-      "2025-10-27": true,
-      "2025-10-26": false,
-      "2025-10-25": true,
+      "2025-10-14": true,
+      "2025-10-15": true,
+      "2025-10-17": false,
+      "2025-10-20": true,
+      "2025-10-22": false,
       "2025-10-24": true,
-      // ... more dates
+      "2025-10-27": true
     }
     // ... more students
   }
 }
 ```
+
+**Important**:
+
+- The `dates` array should contain ALL dates you want to display as columns in the matrix
+- EVERY student must have an entry for EVERY date in the `dates` array
+- Use `true` for present, `false` for absent, or omit the key if not marked yet
+- The UI will automatically fill in missing dates with `false` (unmarked)
 
 ---
 
