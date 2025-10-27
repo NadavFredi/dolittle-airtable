@@ -16,6 +16,7 @@ interface Registration {
     id: string
     childName: string
     cycle: string
+    cohortId?: string  // מזהה רשומת מחזור - the cohort record ID
     parentPhone: string
     parentName: string
     course: string

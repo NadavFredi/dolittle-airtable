@@ -17,6 +17,7 @@ interface Registration {
     trialDate: string
     inWhatsAppGroup: boolean
     registrationStatus: string
+    cohortId?: string  // מזהה רשומת מחזור
 }
 
 interface ArrivalSystemProps {
@@ -100,18 +101,45 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         }))
     }
 
+    // All required fields for displaying the table (date is optional, for marking attendance)
+    const allFieldsSelected = selectedFilters.course && selectedFilters.school && selectedFilters.cohort
+
+    // Load existing attendance data when date is selected
+    useEffect(() => {
+        if (selectedFilters.date && allFieldsSelected) {
+            // In real app, this would fetch from API
+            // For now, simulate existing attendance data
+
+            // Mock: Simulate some students already being marked as present
+            const existingAttendance: Record<string, boolean> = {}
+            filteredRegistrations.forEach((student, index) => {
+                // Some students already marked (simulate previous save)
+                if (index % 3 === 0) {
+                    existingAttendance[student.id] = true
+                }
+            })
+
+            setArrivalStatuses(existingAttendance)
+        }
+    }, [selectedFilters.date, allFieldsSelected, filteredRegistrations])
+
     const handleSendToWebhook = async () => {
         if (!selectedFilters.cohort || !selectedFilters.date) {
             alert('נא למלא את כל השדות: cohort ותאריך')
             return
         }
 
-        const cohortId = selectedFilters.cohort
+        const cohortName = selectedFilters.cohort
         const date = selectedFilters.date.toISOString().split('T')[0]
 
         try {
-            // Mock API call - in production this would be the actual webhook
-            console.log('Sending to webhook:', { cohortId, date })
+            // Get cohortId from the first registration (all should have the same cohort)
+            const cohortId = filteredRegistrations[0]?.cohortId || ''
+
+            if (!cohortId) {
+                alert('לא נמצא מזהה קבוצה - נא לנסות שוב')
+                return
+            }
 
             const arrivals = filteredRegistrations.map(reg => ({
                 id: reg.id,
@@ -121,24 +149,36 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                 parentPhone: reg.parentPhone
             }))
 
-            console.log('Arrivals data:', arrivals)
+            const payload = {
+                cohortId,
+                cohortName,
+                date,
+                arrivals
+            }
 
-            // In production, make actual API call:
-            // const response = await fetch('https://hook.eu2.make.com/0e2cyv1hcdgbvcisfh6hk3sc55lqqjai', {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({ cohortId, date, arrivals })
-            // })
+            console.log('Sending to webhook:', payload)
 
-            alert(`נשלח בהצלחה! Cohort: ${cohortId}, Date: ${date}, Records: ${arrivals.length}`)
+            const response = await fetch('https://hook.eu2.make.com/6luhtuffr5m49cnoronku4fnv7g7wlyr', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`)
+            }
+
+            const result = await response.json()
+            console.log('Webhook response:', result)
+
+            alert(`נשלח בהצלחה! Cohort ID: ${cohortId}, Date: ${date}, Records: ${arrivals.length}`)
         } catch (error) {
             console.error('Error sending to webhook:', error)
-            alert('שגיאה בשליחה')
+            alert('שגיאה בשליחה: ' + (error instanceof Error ? error.message : 'Unknown error'))
         }
     }
-
-    // All required fields for displaying the table (date is optional, for marking attendance)
-    const allFieldsSelected = selectedFilters.course && selectedFilters.school && selectedFilters.cohort
 
     if (loading) {
         return (
@@ -156,7 +196,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         if (viewMode === 'history' && allFieldsSelected) {
             // Mock: In real app, this would fetch from API
             // Generate dates based on current offset (slide window of 14 days)
-            const dates = []
+            const dates: string[] = []
             const today = new Date()
             const startDate = new Date(today)
             startDate.setDate(startDate.getDate() - currentDateOffset - 13) // Go back to start of window
@@ -164,7 +204,8 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
             for (let i = 0; i < 14; i++) {
                 const date = new Date(startDate)
                 date.setDate(date.getDate() + i)
-                dates.push(date.toISOString().split('T')[0])
+                const dateStr = date.toISOString().split('T')[0]
+                dates.push(dateStr)
             }
             setAttendanceDates(dates)
 
@@ -172,7 +213,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
             const mockAttendance: Record<string, Record<string, boolean>> = {}
             filteredRegistrations.forEach(student => {
                 mockAttendance[student.id] = {}
-                dates.forEach(date => {
+                dates.forEach((date: string) => {
                     // Random for demo, but more realistic
                     mockAttendance[student.id][date] = Math.random() > 0.3
                 })
@@ -289,16 +330,34 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                             <div>
                                 <h2 className="text-lg font-semibold text-gray-900">רשימת התלמידים בקבוצה</h2>
                                 <p className="text-sm text-gray-600 mt-1">
-                                    נמצאו {filteredRegistrations.length} תלמידים{selectedFilters.date && ` - סמן הגעה לתאריך ${selectedFilters.date.toLocaleDateString('he-IL')}`}
+                                    נמצאו {filteredRegistrations.length} תלמידים
+                                    {selectedFilters.date && (
+                                        <>
+                                            {' • '}
+                                            <span className="font-medium text-green-600">
+                                                {Object.values(arrivalStatuses).filter(Boolean).length} סומנו
+                                            </span>
+                                        </>
+                                    )}
                                 </p>
                             </div>
                             {selectedFilters.date && (
-                                <Button
-                                    onClick={handleSendToWebhook}
-                                    className="bg-green-600 hover:bg-green-700"
-                                >
-                                    שלח לעדכון
-                                </Button>
+                                <div className="flex items-center gap-3">
+                                    <div className="text-sm text-gray-600">
+                                        {selectedFilters.date.toLocaleDateString('he-IL', {
+                                            weekday: 'long',
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                        })}
+                                    </div>
+                                    <Button
+                                        onClick={handleSendToWebhook}
+                                        className="bg-green-600 hover:bg-green-700"
+                                    >
+                                        שמור עדכונים
+                                    </Button>
+                                </div>
                             )}
                         </div>
                     </div>

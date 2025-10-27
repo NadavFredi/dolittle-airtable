@@ -157,6 +157,7 @@ serve(async (req) => {
         id: record.id,
         childName: getFirstValue(record.fields["שם הילד"]),
         cycle: cycleMap.get(cycleId) || cycleId,
+        cohortId: cycleId, // מזהה רשומת מחזור - the cohort record ID
         parentPhone: record.fields["טלפון הורה"] || "",
         parentName: record.fields["שם מלא הורה"] || "",
         course: courseMap.get(courseId) || courseId,
