@@ -822,23 +822,24 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                             </td>
                                             {/* Attendance cells */}
                                             {attendanceDates.map((date) => {
-                                                const hasNote = historyNotes[student.id]?.[date]
+                                                const note = historyNotes[student.id]?.[date]
+                                                const hasNote = note !== undefined && note !== null && note !== ''
                                                 return (
                                                     <td
                                                         key={date}
                                                         className="border-b border-gray-200 px-3 py-3 text-center"
                                                     >
-                                                        <div className="flex items-center justify-center gap-1">
+                                                        <div className="flex items-center justify-center gap-1 group/cell">
                                                             {attendanceHistory[student.id]?.[date] ? (
                                                                 <span className="text-green-600 text-xl">✓</span>
                                                             ) : (
                                                                 <span className="text-red-400 text-xl">✗</span>
                                                             )}
                                                             {hasNote && (
-                                                                <div className="relative group/history-tooltip">
+                                                                <div className="relative group/note-icon">
                                                                     <FileText className="w-3 h-3 text-blue-500" />
-                                                                    <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10 opacity-0 group-hover/history-tooltip:opacity-100 transition-opacity pointer-events-none">
-                                                                        {hasNote}
+                                                                    <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10 opacity-0 group-hover/note-icon:opacity-100 transition-opacity pointer-events-none whitespace-normal">
+                                                                        {note}
                                                                     </div>
                                                                 </div>
                                                             )}
