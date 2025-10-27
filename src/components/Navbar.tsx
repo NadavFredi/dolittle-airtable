@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import { MessageCircle, LogOut, RefreshCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
@@ -25,7 +25,7 @@ const Navbar: React.FC<NavbarProps> = ({
         <nav className="bg-white shadow-sm border-b">
             <div className="max-w-7xl mx-auto px-6 py-4">
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <Link to="/" className="flex items-center gap-3">
                         <img
                             src={easyflowLogo}
                             alt="EasyFlow logo"
@@ -39,7 +39,7 @@ const Navbar: React.FC<NavbarProps> = ({
                             <h1 className="text-xl font-semibold text-gray-900">Dolittle</h1>
                             <p className="text-sm text-gray-500">ניהול הרשמות</p>
                         </div>
-                    </div>
+                    </Link>
 
                     {/* Navigation Links */}
                     <div className="flex items-center gap-6">
@@ -122,4 +122,3 @@ const Navbar: React.FC<NavbarProps> = ({
 }
 
 export default Navbar
-

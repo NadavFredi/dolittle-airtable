@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { BrowserRouter, useLocation, useNavigate } from 'react-router-dom'
+import { BrowserRouter, useLocation, useNavigate, Link } from 'react-router-dom'
 import { Filter, Zap, Check, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Search, Settings, X, MessageCircle, Send, LogOut, Phone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Autocomplete } from '@/components/ui/autocomplete'
@@ -1066,7 +1066,7 @@ const App: React.FC = () => {
             <nav className="bg-white shadow-sm border-b">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
                     <div className="flex flex-wrap items-center gap-4">
-                        <div className="flex items-center gap-3 flex-1 min-w-[200px]">
+                        <Link to="/" className="flex items-center gap-3 flex-1 min-w-[200px]">
                             <img
                                 src={easyflowLogo}
                                 alt="EasyFlow logo"
@@ -1082,7 +1082,7 @@ const App: React.FC = () => {
                                 <h1 className="text-xl font-semibold text-gray-900">Dolittle</h1>
                                 <p className="text-sm text-gray-500">ניהול הרשמות</p>
                             </div>
-                        </div>
+                        </Link>
 
                         <div className="order-2 w-full lg:order-2 lg:w-auto">
                             <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-end">
