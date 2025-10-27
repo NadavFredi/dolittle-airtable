@@ -182,4 +182,3 @@ If no attendance found for a date, return:
   "message": "לא נמצאו נתוני הגעה לתאריך זה"
 }
 ```
-

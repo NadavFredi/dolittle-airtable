@@ -172,13 +172,20 @@ const Autocomplete = React.forwardRef<HTMLButtonElement, AutocompleteProps>(
                         />
                         <div className="flex items-center gap-1">
                             {allowClear && selectedOption && (
-                                <button
-                                    type="button"
+                                <div
                                     onClick={handleClear}
-                                    className="h-4 w-4 opacity-50 hover:opacity-100 transition-opacity flex items-center justify-center"
+                                    className="h-4 w-4 opacity-50 hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault()
+                                            handleClear(e as any)
+                                        }
+                                    }}
                                 >
                                     <X className="h-3 w-3" />
-                                </button>
+                                </div>
                             )}
                             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
                         </div>

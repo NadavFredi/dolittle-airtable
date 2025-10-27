@@ -170,8 +170,15 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                 throw new Error(`HTTP error! status: ${response.status}`)
             }
 
-            const result = await response.json()
-            console.log('Webhook response:', result)
+            // Handle the response - it might return plain text or JSON
+            const contentType = response.headers.get('content-type')
+            if (contentType && contentType.includes('application/json')) {
+                const result = await response.json()
+                console.log('Webhook response:', result)
+            } else {
+                const textResult = await response.text()
+                console.log('Webhook response (text):', textResult)
+            }
 
             alert(`נשלח בהצלחה! Cohort ID: ${cohortId}, Date: ${date}, Records: ${arrivals.length}`)
         } catch (error) {
