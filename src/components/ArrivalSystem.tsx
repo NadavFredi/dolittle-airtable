@@ -63,10 +63,13 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
     const [isLoadingAttendance, setIsLoadingAttendance] = useState(false)
 
     // For history view - fetch attendance records
-    const [attendanceHistory, setAttendanceHistory] = useState<Record<string, Record<string, boolean>>>({})
-    const [attendanceDates, setAttendanceDates] = useState<string[]>([])
+    const [fullAttendanceHistory, setFullAttendanceHistory] = useState<Record<string, Record<string, boolean>>>({})
+    const [allHistoryDates, setAllHistoryDates] = useState<string[]>([]) // All dates from API
+    const [attendanceDates, setAttendanceDates] = useState<string[]>([]) // Current 14-day window to display
+    const [attendanceHistory, setAttendanceHistory] = useState<Record<string, Record<string, boolean>>>({}) // Current window data
     const [currentDateOffset, setCurrentDateOffset] = useState(0) // Days to offset from today
     const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+    const [hasFetchedFullHistory, setHasFetchedFullHistory] = useState(false) // Track if we've fetched full history
 
     // Extract unique options
     const courses = useMemo(() => {
@@ -282,10 +285,10 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         )
     }
 
-    // Fetch attendance history when in history mode
+    // Fetch full attendance history once when entering history mode
     useEffect(() => {
-        if (viewMode === 'history' && allFieldsSelected && filteredRegistrations.length > 0) {
-            const fetchHistoryData = async () => {
+        if (viewMode === 'history' && allFieldsSelected && filteredRegistrations.length > 0 && !hasFetchedFullHistory) {
+            const fetchFullHistory = async () => {
                 try {
                     setIsLoadingHistory(true)
                     const cohortId = filteredRegistrations[0]?.cohortId
@@ -295,93 +298,100 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                         return
                     }
 
-                    // Generate date range for the request based on offset
-                    const dates: string[] = []
-                    const today = new Date()
-                    const startDate = new Date(today)
-                    startDate.setDate(startDate.getDate() - currentDateOffset - 13) // Go back to start of window
-
-                    for (let i = 0; i < 14; i++) {
-                        const date = new Date(startDate)
-                        date.setDate(date.getDate() + i)
-                        const dateStr = date.toISOString().split('T')[0]
-                        dates.push(dateStr)
-                    }
-
-                    // Fetch history from API
+                    // Fetch full history from API (without date range)
                     const { data, error } = await supabase.functions.invoke('get-attendance', {
                         body: {
                             cohortId,
-                            dateRange: {
-                                startDate: dates[0],
-                                endDate: dates[dates.length - 1]
-                            }
+                            fullHistory: true
                         }
                     })
 
                     if (error) {
                         console.error('Error calling get-attendance for history:', error)
-                        // Fallback to empty history
-                        const emptyHistory: Record<string, Record<string, boolean>> = {}
-                        filteredRegistrations.forEach(student => {
-                            emptyHistory[student.id] = {}
-                        })
-                        setAttendanceHistory(emptyHistory)
-                        setAttendanceDates([])
+                        setFullAttendanceHistory({})
+                        setAllHistoryDates([])
                         return
                     }
 
                     if (data?.success && data?.data) {
-                        // Use dates from API if provided, otherwise use the generated ones
-                        if (data.data.dates && Array.isArray(data.data.dates) && data.data.dates.length > 0) {
-                            setAttendanceDates(data.data.dates)
-                        } else {
-                            setAttendanceDates(dates)
+                        if (data.data.history) {
+                            setFullAttendanceHistory(data.data.history)
                         }
 
-                        if (data.data.history) {
-                            setAttendanceHistory(data.data.history)
+                        if (data.data.dates && Array.isArray(data.data.dates) && data.data.dates.length > 0) {
+                            setAllHistoryDates(data.data.dates)
                         } else {
-                            // No history data - show empty
-                            const emptyHistory: Record<string, Record<string, boolean>> = {}
-                            filteredRegistrations.forEach(student => {
-                                emptyHistory[student.id] = {}
+                            // Extract dates from history if not provided
+                            const allDates = new Set<string>()
+                            const history = data.data.history || {}
+                            Object.values(history).forEach((studentDates) => {
+                                if (studentDates && typeof studentDates === 'object') {
+                                    Object.keys(studentDates).forEach(date => allDates.add(date))
+                                }
                             })
-                            setAttendanceHistory(emptyHistory)
+                            setAllHistoryDates(Array.from(allDates).sort())
                         }
-                    } else {
-                        // No history data - show empty
-                        setAttendanceDates(dates)
-                        const emptyHistory: Record<string, Record<string, boolean>> = {}
-                        filteredRegistrations.forEach(student => {
-                            emptyHistory[student.id] = {}
-                        })
-                        setAttendanceHistory(emptyHistory)
                     }
+
+                    setHasFetchedFullHistory(true)
                 } catch (error) {
                     console.error('Error fetching history:', error)
-                    // Show empty history on error
-                    const emptyHistory: Record<string, Record<string, boolean>> = {}
-                    filteredRegistrations.forEach(student => {
-                        emptyHistory[student.id] = {}
-                    })
-                    setAttendanceHistory(emptyHistory)
+                    setFullAttendanceHistory({})
+                    setAllHistoryDates([])
                 } finally {
                     setIsLoadingHistory(false)
                 }
             }
 
-            fetchHistoryData()
+            fetchFullHistory()
         }
-    }, [viewMode, allFieldsSelected, filteredRegistrations, currentDateOffset])
+    }, [viewMode, allFieldsSelected, filteredRegistrations, hasFetchedFullHistory])
+
+    // Update displayed dates based on current offset (no API call needed)
+    useEffect(() => {
+        if (viewMode === 'history' && allHistoryDates.length > 0) {
+            const allDatesCopy = [...allHistoryDates]
+            const maxOffset = Math.max(0, allDatesCopy.length - 14)
+            const clampedOffset = Math.min(currentDateOffset, maxOffset)
+
+            // Display 14 dates starting from the offset (or fewer if not enough dates)
+            const windowDates = allDatesCopy.slice(clampedOffset, clampedOffset + 14)
+            setAttendanceDates(windowDates)
+
+            // Filter attendance history for current window
+            const windowHistory: Record<string, Record<string, boolean>> = {}
+            filteredRegistrations.forEach(student => {
+                if (fullAttendanceHistory[student.id]) {
+                    windowHistory[student.id] = {}
+                    windowDates.forEach(date => {
+                        windowHistory[student.id][date] = fullAttendanceHistory[student.id][date] || false
+                    })
+                } else {
+                    windowHistory[student.id] = {}
+                    windowDates.forEach(date => {
+                        windowHistory[student.id][date] = false
+                    })
+                }
+            })
+            setAttendanceHistory(windowHistory)
+        }
+    }, [viewMode, allHistoryDates, currentDateOffset, filteredRegistrations, fullAttendanceHistory])
 
     const handleDateNavigation = (direction: 'forward' | 'back') => {
         if (direction === 'forward') {
             setCurrentDateOffset(prev => Math.max(0, prev - 14))
         } else {
-            setCurrentDateOffset(prev => prev + 14)
+            // Calculate max offset based on all available dates
+            const maxOffset = Math.max(0, allHistoryDates.length - 14)
+            setCurrentDateOffset(prev => Math.min(prev + 14, maxOffset))
         }
     }
+
+    // When filters change, reset the full history fetch flag
+    useEffect(() => {
+        setHasFetchedFullHistory(false)
+        setCurrentDateOffset(0)
+    }, [selectedFilters.cohort])
 
     return (
         <div className="max-w-7xl mx-auto px-6 py-8" dir="rtl">
@@ -632,7 +642,8 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                 <div className="flex items-center gap-3">
                                     <button
                                         onClick={() => handleDateNavigation('back')}
-                                        className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                                        disabled={currentDateOffset === 0 || allHistoryDates.length <= 14}
+                                        className="p-2 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         title="תאריכים קודמים"
                                     >
                                         <ChevronRight className="w-5 h-5 text-gray-600" />
@@ -650,7 +661,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
 
                                     <button
                                         onClick={() => handleDateNavigation('forward')}
-                                        disabled={currentDateOffset === 0}
+                                        disabled={(currentDateOffset + 14) >= allHistoryDates.length || allHistoryDates.length <= 14}
                                         className="p-2 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         title="תאריכים הבאים"
                                     >

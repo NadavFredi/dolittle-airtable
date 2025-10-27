@@ -24,7 +24,7 @@ serve(async (req) => {
   }
 
   try {
-    const { cohortId, date, dateRange } = await req.json()
+    const { cohortId, date, dateRange, fullHistory } = await req.json()
 
     if (!cohortId) {
       return new Response(
@@ -40,9 +40,10 @@ serve(async (req) => {
     }
 
     // Call the webhook to get attendance data
-    const webhookUrl = dateRange
-      ? "https://hook.eu2.make.com/jyzdeo53igp94rjnnw7kq6ntttyc1xa5" // History endpoint
-      : "https://hook.eu2.make.com/0e2cyv1hcdgbvcisfh6hk3sc55lqqjai" // Single date endpoint
+    const webhookUrl =
+      dateRange || fullHistory
+        ? "https://hook.eu2.make.com/jyzdeo53igp94rjnnw7kq6ntttyc1xa5" // History endpoint
+        : "https://hook.eu2.make.com/0e2cyv1hcdgbvcisfh6hk3sc55lqqjai" // Single date endpoint
 
     const webhookResponse = await fetch(webhookUrl, {
       method: "POST",
@@ -53,6 +54,7 @@ serve(async (req) => {
         cohortId,
         date, // optional
         dateRange, // for history: { startDate, endDate }
+        fullHistory, // fetch all history without date range
       }),
     })
 
@@ -61,7 +63,7 @@ serve(async (req) => {
     }
 
     // Parse the response - might be JSON or text
-    if (dateRange) {
+    if (dateRange || fullHistory) {
       // History response
       try {
         const historyData: HistoryResponse = await webhookResponse.json()
