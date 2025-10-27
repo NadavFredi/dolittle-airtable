@@ -109,3 +109,8 @@ entrypoint = "./functions/get-registrations/index.ts"
 enabled = true
 verify_jwt = true
 entrypoint = "./functions/send-bulk-messages/index.ts"
+
+[functions.get-attendance]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/get-attendance/index.ts"

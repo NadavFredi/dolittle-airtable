@@ -4,6 +4,7 @@ import { Autocomplete } from '@/components/ui/autocomplete'
 import { DatePickerInput } from '@/components/ui/date-picker-input'
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
+import { supabase } from '@/hooks/useAuth'
 
 interface Registration {
     id: string
@@ -108,20 +109,37 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
 
     // Load existing attendance data when date is selected
     useEffect(() => {
-        if (selectedFilters.date && allFieldsSelected) {
-            // In real app, this would fetch from API
-            // For now, simulate existing attendance data
+        if (selectedFilters.date && allFieldsSelected && filteredRegistrations.length > 0) {
+            const fetchAttendanceData = async () => {
+                try {
+                    const cohortId = filteredRegistrations[0]?.cohortId
+                    if (!cohortId) {
+                        console.log('No cohort ID available')
+                        return
+                    }
 
-            // Mock: Simulate some students already being marked as present
-            const existingAttendance: Record<string, boolean> = {}
-            filteredRegistrations.forEach((student, index) => {
-                // Some students already marked (simulate previous save)
-                if (index % 3 === 0) {
-                    existingAttendance[student.id] = true
+                    const date = selectedFilters.date!.toISOString().split('T')[0]
+
+                    const { data, error } = await supabase.functions.invoke('get-attendance', {
+                        body: { cohortId, date }
+                    })
+
+                    if (error) {
+                        console.error('Error calling get-attendance:', error)
+                        return
+                    }
+
+                    if (data?.success && data?.data?.attendance) {
+                        setArrivalStatuses(data.data.attendance)
+                    } else {
+                        console.log('No attendance data found for this date')
+                    }
+                } catch (error) {
+                    console.error('Error fetching attendance:', error)
                 }
-            })
+            }
 
-            setArrivalStatuses(existingAttendance)
+            fetchAttendanceData()
         }
     }, [selectedFilters.date, allFieldsSelected, filteredRegistrations])
 
