@@ -7,6 +7,7 @@ const corsHeaders = {
 
 interface AttendanceResponse {
   attendance: Record<string, boolean> // studentId -> attended (boolean)
+  notes?: Record<string, string> // studentId -> note text
   date: string
   cohortId: string
 }

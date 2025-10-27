@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Autocomplete } from '@/components/ui/autocomplete'
 import { DatePickerInput } from '@/components/ui/date-picker-input'
-import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, FileText, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/hooks/useAuth'
 
@@ -59,6 +59,8 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         date: getInitialDate()
     })
     const [arrivalStatuses, setArrivalStatuses] = useState<Record<string, boolean>>({})
+    const [notes, setNotes] = useState<Record<string, string>>({}) // studentId -> note text
+    const [noteEditMode, setNoteEditMode] = useState<string | null>(null) // studentId currently being edited
     const [isSaving, setIsSaving] = useState(false)
     const [isLoadingAttendance, setIsLoadingAttendance] = useState(false)
 
@@ -186,8 +188,13 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                         return
                     }
 
-                    if (data?.success && data?.data?.attendance) {
-                        setArrivalStatuses(data.data.attendance)
+                    if (data?.success && data?.data) {
+                        if (data.data.attendance) {
+                            setArrivalStatuses(data.data.attendance)
+                        }
+                        if (data.data.notes) {
+                            setNotes(data.data.notes)
+                        }
                     } else {
                         console.log('No attendance data found for this date')
                     }
@@ -227,7 +234,8 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                 arrived: arrivalStatuses[reg.id] || false,
                 childName: reg.childName,
                 parentName: reg.parentName,
-                parentPhone: reg.parentPhone
+                parentPhone: reg.parentPhone,
+                note: notes[reg.id] || ''
             }))
 
             const payload = {
@@ -568,6 +576,9 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                                                 סטטוס הרשמה
                                             </th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                                הערות
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
@@ -608,6 +619,52 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                                         }`}>
                                                         {registration.registrationStatus}
                                                     </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    {noteEditMode === registration.id ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <input
+                                                                type="text"
+                                                                value={notes[registration.id] || ''}
+                                                                onChange={(e) => setNotes(prev => ({ ...prev, [registration.id]: e.target.value }))}
+                                                                onBlur={() => setNoteEditMode(null)}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter') {
+                                                                        setNoteEditMode(null)
+                                                                    }
+                                                                }}
+                                                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                                autoFocus
+                                                            />
+                                                            <button
+                                                                onClick={() => setNoteEditMode(null)}
+                                                                className="text-gray-400 hover:text-gray-600"
+                                                            >
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="relative">
+                                                                {notes[registration.id] ? (
+                                                                    <FileText className="w-4 h-4 text-blue-600" />
+                                                                ) : (
+                                                                    <FileText className="w-4 h-4 text-gray-300" />
+                                                                )}
+                                                                {notes[registration.id] && (
+                                                                    <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10 pointer-events-none">
+                                                                        {notes[registration.id]}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setNoteEditMode(registration.id)}
+                                                                className="text-xs text-blue-600 hover:text-blue-800"
+                                                            >
+                                                                {notes[registration.id] ? 'ערוך' : 'הוסף'}
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}
