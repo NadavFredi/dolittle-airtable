@@ -22,21 +22,24 @@ POST https://hook.eu2.make.com/0e2cyv1hcdgbvcisfh6hk3sc55lqqjai
       "arrived": true,
       "childName": "ניקו ליבוביץ",
       "parentName": "דני ליבוביץ",
-      "parentPhone": "0521234567"
+      "parentPhone": "0521234567",
+      "note": "הגיע מאוחר ב-10 דקות"
     },
     {
       "id": "rec456def",
       "arrived": true,
       "childName": "יהונתן אלבז",
       "parentName": "שרה אלבז",
-      "parentPhone": "0527654321"
+      "parentPhone": "0527654321",
+      "note": ""
     },
     {
       "id": "rec789ghi",
       "arrived": false,
       "childName": "איתי אברהם",
       "parentName": "מיכל אברהם",
-      "parentPhone": "0521112222"
+      "parentPhone": "0521112222",
+      "note": "הודיע שלא יגיע"
     }
   ]
 }
@@ -58,11 +61,18 @@ GET /api/attendance/{cohortId}/{date}
     "rec123abc": true,
     "rec456def": true,
     "rec789ghi": false
+  },
+  "notes": {
+    "rec123abc": "הגיע מאוחר ב-10 דקות",
+    "rec789ghi": "הודיע שלא יגיע"
   }
 }
 ```
 
-This will pre-populate the checkboxes based on the `attendance` object.
+This will pre-populate:
+
+- The checkboxes based on the `attendance` object
+- The notes based on the `notes` object
 
 ---
 
@@ -159,6 +169,27 @@ GET /api/attendance-history/{cohortId}?startDate=2025-10-14&endDate=2025-10-27
       "2025-10-27": true
     }
     // ... more students
+  },
+  "notes": {
+    "rec123abc": {
+      "2025-10-14": "",
+      "2025-10-15": "לא הודיע מראש",
+      "2025-10-17": "",
+      "2025-10-20": "",
+      "2025-10-22": "",
+      "2025-10-24": "",
+      "2025-10-27": ""
+    },
+    "rec456def": {
+      "2025-10-14": "",
+      "2025-10-15": "",
+      "2025-10-17": "",
+      "2025-10-20": "",
+      "2025-10-22": "היה חולה",
+      "2025-10-24": "",
+      "2025-10-27": ""
+    }
+    // ... more students
   }
 }
 ```
@@ -174,11 +205,12 @@ GET /api/attendance-history/{cohortId}?startDate=2025-10-14&endDate=2025-10-27
 
 ## Key Points
 
-1. **Sending**: Always send complete list with all student IDs
-2. **Receiving**: Return simple map of `studentId -> attended (boolean)`
-3. **New students**: Add them to the arrivals array and they'll be included in future fetches
-4. **Overwrite**: Each save completely replaces the previous attendance for that date
-5. **History**: Return all dates you have attendance for
+1. **Sending**: Always send complete list with all student IDs and their notes
+2. **Receiving**: Return simple map of `studentId -> attended (boolean)` and `studentId -> note text`
+3. **Notes**: Store and retrieve notes for each student on each date
+4. **New students**: Add them to the arrivals array and they'll be included in future fetches
+5. **Overwrite**: Each save completely replaces the previous attendance for that date
+6. **History**: Return all dates you have attendance for, including notes for each date
 
 ---
 
