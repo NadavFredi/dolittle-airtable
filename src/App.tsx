@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { BrowserRouter, useLocation, useNavigate } from 'react-router-dom'
-import { Filter, Zap, Check, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Search, Settings, X, MessageCircle, Send, LogOut } from 'lucide-react'
+import { Filter, Zap, Check, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Search, Settings, X, MessageCircle, Send, LogOut, Phone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Autocomplete } from '@/components/ui/autocomplete'
 import { Popover } from '@/components/ui/popover'
@@ -236,6 +236,76 @@ const FilterGroup = ({
 }
 
 
+const RegistrationCard = ({ registration }: { registration: Registration }) => {
+    const rawPhone = registration.parentPhone || ''
+    const telPhone = rawPhone.replace(/[^+\d]/g, '')
+
+    return (
+        <div className="px-4 py-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex-1 space-y-1 text-right">
+                    <p className="text-xs text-gray-500">{registration.trialDate || '—'}</p>
+                    <h3 className="text-lg font-semibold text-gray-900">{registration.childName}</h3>
+                    <div className="flex items-center justify-end gap-2 text-sm text-gray-600">
+                        <Zap className="h-4 w-4 text-yellow-600" />
+                        <span>{registration.course || '—'}</span>
+                    </div>
+                </div>
+                {registration.needsPickup && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+                        <Check className="h-3 w-3" />
+                        איסוף
+                    </span>
+                )}
+            </div>
+
+            <div className="mt-4 space-y-2 text-sm text-gray-700">
+                <div className="flex justify-between gap-4">
+                    <span className="text-gray-500">שם הורה</span>
+                    <span className="text-right">{registration.parentName || '—'}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                    <span className="text-gray-500">טלפון</span>
+                    <span className="font-mono text-blue-600" dir="ltr">{registration.parentPhone || '—'}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                    <span className="text-gray-500">בית ספר</span>
+                    <span className="text-right">{registration.school || '—'}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                    <span className="text-gray-500">כיתה</span>
+                    <span>{registration.class || '—'}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                    <span className="text-gray-500">מחזור</span>
+                    <span className="max-w-[60%] text-right">{registration.cycle || '—'}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                    <span className="text-gray-500">סטטוס</span>
+                    <span className="text-right">{registration.registrationStatus || '—'}</span>
+                </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+                {telPhone && (
+                    <Button variant="outline" className="flex-1 min-w-[140px]" asChild>
+                        <a href={`tel:${telPhone}`} className="flex items-center justify-center gap-2">
+                            <Phone className="h-4 w-4" />
+                            התקשר
+                        </a>
+                    </Button>
+                )}
+                {registration.cycle && (
+                    <span className="inline-flex items-center justify-center gap-2 rounded-md bg-gray-100 px-3 py-1 text-xs text-gray-700">
+                        <span className="font-medium text-gray-600">מחזור</span>
+                        <span className="max-w-[160px] truncate">{registration.cycle}</span>
+                    </span>
+                )}
+            </div>
+        </div>
+    )
+}
+
 // Simple Navigation Button Component
 const NavigationButton: React.FC<{ path: string; currentPath: string; children: React.ReactNode }> = ({ path, currentPath, children }) => {
     const navigate = useNavigate()
@@ -342,6 +412,18 @@ const App: React.FC = () => {
         { value: 'after', label: 'אחרי' },
         { value: 'on', label: 'בתאריך' }
     ]
+
+    const mobileSortOptions = useMemo(() => ([
+        { value: 'trialDate' as keyof Registration, label: 'תאריך הגעה' },
+        { value: 'needsPickup' as keyof Registration, label: 'איסוף מהצהרון' },
+        { value: 'class' as keyof Registration, label: 'כיתה' },
+        { value: 'school' as keyof Registration, label: 'בית ספר' },
+        { value: 'course' as keyof Registration, label: 'חוג' },
+        { value: 'parentName' as keyof Registration, label: 'שם הורה' },
+        { value: 'parentPhone' as keyof Registration, label: 'טלפון הורה' },
+        { value: 'cycle' as keyof Registration, label: 'מחזור' },
+        { value: 'childName' as keyof Registration, label: 'שם הילד' },
+    ]), [])
 
     // Sorting state
     const [sortConfig, setSortConfig] = useState<{
@@ -473,6 +555,31 @@ const App: React.FC = () => {
             }
             // If clicking a different column, start with asc
             return { key, direction: 'asc' }
+        })
+    }
+
+    const handleMobileSortChange = (value: keyof Registration | '') => {
+        if (!value) {
+            setSortConfig({ key: null, direction: 'asc' })
+            return
+        }
+
+        setSortConfig(prev => ({
+            key: value,
+            direction: prev.key === value ? prev.direction : 'asc'
+        }))
+    }
+
+    const toggleSortDirection = () => {
+        setSortConfig(prev => {
+            if (!prev.key) {
+                return prev
+            }
+
+            return {
+                key: prev.key,
+                direction: prev.direction === 'asc' ? 'desc' : 'asc'
+            }
         })
     }
 
@@ -957,9 +1064,9 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-gray-100">
             {/* Navbar */}
             <nav className="bg-white shadow-sm border-b">
-                <div className="max-w-7xl mx-auto px-6 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+                    <div className="flex flex-wrap items-center gap-4">
+                        <div className="flex items-center gap-3 flex-1 min-w-[200px]">
                             <img
                                 src={easyflowLogo}
                                 alt="EasyFlow logo"
@@ -977,30 +1084,30 @@ const App: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Navigation Links */}
-                        <div className="flex items-center gap-2 mr-4">
-                            <NavigationButton path="/" currentPath={location.pathname}>
-                                מערכת דיוור
-                            </NavigationButton>
-                            <NavigationButton path="/arrivals" currentPath={location.pathname}>
-                                מערכת הגעות
-                            </NavigationButton>
+                        <div className="order-2 w-full lg:order-2 lg:w-auto">
+                            <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-end">
+                                <NavigationButton path="/" currentPath={location.pathname}>
+                                    מערכת דיוור
+                                </NavigationButton>
+                                <NavigationButton path="/arrivals" currentPath={location.pathname}>
+                                    מערכת הגעות
+                                </NavigationButton>
+                            </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
-                            <div className="text-right">
+                        <div className="order-3 flex w-full flex-wrap items-center justify-center gap-3 lg:order-3 lg:w-auto lg:justify-end lg:gap-4">
+                            <div className="w-full text-center sm:w-auto sm:text-right">
                                 <p className="text-sm font-medium text-gray-900">סה"כ הרשמות</p>
                                 <p className="text-2xl font-bold text-blue-600">{filteredRegistrations.length}</p>
                             </div>
-                            <div className="w-px h-8 bg-gray-300"></div>
+                            <div className="hidden lg:block w-px h-8 bg-gray-300" />
 
-                            {/* WhatsApp Bulk Messaging Button */}
                             {filteredRegistrations.length > 0 && (
                                 <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setShowBulkMessaging(true)}
-                                    className="flex items-center gap-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                    className="flex w-full items-center justify-center gap-2 text-green-600 hover:text-green-700 hover:bg-green-50 sm:w-auto"
                                 >
                                     <MessageCircle className="w-4 h-4" />
                                     שליחת הודעות
@@ -1011,7 +1118,7 @@ const App: React.FC = () => {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => signOut()}
-                                className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="flex w-full items-center justify-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 sm:w-auto"
                             >
                                 <LogOut className="w-4 h-4" />
                                 התנתק
@@ -1022,7 +1129,7 @@ const App: React.FC = () => {
                                 size="sm"
                                 onClick={handleRefresh}
                                 disabled={refreshing}
-                                className="flex items-center gap-2"
+                                className="flex w-full items-center justify-center gap-2 sm:w-auto"
                             >
                                 {refreshing ? (
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
@@ -1047,9 +1154,9 @@ const App: React.FC = () => {
                 <>
                     {/* Search Bar */}
                     <div className="bg-white border-b">
-                        <div className="max-w-7xl mx-auto px-6 py-4">
-                            <div className="flex items-center gap-4">
-                                <div className="flex-1">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                                <div className="w-full sm:flex-1">
                                     <div className="relative">
                                         <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                                         <input
@@ -1061,23 +1168,25 @@ const App: React.FC = () => {
                                         />
                                     </div>
                                 </div>
-                                {searchQuery && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setSearchQuery('')}
-                                        className="text-gray-600 hover:text-gray-800"
-                                    >
-                                        נקה חיפוש
-                                    </Button>
-                                )}
+                                <div className="flex items-center justify-end">
+                                    {searchQuery && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setSearchQuery('')}
+                                            className="w-full text-gray-600 hover:text-gray-800 sm:w-auto"
+                                        >
+                                            נקה חיפוש
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Filter Bar */}
                     <div className="border-b bg-white">
-                        <div className="max-w-7xl mx-auto px-6 py-3">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
                             <div className="flex items-center gap-4 flex-wrap">
                                 <div className="flex items-center gap-2">
                                     <Filter className="h-4 w-4 text-gray-500" />
@@ -1283,7 +1392,7 @@ const App: React.FC = () => {
 
                     {/* Grouping Section */}
                     <div className="bg-white border-b">
-                        <div className="max-w-7xl mx-auto px-6 py-3">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
                             <div className="flex items-center gap-4 flex-wrap">
                                 {filters.course && (
                                     <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1 rounded-md">
@@ -1318,9 +1427,9 @@ const App: React.FC = () => {
 
                     {/* Data Table */}
                     <div className="bg-white">
-                        <div className="max-w-7xl mx-auto px-6">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6">
                             {/* Table Header */}
-                            <div className="flex items-center border-b bg-gray-50 py-3">
+                            <div className="hidden items-center border-b bg-gray-50 py-3 lg:flex">
                                 <div className="flex-1 min-w-[140px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('trialDate')}>
                                     <div className="flex items-center justify-center gap-2">
                                         תאריך הגעה לשיעור ניסיון
@@ -1395,94 +1504,139 @@ const App: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Paginated Table Body */}
-                            <div className="overflow-x-auto">
-                                {paginatedRegistrations.length > 0 ? (
-                                    <>
-                                        {paginatedRegistrations.map((registration, index) => (
-                                            <div key={registration.id} className={`flex items-center border-b ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                                                <div className="flex-1 min-w-[140px] px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
-                                                    {registration.trialDate}
-                                                </div>
-                                                <div className="flex-1 min-w-[100px] px-4 py-3 text-center">
-                                                    {registration.needsPickup && (
-                                                        <div className="flex items-center justify-center w-6 h-6 bg-green-100 rounded-full mx-auto">
-                                                            <Check className="h-4 w-4 text-green-600" />
+                            <div className="lg:hidden border-b border-gray-200">
+                                <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <label className="flex w-full flex-col gap-1 text-sm font-medium text-gray-700 sm:w-auto">
+                                        <span>מיון לפי</span>
+                                        <select
+                                            value={sortConfig.key ?? ''}
+                                            onChange={(e) => handleMobileSortChange(e.target.value as keyof Registration)}
+                                            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-48"
+                                        >
+                                            <option value="">ללא</option>
+                                            {mobileSortOptions.map(option => (
+                                                <option key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={toggleSortDirection}
+                                        disabled={!sortConfig.key}
+                                        className="flex w-full items-center justify-center gap-2 sm:w-auto"
+                                    >
+                                        {sortConfig.direction === 'asc' ? (
+                                            <ArrowUp className="h-4 w-4" />
+                                        ) : (
+                                            <ArrowDown className="h-4 w-4" />
+                                        )}
+                                        {sortConfig.direction === 'asc' ? 'סדר עולה' : 'סדר יורד'}
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {paginatedRegistrations.length > 0 ? (
+                                <>
+                                    <div className="hidden lg:block">
+                                        <div className="overflow-x-auto">
+                                            {paginatedRegistrations.map((registration, index) => (
+                                                <div
+                                                    key={registration.id}
+                                                    className={`flex items-center border-b ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                                                >
+                                                    <div className="flex-1 min-w-[140px] px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
+                                                        {registration.trialDate}
+                                                    </div>
+                                                    <div className="flex-1 min-w-[100px] px-4 py-3 text-center">
+                                                        {registration.needsPickup && (
+                                                            <div className="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-green-100">
+                                                                <Check className="h-4 w-4 text-green-600" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1 min-w-[70px] px-4 py-3">
+                                                        <span className="whitespace-nowrap rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+                                                            {registration.class}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex-1 min-w-[120px] px-4 py-3 text-gray-700 whitespace-nowrap">
+                                                        {registration.school}
+                                                    </div>
+                                                    <div className="flex-1 min-w-[120px] px-4 py-3">
+                                                        <div className="flex items-center gap-2 whitespace-nowrap">
+                                                            <Zap className="h-4 w-4 text-yellow-600" />
+                                                            <span className="text-gray-700">{registration.course}</span>
                                                         </div>
-                                                    )}
-                                                </div>
-                                                <div className="flex-1 min-w-[70px] px-4 py-3">
-                                                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap">
-                                                        {registration.class}
-                                                    </span>
-                                                </div>
-                                                <div className="flex-1 min-w-[120px] px-4 py-3 text-gray-700 whitespace-nowrap">
-                                                    {registration.school}
-                                                </div>
-                                                <div className="flex-1 min-w-[120px] px-4 py-3">
-                                                    <div className="flex items-center gap-2 whitespace-nowrap">
-                                                        <Zap className="h-4 w-4 text-yellow-600" />
-                                                        <span className="text-gray-700">{registration.course}</span>
+                                                    </div>
+                                                    <div className="flex-1 min-w-[140px] px-4 py-3 text-gray-700 whitespace-nowrap">
+                                                        {registration.parentName}
+                                                    </div>
+                                                    <div className="flex-1 min-w-[120px] px-4 py-3 font-mono text-gray-700 whitespace-nowrap">
+                                                        {registration.parentPhone}
+                                                    </div>
+                                                    <div className="flex-1 min-w-[200px] px-4 py-3">
+                                                        <Popover content={registration.cycle}>
+                                                            <Button variant="outline" size="sm" className="max-w-[180px] truncate whitespace-nowrap border-gray-300 bg-gray-100 text-xs hover:bg-gray-200">
+                                                                {registration.cycle}
+                                                            </Button>
+                                                        </Popover>
+                                                    </div>
+                                                    <div className="flex-1 min-w-[120px] px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">
+                                                        {registration.childName}
                                                     </div>
                                                 </div>
-                                                <div className="flex-1 min-w-[140px] px-4 py-3 text-gray-700 whitespace-nowrap">
-                                                    {registration.parentName}
-                                                </div>
-                                                <div className="flex-1 min-w-[120px] px-4 py-3 text-gray-700 font-mono whitespace-nowrap">
-                                                    {registration.parentPhone}
-                                                </div>
-                                                <div className="flex-1 min-w-[200px] px-4 py-3">
-                                                    <Popover content={registration.cycle}>
-                                                        <Button variant="outline" size="sm" className="text-xs bg-gray-100 hover:bg-gray-200 border-gray-300 whitespace-nowrap max-w-[180px] truncate">
-                                                            {registration.cycle}
-                                                        </Button>
-                                                    </Popover>
-                                                </div>
-                                                <div className="flex-1 min-w-[120px] px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">
-                                                    {registration.childName}
-                                                </div>
-                                            </div>
-                                        ))}
-
-                                        {/* Pagination Controls */}
-                                        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t">
-                                            <div className="text-sm text-gray-700">
-                                                מציג {startIndex + 1}-{Math.min(endIndex, filteredRegistrations.length)} מתוך {filteredRegistrations.length} רשומות
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                                    disabled={currentPage === 1}
-                                                >
-                                                    <ChevronRight className="h-4 w-4" />
-                                                    הקודם
-                                                </Button>
-                                                <span className="text-sm text-gray-700">
-                                                    עמוד {currentPage} מתוך {totalPages}
-                                                </span>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                                    disabled={currentPage === totalPages}
-                                                >
-                                                    הבא
-                                                    <ChevronLeft className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="flex items-center justify-center h-96 text-gray-500">
-                                        <div className="text-center">
-                                            <p className="text-lg font-medium">אין נתונים להצגה</p>
-                                            <p className="text-sm">לא נמצאו הרשמות התואמות לסינון הנוכחי</p>
+                                            ))}
                                         </div>
                                     </div>
-                                )}
-                            </div>
+
+                                    <div className="divide-y divide-gray-200 border-t lg:hidden">
+                                        {paginatedRegistrations.map(registration => (
+                                            <RegistrationCard key={registration.id} registration={registration} />
+                                        ))}
+                                    </div>
+
+                                    <div className="flex flex-col gap-3 border-t bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                        <div className="text-center text-sm text-gray-700 sm:text-right">
+                                            מציג {startIndex + 1}-{Math.min(endIndex, filteredRegistrations.length)} מתוך {filteredRegistrations.length} רשומות
+                                        </div>
+                                        <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                                disabled={currentPage === 1}
+                                                className="w-full sm:w-auto"
+                                            >
+                                                <ChevronRight className="h-4 w-4" />
+                                                הקודם
+                                            </Button>
+                                            <span className="text-sm text-gray-700 text-center sm:text-right">
+                                                עמוד {currentPage} מתוך {totalPages}
+                                            </span>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                                disabled={currentPage === totalPages}
+                                                className="w-full sm:w-auto"
+                                            >
+                                                הבא
+                                                <ChevronLeft className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex items-center justify-center py-16 text-gray-500">
+                                    <div className="px-4 text-center">
+                                        <p className="text-lg font-medium">אין נתונים להצגה</p>
+                                        <p className="mt-2 text-sm text-gray-500">לא נמצאו הרשמות התואמות לסינון הנוכחי</p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
