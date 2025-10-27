@@ -33,6 +33,7 @@ interface SelectedFilters {
     course: string
     school: string
     cohort: string
+    cohortId: string // Store the cohort ID instead of name in URL
     date: Date | null
 }
 
@@ -57,6 +58,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         course: searchParams.get('course') || '',
         school: searchParams.get('school') || '',
         cohort: searchParams.get('cohort') || '',
+        cohortId: searchParams.get('cohortId') || '',
         date: getInitialDate()
     })
     const [arrivalStatuses, setArrivalStatuses] = useState<Record<string, boolean>>({})
@@ -156,6 +158,22 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         return () => document.removeEventListener('keydown', handleEscape)
     }, [notePopupOpen])
 
+    // Load course/school/cohort from cohortId on initial load
+    useEffect(() => {
+        if (selectedFilters.cohortId && !selectedFilters.cohort) {
+            // Find the registration with this cohortId
+            const matchingReg = registrations.find(r => r.cohortId === selectedFilters.cohortId)
+            if (matchingReg) {
+                setSelectedFilters(prev => ({
+                    ...prev,
+                    course: matchingReg.course,
+                    school: matchingReg.school,
+                    cohort: matchingReg.cycle
+                }))
+            }
+        }
+    }, [selectedFilters.cohortId, selectedFilters.cohort, registrations])
+
     // All required fields for displaying the table (date is optional, for marking attendance)
     const allFieldsSelected = selectedFilters.course && selectedFilters.school && selectedFilters.cohort
 
@@ -171,38 +189,48 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         )
     }
 
-    // Sync filters to URL params
+    // Sync filters to URL params - only store cohortId for cleaner URLs
     useEffect(() => {
         const params = new URLSearchParams(searchParams)
 
-        if (selectedFilters.course) {
-            params.set('course', selectedFilters.course)
-        } else {
-            params.delete('course')
+        let hasChanges = false
+
+        // Update cohortId (this is what we actually use)
+        if (selectedFilters.cohortId && params.get('cohortId') !== selectedFilters.cohortId) {
+            params.set('cohortId', selectedFilters.cohortId)
+            hasChanges = true
+        } else if (!selectedFilters.cohortId && params.has('cohortId')) {
+            params.delete('cohortId')
+            hasChanges = true
         }
 
-        if (selectedFilters.school) {
-            params.set('school', selectedFilters.school)
-        } else {
-            params.delete('school')
-        }
-
-        if (selectedFilters.cohort) {
-            params.set('cohort', selectedFilters.cohort)
-        } else {
-            params.delete('cohort')
-        }
-
-        if (selectedFilters.date) {
-            params.set('date', selectedFilters.date.toISOString().split('T')[0])
-        } else {
+        // Check and update date
+        const dateString = selectedFilters.date ? selectedFilters.date.toISOString().split('T')[0] : null
+        if (dateString && params.get('date') !== dateString) {
+            params.set('date', dateString)
+            hasChanges = true
+        } else if (!dateString && params.has('date')) {
             params.delete('date')
+            hasChanges = true
         }
 
-        params.set('view', viewMode)
+        // Check and update view
+        const currentView = params.get('view') || 'mark'
+        if (viewMode !== currentView) {
+            params.set('view', viewMode)
+            hasChanges = true
+        }
 
-        setSearchParams(params, { replace: true })
-    }, [selectedFilters, viewMode, searchParams, setSearchParams])
+        // Remove old name-based params if they exist (for migration)
+        if (params.has('course')) params.delete('course')
+        if (params.has('school')) params.delete('school')
+        if (params.has('cohort')) params.delete('cohort')
+
+        // Only update if there are actual changes
+        if (hasChanges) {
+            setSearchParams(params, { replace: true })
+        }
+    }, [selectedFilters.cohortId, selectedFilters.date, viewMode, searchParams, setSearchParams])
 
     // Get attendance data using RTK Query for mark mode
     const shouldFetchMarkAttendance =
@@ -476,7 +504,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                         <Autocomplete
                             options={courses.map(c => ({ label: c, value: c }))}
                             value={selectedFilters.course}
-                            onSelect={(value) => setSelectedFilters(prev => ({ ...prev, course: value, school: '', cohort: '' }))}
+                            onSelect={(value) => setSelectedFilters(prev => ({ ...prev, course: value, school: '', cohort: '', cohortId: '' }))}
                             placeholder="בחר קורס"
                             allowClear
                         />
@@ -489,7 +517,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                         <Autocomplete
                             options={schools.map(s => ({ label: s, value: s }))}
                             value={selectedFilters.school}
-                            onSelect={(value) => setSelectedFilters(prev => ({ ...prev, school: value, cohort: '' }))}
+                            onSelect={(value) => setSelectedFilters(prev => ({ ...prev, school: value, cohort: '', cohortId: '' }))}
                             placeholder="בחר בית ספר"
                             allowClear
                             disabled={!selectedFilters.course}
@@ -503,16 +531,17 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                         <Autocomplete
                             options={cohorts.map(c => ({ label: c, value: c }))}
                             value={selectedFilters.cohort}
-                            onSelect={(value) => setSelectedFilters(prev => ({ ...prev, cohort: value }))}
+                            onSelect={(value) => {
+                                // Find the cohortId for this cohort
+                                const filtered = registrations
+                                    .filter(r => r.school === selectedFilters.school && r.course === selectedFilters.course && r.cycle === value)
+                                const cohortId = filtered[0]?.cohortId || ''
+                                setSelectedFilters(prev => ({ ...prev, cohort: value, cohortId }))
+                            }}
                             placeholder="בחר קבוצה"
                             allowClear
                             disabled={!selectedFilters.school || !selectedFilters.course}
                         />
-                        {selectedFilters.cohort && filteredRegistrations.length > 0 && (
-                            <p className="mt-1 text-xs text-gray-500">
-                                ID: {filteredRegistrations[0]?.cohortId || 'N/A'}
-                            </p>
-                        )}
                     </div>
 
                     <div>
