@@ -6,6 +6,7 @@ import { DatePickerInput } from '@/components/ui/date-picker-input'
 import { Calendar, ChevronLeft, ChevronRight, FileText, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useGetAttendanceQuery } from '@/store/api'
+import { supabase } from '@/hooks/useAuth'
 
 interface Registration {
     id: string
@@ -294,35 +295,25 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                 arrivals
             }
 
-            console.log('Sending to webhook:', payload)
+            console.log('Sending to API:', payload)
 
-            const response = await fetch('https://hook.eu2.make.com/6luhtuffr5m49cnoronku4fnv7g7wlyr', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
+            // Call Supabase Edge Function instead of webhook directly
+            const { data, error } = await supabase.functions.invoke('send-attendance', {
+                body: payload
             })
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`)
+            if (error) {
+                console.error('Error calling send-attendance:', error)
+                throw new Error(error.message || 'Failed to send attendance')
             }
 
-            // Handle the response - it might return plain text or JSON
-            const contentType = response.headers.get('content-type')
-            if (contentType && contentType.includes('application/json')) {
-                const result = await response.json()
-                console.log('Webhook response:', result)
-            } else {
-                const textResult = await response.text()
-                console.log('Webhook response (text):', textResult)
-            }
+            console.log('API response:', data)
 
             toast.success(`נשלח בהצלחה! ${arrivals.length} תלמידים`, {
                 description: `תאריך: ${date} • קבוצה: ${cohortName.substring(0, 30)}...`
             })
         } catch (error) {
-            console.error('Error sending to webhook:', error)
+            console.error('Error sending attendance:', error)
             toast.error('שגיאה בשליחה', {
                 description: error instanceof Error ? error.message : 'Unknown error'
             })
