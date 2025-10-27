@@ -46,8 +46,14 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
     }, [registrations])
 
     const schools = useMemo(() => {
-        return Array.from(new Set(registrations.map(r => r.school).filter(Boolean)))
-    }, [registrations])
+        if (!selectedFilters.course) return []
+        return Array.from(new Set(
+            registrations
+                .filter(r => r.course === selectedFilters.course)
+                .map(r => r.school)
+                .filter(Boolean)
+        ))
+    }, [registrations, selectedFilters.course])
 
     const cohorts = useMemo(() => {
         if (!selectedFilters.school || !selectedFilters.course) return []
@@ -162,7 +168,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                         <Autocomplete
                             options={courses.map(c => ({ label: c, value: c }))}
                             value={selectedFilters.course}
-                            onSelect={(value) => setSelectedFilters(prev => ({ ...prev, course: value, cohort: '' }))}
+                            onSelect={(value) => setSelectedFilters(prev => ({ ...prev, course: value, school: '', cohort: '' }))}
                             placeholder="בחר קורס"
                             allowClear
                         />
@@ -178,6 +184,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                             onSelect={(value) => setSelectedFilters(prev => ({ ...prev, school: value, cohort: '' }))}
                             placeholder="בחר בית ספר"
                             allowClear
+                            disabled={!selectedFilters.course}
                         />
                     </div>
 
