@@ -50,6 +50,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
     const [attendanceHistory, setAttendanceHistory] = useState<Record<string, Record<string, boolean>>>({})
     const [attendanceDates, setAttendanceDates] = useState<string[]>([])
     const [currentDateOffset, setCurrentDateOffset] = useState(0) // Days to offset from today
+    const [isLoadingHistory, setIsLoadingHistory] = useState(false)
 
     // Extract unique options
     const courses = useMemo(() => {
@@ -234,32 +235,80 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
 
     // Fetch attendance history when in history mode
     useEffect(() => {
-        if (viewMode === 'history' && allFieldsSelected) {
-            // Mock: In real app, this would fetch from API
-            // Generate dates based on current offset (slide window of 14 days)
-            const dates: string[] = []
-            const today = new Date()
-            const startDate = new Date(today)
-            startDate.setDate(startDate.getDate() - currentDateOffset - 13) // Go back to start of window
+        if (viewMode === 'history' && allFieldsSelected && filteredRegistrations.length > 0) {
+            const fetchHistoryData = async () => {
+                try {
+                    setIsLoadingHistory(true)
+                    const cohortId = filteredRegistrations[0]?.cohortId
+                    if (!cohortId) {
+                        console.log('No cohort ID available')
+                        setIsLoadingHistory(false)
+                        return
+                    }
 
-            for (let i = 0; i < 14; i++) {
-                const date = new Date(startDate)
-                date.setDate(date.getDate() + i)
-                const dateStr = date.toISOString().split('T')[0]
-                dates.push(dateStr)
+                    // Generate dates based on current offset (slide window of 14 days)
+                    const dates: string[] = []
+                    const today = new Date()
+                    const startDate = new Date(today)
+                    startDate.setDate(startDate.getDate() - currentDateOffset - 13) // Go back to start of window
+
+                    for (let i = 0; i < 14; i++) {
+                        const date = new Date(startDate)
+                        date.setDate(date.getDate() + i)
+                        const dateStr = date.toISOString().split('T')[0]
+                        dates.push(dateStr)
+                    }
+                    setAttendanceDates(dates)
+
+                    // Fetch history from API
+                    const { data, error } = await supabase.functions.invoke('get-attendance', {
+                        body: {
+                            cohortId,
+                            dateRange: {
+                                startDate: dates[0],
+                                endDate: dates[dates.length - 1]
+                            }
+                        }
+                    })
+
+                    if (error) {
+                        console.error('Error calling get-attendance for history:', error)
+                        // Fallback to empty history
+                        const emptyHistory: Record<string, Record<string, boolean>> = {}
+                        filteredRegistrations.forEach(student => {
+                            emptyHistory[student.id] = {}
+                        })
+                        setAttendanceHistory(emptyHistory)
+                        return
+                    }
+
+                    if (data?.success && data?.data?.history) {
+                        setAttendanceHistory(data.data.history)
+                    } else if (data?.success && data?.data?.dates && data?.data?.dates.length > 0) {
+                        // If dates are provided separately
+                        setAttendanceHistory(data.data.history || {})
+                    } else {
+                        // No history data - show empty
+                        const emptyHistory: Record<string, Record<string, boolean>> = {}
+                        filteredRegistrations.forEach(student => {
+                            emptyHistory[student.id] = {}
+                        })
+                        setAttendanceHistory(emptyHistory)
+                    }
+                } catch (error) {
+                    console.error('Error fetching history:', error)
+                    // Show empty history on error
+                    const emptyHistory: Record<string, Record<string, boolean>> = {}
+                    filteredRegistrations.forEach(student => {
+                        emptyHistory[student.id] = {}
+                    })
+                    setAttendanceHistory(emptyHistory)
+                } finally {
+                    setIsLoadingHistory(false)
+                }
             }
-            setAttendanceDates(dates)
 
-            // Mock attendance data
-            const mockAttendance: Record<string, Record<string, boolean>> = {}
-            filteredRegistrations.forEach(student => {
-                mockAttendance[student.id] = {}
-                dates.forEach((date: string) => {
-                    // Random for demo, but more realistic
-                    mockAttendance[student.id][date] = Math.random() > 0.3
-                })
-            })
-            setAttendanceHistory(mockAttendance)
+            fetchHistoryData()
         }
     }, [viewMode, allFieldsSelected, filteredRegistrations, currentDateOffset])
 
@@ -516,7 +565,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                             </div>
 
                             {/* Date Navigation */}
-                            {attendanceDates.length > 0 && (
+                            {!isLoadingHistory && attendanceDates.length > 0 && (
                                 <div className="flex items-center gap-3">
                                     <button
                                         onClick={() => handleDateNavigation('back')}
@@ -549,57 +598,64 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full border-collapse">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    {/* Fixed student name column */}
-                                    <th className="sticky right-0 bg-gray-50 border-b border-gray-200 px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider z-10">
-                                        שם התלמיד
-                                    </th>
-                                    {/* Date columns */}
-                                    {attendanceDates.map((date) => (
-                                        <th
-                                            key={date}
-                                            className="border-b border-gray-200 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                        >
-                                            {new Date(date).toLocaleDateString('he-IL', {
-                                                month: '2-digit',
-                                                day: '2-digit'
-                                            })}
+                    {isLoadingHistory ? (
+                        <div className="text-center py-12">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                            <p className="text-gray-600">טוען היסטוריית הגעה...</p>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full border-collapse">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        {/* Fixed student name column */}
+                                        <th className="sticky right-0 bg-gray-50 border-b border-gray-200 px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider z-10">
+                                            שם התלמיד
                                         </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {filteredRegistrations.map((student) => (
-                                    <tr key={student.id} className="hover:bg-gray-50">
-                                        {/* Fixed student name cell */}
-                                        <td className="sticky right-0 bg-white border-b border-gray-200 px-4 py-3 text-sm font-medium text-gray-900 z-10 whitespace-nowrap">
-                                            {student.childName}
-                                        </td>
-                                        {/* Attendance cells */}
+                                        {/* Date columns */}
                                         {attendanceDates.map((date) => (
-                                            <td
+                                            <th
                                                 key={date}
-                                                className="border-b border-gray-200 px-3 py-3 text-center"
+                                                className="border-b border-gray-200 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
                                             >
-                                                {attendanceHistory[student.id]?.[date] ? (
-                                                    <div className="flex items-center justify-center">
-                                                        <span className="text-green-600 text-xl">✓</span>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center justify-center">
-                                                        <span className="text-red-400 text-xl">✗</span>
-                                                    </div>
-                                                )}
-                                            </td>
+                                                {new Date(date).toLocaleDateString('he-IL', {
+                                                    month: '2-digit',
+                                                    day: '2-digit'
+                                                })}
+                                            </th>
                                         ))}
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {filteredRegistrations.map((student) => (
+                                        <tr key={student.id} className="hover:bg-gray-50">
+                                            {/* Fixed student name cell */}
+                                            <td className="sticky right-0 bg-white border-b border-gray-200 px-4 py-3 text-sm font-medium text-gray-900 z-10 whitespace-nowrap">
+                                                {student.childName}
+                                            </td>
+                                            {/* Attendance cells */}
+                                            {attendanceDates.map((date) => (
+                                                <td
+                                                    key={date}
+                                                    className="border-b border-gray-200 px-3 py-3 text-center"
+                                                >
+                                                    {attendanceHistory[student.id]?.[date] ? (
+                                                        <div className="flex items-center justify-center">
+                                                            <span className="text-green-600 text-xl">✓</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center justify-center">
+                                                            <span className="text-red-400 text-xl">✗</span>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             )}
 

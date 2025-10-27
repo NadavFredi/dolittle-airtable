@@ -11,6 +11,12 @@ interface AttendanceResponse {
   cohortId: string
 }
 
+interface HistoryResponse {
+  history: Record<string, Record<string, boolean>> // studentId -> { date: attended }
+  dates: string[]
+  cohortId: string
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -18,7 +24,7 @@ serve(async (req) => {
   }
 
   try {
-    const { cohortId, date } = await req.json()
+    const { cohortId, date, dateRange } = await req.json()
 
     if (!cohortId) {
       return new Response(
@@ -33,11 +39,10 @@ serve(async (req) => {
       )
     }
 
-    // For now, since we're just calling the webhook, we don't need Airtable credentials
-    // But if you want to store attendance in Airtable, you would need them
-
     // Call the webhook to get attendance data
-    const webhookUrl = "https://hook.eu2.make.com/0e2cyv1hcdgbvcisfh6hk3sc55lqqjai"
+    const webhookUrl = dateRange
+      ? "https://hook.eu2.make.com/0e2cyv1hcdgbvcisfh6hk3sc55lqqjai" // History endpoint
+      : "https://hook.eu2.make.com/0e2cyv1hcdgbvcisfh6hk3sc55lqqjai" // Single date endpoint
 
     const webhookResponse = await fetch(webhookUrl, {
       method: "POST",
@@ -46,7 +51,8 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         cohortId,
-        date, // optional, if not provided returns all attendance for this cohort
+        date, // optional
+        dateRange, // for history: { startDate, endDate }
       }),
     })
 
@@ -55,33 +61,67 @@ serve(async (req) => {
     }
 
     // Parse the response - might be JSON or text
-    let attendanceData: AttendanceResponse | null = null
+    if (dateRange) {
+      // History response
+      try {
+        const historyData = await webhookResponse.json()
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: historyData,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        )
+      } catch {
+        const textResponse = await webhookResponse.text()
+        console.log("Webhook returned text:", textResponse)
 
-    try {
-      attendanceData = await webhookResponse.json()
-    } catch {
-      // If not JSON, try to parse as text
-      const textResponse = await webhookResponse.text()
-      console.log("Webhook returned text:", textResponse)
-
-      // If it's "Accepted" or similar, return empty attendance
-      attendanceData = {
-        attendance: {},
-        date: date || new Date().toISOString().split("T")[0],
-        cohortId,
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: {
+              history: {},
+              dates: [],
+              cohortId,
+            },
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        )
       }
+    } else {
+      // Single date response
+      let attendanceData: AttendanceResponse | null = null
+
+      try {
+        attendanceData = await webhookResponse.json()
+      } catch {
+        const textResponse = await webhookResponse.text()
+        console.log("Webhook returned text:", textResponse)
+
+        attendanceData = {
+          attendance: {},
+          date: date || new Date().toISOString().split("T")[0],
+          cohortId,
+        }
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: attendanceData,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      )
     }
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: attendanceData,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    )
   } catch (error) {
     console.error("Error fetching attendance:", error)
 
