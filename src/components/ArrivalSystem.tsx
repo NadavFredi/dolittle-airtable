@@ -449,18 +449,18 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
     }, [selectedFilters.cohort])
 
     return (
-        <div className="max-w-7xl mx-auto px-6 py-8" dir="rtl">
-            <div className="mb-6 flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">מערכת הגעות</h1>
-                    <p className="text-gray-600">נהל הגעות של משתתפים לקורסים</p>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-6" dir="rtl">
+            <div className="mb-3 sm:mb-6">
+                <div className="mb-3 sm:mb-4">
+                    <h1 className="text-xl sm:text-3xl font-bold text-gray-900 mb-0.5 sm:mb-2">מערכת הגעות</h1>
+                    <p className="text-xs sm:text-base text-gray-600">נהל הגעות של משתתפים לקורסים</p>
                 </div>
 
                 {/* View Mode Toggle */}
-                <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+                <div className="flex gap-2 bg-gray-100 p-1 rounded-lg w-full sm:w-auto">
                     <button
                         onClick={() => setViewMode('mark')}
-                        className={`px-4 py-2 rounded-md font-medium transition-colors ${viewMode === 'mark'
+                        className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-md font-medium transition-colors text-sm sm:text-base ${viewMode === 'mark'
                             ? 'bg-white shadow-sm text-blue-600'
                             : 'text-gray-600 hover:text-gray-900'
                             }`}
@@ -469,7 +469,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                     </button>
                     <button
                         onClick={() => setViewMode('history')}
-                        className={`px-4 py-2 rounded-md font-medium transition-colors ${viewMode === 'history'
+                        className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-md font-medium transition-colors text-sm sm:text-base ${viewMode === 'history'
                             ? 'bg-white shadow-sm text-blue-600'
                             : 'text-gray-600 hover:text-gray-900'
                             }`}
@@ -480,12 +480,12 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
             </div>
 
             {/* Filter Section */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Calendar className="w-5 h-5" />
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-6 mb-3 sm:mb-6">
+                <h2 className="text-sm sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-4 flex items-center gap-2">
+                    <Calendar className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                     סינון נתונים
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             קורס
@@ -548,11 +548,11 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
             {/* Results Section */}
             {allFieldsSelected && viewMode === 'mark' && (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                    <div className="p-6 border-b border-gray-200">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h2 className="text-lg font-semibold text-gray-900">רשימת התלמידים בקבוצה</h2>
-                                <p className="text-sm text-gray-600 mt-1">
+                    <div className="p-3 sm:p-6 border-b border-gray-200">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+                            <div className="flex-1">
+                                <h2 className="text-base sm:text-lg font-semibold text-gray-900">רשימת התלמידים בקבוצה</h2>
+                                <p className="text-xs sm:text-sm text-gray-600 mt-1">
                                     נמצאו {filteredRegistrations.length} תלמידים
                                     {selectedFilters.date && (
                                         <>
@@ -565,8 +565,8 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                 </p>
                             </div>
                             {selectedFilters.date && (
-                                <div className="flex items-center gap-3">
-                                    <div className="text-sm text-gray-600">
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                                    <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-right order-2 sm:order-1">
                                         {selectedFilters.date.toLocaleDateString('he-IL', {
                                             weekday: 'long',
                                             year: 'numeric',
@@ -577,7 +577,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                     <Button
                                         onClick={handleSendToWebhook}
                                         disabled={isSaving}
-                                        className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                                        className="bg-green-600 hover:bg-green-700 disabled:opacity-50 w-full sm:w-auto order-1 sm:order-2"
                                     >
                                         {isSaving ? (
                                             <>
@@ -601,31 +601,103 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                             </div>
                         ) : (
                             <>
-                                <table className="w-full">
+                                {/* Mobile Card View */}
+                                <div className="block md:hidden divide-y divide-gray-200">
+                                    {filteredRegistrations.map((registration) => (
+                                        <div key={registration.id} className="bg-white px-3 py-3 active:bg-gray-50 transition-colors">
+                                            <div className="flex items-start gap-2.5 mb-2.5">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={arrivalStatuses[registration.id] || false}
+                                                    onChange={() => handleToggleArrival(registration.id)}
+                                                    className="h-5 w-5 mt-0.5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <h3 className="font-semibold text-base text-gray-900">{registration.childName}</h3>
+                                                        {notes[registration.id] && (
+                                                            <div className="relative group/name-tooltip flex-shrink-0">
+                                                                <FileText className="w-4 h-4 text-blue-500" />
+                                                                <div className="absolute bottom-full right-0 mb-2 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-10 opacity-0 group-hover/name-tooltip:opacity-100 transition-opacity pointer-events-none">
+                                                                    {notes[registration.id]}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${registration.registrationStatus === 'אושר'
+                                                            ? 'bg-green-100 text-green-800'
+                                                            : registration.registrationStatus === 'נדחה'
+                                                                ? 'bg-red-100 text-red-800'
+                                                                : 'bg-yellow-100 text-yellow-800'
+                                                            }`}>
+                                                            {registration.registrationStatus}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mb-2.5 text-sm">
+                                                <div>
+                                                    <span className="text-gray-500">הורה:</span> <span className="text-gray-900">{registration.parentName}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-500">טלפון:</span> <a href={`tel:${registration.parentPhone}`} className="text-blue-600">{registration.parentPhone}</a>
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <span className="text-gray-500">קורס:</span> <span className="text-gray-900">{registration.course}</span>
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <span className="text-gray-500">בית ספר:</span> <span className="text-gray-900">{registration.school}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-2 border-t border-gray-200">
+                                                <button
+                                                    onClick={() => handleOpenNotePopup(registration.id)}
+                                                    className="w-full flex items-center justify-between gap-2 text-sm py-2 px-3 rounded-md border border-gray-300 hover:border-blue-400 hover:bg-blue-50 transition-all"
+                                                >
+                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                        <FileText className={`w-4 h-4 flex-shrink-0 ${notes[registration.id] ? 'text-blue-600' : 'text-gray-400'}`} />
+                                                        <span className="text-gray-700 font-medium">
+                                                            {notes[registration.id] ? 'ערוך הערה' : 'הוסף הערה'}
+                                                        </span>
+                                                    </div>
+                                                    {notes[registration.id] && (
+                                                        <span className="text-xs text-gray-500 truncate max-w-[40%]">
+                                                            {notes[registration.id]}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Desktop Table View */}
+                                <table className="w-full hidden md:table">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                            <th className="px-3 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                                                 הגיע
                                             </th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                            <th className="px-3 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                                                 שם הילד
                                             </th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                            <th className="px-3 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                                                 שם ההורה
                                             </th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                            <th className="px-3 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                                                 טלפון
                                             </th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                            <th className="px-3 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                                                 קורס
                                             </th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                            <th className="px-3 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                                                 בית ספר
                                             </th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                            <th className="px-3 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                                                 סטטוס הרשמה
                                             </th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                            <th className="px-3 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
                                                 הערות
                                             </th>
                                         </tr>
@@ -633,7 +705,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                     <tbody className="bg-white divide-y divide-gray-200">
                                         {filteredRegistrations.map((registration) => (
                                             <tr key={registration.id} className="hover:bg-gray-50 group">
-                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                <td className="px-3 lg:px-6 py-4 whitespace-nowrap">
                                                     <input
                                                         type="checkbox"
                                                         checked={arrivalStatuses[registration.id] || false}
@@ -641,7 +713,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                                         className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                                     />
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <div className="flex items-center gap-2">
                                                         <span>{registration.childName}</span>
                                                         {notes[registration.id] && (
@@ -654,19 +726,19 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {registration.parentName}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {registration.parentPhone}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {registration.course}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-3 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {registration.school}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                <td className="px-3 lg:px-6 py-4 whitespace-nowrap">
                                                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${registration.registrationStatus === 'אושר'
                                                         ? 'bg-green-100 text-green-800'
                                                         : registration.registrationStatus === 'נדחה'
@@ -676,7 +748,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                                         {registration.registrationStatus}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                <td className="px-3 lg:px-6 py-4 whitespace-nowrap">
                                                     {noteEditMode === registration.id ? (
                                                         <div className="flex items-center gap-2">
                                                             <input
@@ -791,8 +863,8 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                             <p className="text-gray-600">טוען היסטוריית הגעה...</p>
                         </div>
                     ) : (
-                        <div className="overflow-x-hidden">
-                            <table className="w-full border-collapse">
+                        <div className="overflow-x-auto">
+                            <table className="w-full border-collapse min-w-[600px]">
                                 <thead className="bg-gray-50">
                                     <tr>
                                         {/* Fixed student name column */}
