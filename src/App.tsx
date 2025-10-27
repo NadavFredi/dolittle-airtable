@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { BrowserRouter, useLocation, useNavigate, Link } from 'react-router-dom'
+import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { Filter, Zap, Check, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Search, Settings, X, MessageCircle, Send, LogOut, Phone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Autocomplete } from '@/components/ui/autocomplete'
@@ -2090,13 +2090,4 @@ const App: React.FC = () => {
     )
 }
 
-const AppWrapper = () => {
-    return (
-        <BrowserRouter>
-            <App />
-            <Toaster position="top-right" richColors />
-        </BrowserRouter>
-    )
-}
-
-export default AppWrapper
+export default App

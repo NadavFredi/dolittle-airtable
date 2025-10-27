@@ -5,7 +5,7 @@ import { Autocomplete } from '@/components/ui/autocomplete'
 import { DatePickerInput } from '@/components/ui/date-picker-input'
 import { Calendar, ChevronLeft, ChevronRight, FileText, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { supabase } from '@/hooks/useAuth'
+import { useGetAttendanceQuery } from '@/store/api'
 
 interface Registration {
     id: string
@@ -74,7 +74,6 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
     const [attendanceHistory, setAttendanceHistory] = useState<Record<string, Record<string, boolean>>>({}) // Current window data
     const [currentDateOffset, setCurrentDateOffset] = useState(0) // Days to offset from today
     const [isLoadingHistory, setIsLoadingHistory] = useState(false)
-    const [hasFetchedFullHistory, setHasFetchedFullHistory] = useState(false) // Track if we've fetched full history
 
     // Extract unique options
     const courses = useMemo(() => {
@@ -204,63 +203,60 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         setSearchParams(params, { replace: true })
     }, [selectedFilters, viewMode, searchParams, setSearchParams])
 
-    // Load existing attendance data when date is selected
-    useEffect(() => {
-        if (selectedFilters.date && allFieldsSelected && filteredRegistrations.length > 0) {
-            const fetchAttendanceData = async () => {
-                try {
-                    setIsLoadingAttendance(true)
-                    const cohortId = filteredRegistrations[0]?.cohortId
-                    if (!cohortId) {
-                        console.log('No cohort ID available')
-                        setIsLoadingAttendance(false)
-                        return
-                    }
+    // Get attendance data using RTK Query for mark mode
+    const shouldFetchMarkAttendance =
+        viewMode === 'mark' &&
+        selectedFilters.date &&
+        allFieldsSelected &&
+        filteredRegistrations.length > 0
 
-                    const date = selectedFilters.date!.toISOString().split('T')[0]
+    const cohortId = filteredRegistrations[0]?.cohortId
+    const date = selectedFilters.date?.toISOString().split('T')[0]
 
-                    const { data, error } = await supabase.functions.invoke('get-attendance', {
-                        body: { cohortId, date }
-                    })
-
-                    if (error) {
-                        console.error('Error calling get-attendance:', error)
-                        // Don't show error toast for 502s if it's just the function starting up
-                        if (!error.message?.includes('502')) {
-                            toast.error('שגיאה בטעינת נתוני הגעה', {
-                                description: error.message || 'Unknown error'
-                            })
-                        }
-                        setIsLoadingAttendance(false)
-                        return
-                    }
-
-                    if (data?.success && data?.data) {
-                        if (data.data.attendance) {
-                            setArrivalStatuses(data.data.attendance)
-                        }
-                        if (data.data.notes) {
-                            setNotes(data.data.notes)
-                        }
-                    } else {
-                        console.log('No attendance data found for this date')
-                    }
-                } catch (error: any) {
-                    console.error('Error fetching attendance:', error)
-                    // Don't show error toast for 502s if it's just the function starting up
-                    if (!error.message?.includes('502') && !error.message?.includes('Bad Gateway')) {
-                        toast.error('שגיאה בטעינת נתוני הגעה', {
-                            description: error.message || 'Unknown error'
-                        })
-                    }
-                } finally {
-                    setIsLoadingAttendance(false)
-                }
-            }
-
-            fetchAttendanceData()
+    const {
+        data: markAttendanceData,
+        isLoading: isLoadingMarkAttendance,
+        error: markAttendanceError
+    } = useGetAttendanceQuery(
+        {
+            cohortId: cohortId || '',
+            date: date
+        },
+        {
+            skip: !shouldFetchMarkAttendance || !cohortId || !date
         }
-    }, [selectedFilters.date, allFieldsSelected, filteredRegistrations])
+    )
+
+    // Update state when mark attendance data is loaded
+    useEffect(() => {
+        if (viewMode === 'mark' && markAttendanceData?.success && markAttendanceData?.data) {
+            if (markAttendanceData.data.attendance) {
+                setArrivalStatuses(markAttendanceData.data.attendance)
+            }
+            if (markAttendanceData.data.notes) {
+                setNotes(markAttendanceData.data.notes)
+            }
+        }
+    }, [markAttendanceData, viewMode])
+
+    // Update loading state
+    useEffect(() => {
+        if (shouldFetchMarkAttendance) {
+            setIsLoadingAttendance(isLoadingMarkAttendance)
+        }
+    }, [shouldFetchMarkAttendance, isLoadingMarkAttendance])
+
+    // Handle errors
+    useEffect(() => {
+        if (markAttendanceError) {
+            const errorMessage = (markAttendanceError as any)?.error || 'Unknown error'
+            if (!errorMessage.includes('502') && !errorMessage.includes('Bad Gateway')) {
+                toast.error('שגיאה בטעינת נתוני הגעה', {
+                    description: errorMessage
+                })
+            }
+        }
+    }, [markAttendanceError])
 
     const handleSendToWebhook = async () => {
         if (!selectedFilters.cohort || !selectedFilters.date) {
@@ -335,72 +331,69 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         }
     }
 
-    // Fetch full attendance history once when entering history mode
+    // Get attendance history using RTK Query for history mode
+    const shouldFetchHistory =
+        viewMode === 'history' &&
+        allFieldsSelected &&
+        filteredRegistrations.length > 0
+
+    const historyCohortId = filteredRegistrations[0]?.cohortId
+
+    const {
+        data: historyAttendanceData,
+        isLoading: isLoadingHistoryAttendance,
+        error: historyAttendanceError
+    } = useGetAttendanceQuery(
+        {
+            cohortId: historyCohortId || '',
+            fullHistory: true
+        },
+        {
+            skip: !shouldFetchHistory || !historyCohortId
+        }
+    )
+
+    // Update state when history attendance data is loaded
     useEffect(() => {
-        if (viewMode === 'history' && allFieldsSelected && filteredRegistrations.length > 0 && !hasFetchedFullHistory) {
-            const fetchFullHistory = async () => {
-                try {
-                    setIsLoadingHistory(true)
-                    const cohortId = filteredRegistrations[0]?.cohortId
-                    if (!cohortId) {
-                        console.log('No cohort ID available')
-                        setIsLoadingHistory(false)
-                        return
-                    }
-
-                    // Fetch full history from API (without date range)
-                    const { data, error } = await supabase.functions.invoke('get-attendance', {
-                        body: {
-                            cohortId,
-                            fullHistory: true
-                        }
-                    })
-
-                    if (error) {
-                        console.error('Error calling get-attendance for history:', error)
-                        setFullAttendanceHistory({})
-                        setAllHistoryDates([])
-                        return
-                    }
-
-                    if (data?.success && data?.data) {
-                        if (data.data.history) {
-                            setFullAttendanceHistory(data.data.history)
-                        }
-
-                        // Load notes if provided
-                        if (data.data.notes) {
-                            setHistoryNotes(data.data.notes)
-                        }
-
-                        if (data.data.dates && Array.isArray(data.data.dates) && data.data.dates.length > 0) {
-                            setAllHistoryDates(data.data.dates)
-                        } else {
-                            // Extract dates from history if not provided
-                            const allDates = new Set<string>()
-                            const history = data.data.history || {}
-                            Object.values(history).forEach((studentDates) => {
-                                if (studentDates && typeof studentDates === 'object') {
-                                    Object.keys(studentDates).forEach(date => allDates.add(date))
-                                }
-                            })
-                            setAllHistoryDates(Array.from(allDates).sort())
-                        }
-                    }
-
-                    setHasFetchedFullHistory(true)
-                } catch (error) {
-                    console.error('Error fetching history:', error)
-                    setFullAttendanceHistory({})
-                    setAllHistoryDates([])
-                } finally {
-                    setIsLoadingHistory(false)
-                }
+        if (viewMode === 'history' && historyAttendanceData?.success && historyAttendanceData?.data) {
+            if (historyAttendanceData.data.history) {
+                setFullAttendanceHistory(historyAttendanceData.data.history)
             }
 
-            fetchFullHistory()
+            // Load notes if provided
+            if (historyAttendanceData.data.historyNotes) {
+                setHistoryNotes(historyAttendanceData.data.historyNotes)
+            }
+
+            if (historyAttendanceData.data.dates && Array.isArray(historyAttendanceData.data.dates) && historyAttendanceData.data.dates.length > 0) {
+                setAllHistoryDates(historyAttendanceData.data.dates)
+            } else {
+                // Extract dates from history if not provided
+                const allDates = new Set<string>()
+                const history = historyAttendanceData.data.history || {}
+                Object.values(history).forEach((studentDates) => {
+                    if (studentDates && typeof studentDates === 'object') {
+                        Object.keys(studentDates).forEach(date => allDates.add(date))
+                    }
+                })
+                setAllHistoryDates(Array.from(allDates).sort())
+            }
         }
-    }, [viewMode, allFieldsSelected, filteredRegistrations, hasFetchedFullHistory])
+    }, [historyAttendanceData, viewMode])
+
+    // Update loading state for history
+    useEffect(() => {
+        if (shouldFetchHistory) {
+            setIsLoadingHistory(isLoadingHistoryAttendance)
+        }
+    }, [shouldFetchHistory, isLoadingHistoryAttendance])
+
+    // Handle history errors
+    useEffect(() => {
+        if (historyAttendanceError) {
+            console.error('Error fetching history attendance:', historyAttendanceError)
+        }
+    }, [historyAttendanceError])
 
     // Update displayed dates based on current offset (no API call needed)
     useEffect(() => {
@@ -442,9 +435,8 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         }
     }
 
-    // When filters change, reset the full history fetch flag
+    // When filters change, reset the current date offset
     useEffect(() => {
-        setHasFetchedFullHistory(false)
         setCurrentDateOffset(0)
     }, [selectedFilters.cohort])
 
