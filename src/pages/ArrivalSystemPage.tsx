@@ -1,6 +1,6 @@
 import React from 'react'
 import Navbar from '@/components/Navbar'
-import AppFooter from '@/components/AppFooter'
+import { AppFooter } from '@/components/AppFooter'
 import ArrivalSystem from '@/components/ArrivalSystem'
 
 interface Registration {

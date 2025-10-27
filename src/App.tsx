@@ -10,7 +10,7 @@ import { Login } from '@/components/Login'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/hooks/useAuth'
 import easyflowLogo from '@/assets/easyflow-site-logo.png'
-import ArrivalSystem from '@/components/ArrivalSystem'
+import ArrivalSystemPage from '@/pages/ArrivalSystemPage'
 import { Toaster } from 'sonner'
 
 interface Registration {
@@ -1062,93 +1062,95 @@ const App: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            {/* Navbar */}
-            <nav className="bg-white shadow-sm border-b">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-                    <div className="flex flex-wrap items-center gap-4">
-                        <Link to="/" className="flex items-center gap-3 flex-1 min-w-[200px]">
-                            <img
-                                src={easyflowLogo}
-                                alt="EasyFlow logo"
-                                className="h-10 w-auto object-contain"
-                                onError={(e) => {
-                                    const target = e.target as HTMLImageElement
-                                    console.error('Logo failed to load:', target.src);
-                                    // Fallback to the other logo
-                                    target.src = '/easyflow-logo.png';
-                                }}
-                            />
-                            <div>
-                                <h1 className="text-xl font-semibold text-gray-900">Dolittle</h1>
-                                <p className="text-sm text-gray-500">ניהול הרשמות</p>
-                            </div>
-                        </Link>
+            {/* Navbar - only show on messaging route */}
+            {location.pathname !== '/arrivals' && (
+                <nav className="bg-white shadow-sm border-b">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+                        <div className="flex flex-wrap items-center gap-4">
+                            <Link to="/" className="flex items-center gap-3 flex-1 min-w-[200px]">
+                                <img
+                                    src={easyflowLogo}
+                                    alt="EasyFlow logo"
+                                    className="h-10 w-auto object-contain"
+                                    onError={(e) => {
+                                        const target = e.target as HTMLImageElement
+                                        console.error('Logo failed to load:', target.src);
+                                        // Fallback to the other logo
+                                        target.src = '/easyflow-logo.png';
+                                    }}
+                                />
+                                <div>
+                                    <h1 className="text-xl font-semibold text-gray-900">Dolittle</h1>
+                                    <p className="text-sm text-gray-500">ניהול הרשמות</p>
+                                </div>
+                            </Link>
 
-                        <div className="order-2 w-full lg:order-2 lg:w-auto">
-                            <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-end">
-                                <NavigationButton path="/" currentPath={location.pathname}>
-                                    מערכת דיוור
-                                </NavigationButton>
-                                <NavigationButton path="/arrivals" currentPath={location.pathname}>
-                                    מערכת הגעות
-                                </NavigationButton>
+                            <div className="order-2 w-full lg:order-2 lg:w-auto">
+                                <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-end">
+                                    <NavigationButton path="/" currentPath={location.pathname}>
+                                        מערכת דיוור
+                                    </NavigationButton>
+                                    <NavigationButton path="/arrivals" currentPath={location.pathname}>
+                                        מערכת הגעות
+                                    </NavigationButton>
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="order-3 flex w-full flex-wrap items-center justify-center gap-3 lg:order-3 lg:w-auto lg:justify-end lg:gap-4">
-                            <div className="w-full text-center sm:w-auto sm:text-right">
-                                <p className="text-sm font-medium text-gray-900">סה"כ הרשמות</p>
-                                <p className="text-2xl font-bold text-blue-600">{filteredRegistrations.length}</p>
-                            </div>
-                            <div className="hidden lg:block w-px h-8 bg-gray-300" />
+                            <div className="order-3 flex w-full flex-wrap items-center justify-center gap-3 lg:order-3 lg:w-auto lg:justify-end lg:gap-4">
+                                <div className="w-full text-center sm:w-auto sm:text-right">
+                                    <p className="text-sm font-medium text-gray-900">סה"כ הרשמות</p>
+                                    <p className="text-2xl font-bold text-blue-600">{filteredRegistrations.length}</p>
+                                </div>
+                                <div className="hidden lg:block w-px h-8 bg-gray-300" />
 
-                            {filteredRegistrations.length > 0 && (
+                                {filteredRegistrations.length > 0 && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setShowBulkMessaging(true)}
+                                        className="flex w-full items-center justify-center gap-2 text-green-600 hover:text-green-700 hover:bg-green-50 sm:w-auto"
+                                    >
+                                        <MessageCircle className="w-4 h-4" />
+                                        שליחת הודעות
+                                    </Button>
+                                )}
+
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => setShowBulkMessaging(true)}
-                                    className="flex w-full items-center justify-center gap-2 text-green-600 hover:text-green-700 hover:bg-green-50 sm:w-auto"
+                                    onClick={() => signOut()}
+                                    className="flex w-full items-center justify-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 sm:w-auto"
                                 >
-                                    <MessageCircle className="w-4 h-4" />
-                                    שליחת הודעות
+                                    <LogOut className="w-4 h-4" />
+                                    התנתק
                                 </Button>
-                            )}
 
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => signOut()}
-                                className="flex w-full items-center justify-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 sm:w-auto"
-                            >
-                                <LogOut className="w-4 h-4" />
-                                התנתק
-                            </Button>
-
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleRefresh}
-                                disabled={refreshing}
-                                className="flex w-full items-center justify-center gap-2 sm:w-auto"
-                            >
-                                {refreshing ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-                                ) : (
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                    </svg>
-                                )}
-                                {refreshing ? 'מרענן...' : 'רענן'}
-                            </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleRefresh}
+                                    disabled={refreshing}
+                                    className="flex w-full items-center justify-center gap-2 sm:w-auto"
+                                >
+                                    {refreshing ? (
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                                    ) : (
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                    )}
+                                    {refreshing ? 'מרענן...' : 'רענן'}
+                                </Button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </nav>
+                </nav>
+            )}
 
             {/* Conditional Content Based on Route */}
             {location.pathname === '/arrivals' ? (
                 <>
-                    <ArrivalSystem registrations={registrations} loading={loading} />
+                    <ArrivalSystemPage registrations={registrations} loading={loading} />
                 </>
             ) : (
                 <>
