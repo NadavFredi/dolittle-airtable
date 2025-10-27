@@ -65,7 +65,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         ))
     }, [registrations, selectedFilters.school, selectedFilters.course])
 
-    // Filter registrations based on selected filters
+    // Filter registrations based on selected filters (date is NOT used for filtering, only for attendance marking)
     const filteredRegistrations = useMemo(() => {
         let filtered = registrations
 
@@ -81,10 +81,8 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
             filtered = filtered.filter(r => r.cycle === selectedFilters.cohort)
         }
 
-        if (selectedFilters.date) {
-            const selectedDateStr = selectedFilters.date.toISOString().split('T')[0]
-            filtered = filtered.filter(r => r.trialDate === selectedDateStr)
-        }
+        // NOTE: Date is NOT used for filtering - it's used as the attendance date for marking
+        // We show ALL students in this cohort regardless of their trialDate
 
         return filtered
     }, [registrations, selectedFilters])
@@ -133,8 +131,8 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         }
     }
 
-    const allFieldsSelected = selectedFilters.course && selectedFilters.school &&
-        selectedFilters.cohort && selectedFilters.date
+    // All required fields for displaying the table (date is optional, for marking attendance)
+    const allFieldsSelected = selectedFilters.course && selectedFilters.school && selectedFilters.cohort
 
     if (loading) {
         return (
@@ -221,17 +219,19 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                     <div className="p-6 border-b border-gray-200">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h2 className="text-lg font-semibold text-gray-900">רשימת הרשמות</h2>
+                                <h2 className="text-lg font-semibold text-gray-900">רשימת התלמידים בקבוצה</h2>
                                 <p className="text-sm text-gray-600 mt-1">
-                                    נמצאו {filteredRegistrations.length} הרשמות
+                                    נמצאו {filteredRegistrations.length} תלמידים{selectedFilters.date && ` - סמן הגעה לתאריך ${selectedFilters.date.toLocaleDateString('he-IL')}`}
                                 </p>
                             </div>
-                            <Button
-                                onClick={handleSendToWebhook}
-                                className="bg-green-600 hover:bg-green-700"
-                            >
-                                שלח לעדכון
-                            </Button>
+                            {selectedFilters.date && (
+                                <Button
+                                    onClick={handleSendToWebhook}
+                                    className="bg-green-600 hover:bg-green-700"
+                                >
+                                    שלח לעדכון
+                                </Button>
+                            )}
                         </div>
                     </div>
 
@@ -321,7 +321,10 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
             {!allFieldsSelected && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
                     <p className="text-blue-800">
-                        נא לבחור את כל השדות כדי לראות את רשימת ההרשמות
+                        נא לבחור קורס, בית ספר וקבוצה כדי לראות את רשימת התלמידים
+                    </p>
+                    <p className="text-sm text-blue-700 mt-2">
+                        תאריך משמש לסמן הגעה - נא לבחור תאריך גם כן
                     </p>
                 </div>
             )}
