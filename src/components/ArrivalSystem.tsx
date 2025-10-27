@@ -40,7 +40,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         course: '',
         school: '',
         cohort: '',
-        date: null
+        date: new Date() // Default to today
     })
     const [arrivalStatuses, setArrivalStatuses] = useState<Record<string, boolean>>({})
     const [isSaving, setIsSaving] = useState(false)
