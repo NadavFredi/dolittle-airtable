@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Autocomplete } from '@/components/ui/autocomplete'
 import { DatePickerInput } from '@/components/ui/date-picker-input'
@@ -35,12 +36,27 @@ interface SelectedFilters {
 }
 
 const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = false }) => {
-    const [viewMode, setViewMode] = useState<'mark' | 'history'>('mark')
+    const [searchParams, setSearchParams] = useSearchParams()
+
+    // Initialize state from URL params
+    const getInitialDate = () => {
+        const dateParam = searchParams.get('date')
+        if (dateParam) {
+            const parsed = new Date(dateParam)
+            if (!isNaN(parsed.getTime())) return parsed
+        }
+        return new Date() // Default to today
+    }
+
+    const [viewMode, setViewMode] = useState<'mark' | 'history'>(() => {
+        const mode = searchParams.get('view') as 'mark' | 'history' | null
+        return mode === 'history' ? 'history' : 'mark'
+    })
     const [selectedFilters, setSelectedFilters] = useState<SelectedFilters>({
-        course: '',
-        school: '',
-        cohort: '',
-        date: new Date() // Default to today
+        course: searchParams.get('course') || '',
+        school: searchParams.get('school') || '',
+        cohort: searchParams.get('cohort') || '',
+        date: getInitialDate()
     })
     const [arrivalStatuses, setArrivalStatuses] = useState<Record<string, boolean>>({})
     const [isSaving, setIsSaving] = useState(false)
@@ -108,6 +124,39 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
 
     // All required fields for displaying the table (date is optional, for marking attendance)
     const allFieldsSelected = selectedFilters.course && selectedFilters.school && selectedFilters.cohort
+
+    // Sync filters to URL params
+    useEffect(() => {
+        const params = new URLSearchParams(searchParams)
+
+        if (selectedFilters.course) {
+            params.set('course', selectedFilters.course)
+        } else {
+            params.delete('course')
+        }
+
+        if (selectedFilters.school) {
+            params.set('school', selectedFilters.school)
+        } else {
+            params.delete('school')
+        }
+
+        if (selectedFilters.cohort) {
+            params.set('cohort', selectedFilters.cohort)
+        } else {
+            params.delete('cohort')
+        }
+
+        if (selectedFilters.date) {
+            params.set('date', selectedFilters.date.toISOString().split('T')[0])
+        } else {
+            params.delete('date')
+        }
+
+        params.set('view', viewMode)
+
+        setSearchParams(params, { replace: true })
+    }, [selectedFilters, viewMode, searchParams, setSearchParams])
 
     // Load existing attendance data when date is selected
     useEffect(() => {
