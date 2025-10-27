@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { Filter, Zap, Check, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Search, Settings, X, MessageCircle, Send, LogOut, Phone } from 'lucide-react'
+import { Filter, Zap, Check, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Search, Settings, X, MessageCircle, Send, LogOut, Phone, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Autocomplete } from '@/components/ui/autocomplete'
 import { Popover } from '@/components/ui/popover'
@@ -327,6 +327,7 @@ const NavigationButton: React.FC<{ path: string; currentPath: string; children: 
 const App: React.FC = () => {
     const { user, loading: authLoading, error: authError, signIn, signOut } = useAuth()
     const location = useLocation()
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [registrations, setRegistrations] = useState<Registration[]>([])
     const [filterOptions, setFilterOptions] = useState({
         schools: [] as string[],
@@ -1064,87 +1065,186 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-gray-100">
             {/* Navbar - only show on messaging route */}
             {location.pathname !== '/arrivals' && (
-                <nav className="bg-white shadow-sm border-b">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-                        <div className="flex flex-wrap items-center gap-4">
-                            <Link to="/" className="flex items-center gap-3 flex-1 min-w-[200px]">
-                                <img
-                                    src={easyflowLogo}
-                                    alt="EasyFlow logo"
-                                    className="h-10 w-auto object-contain"
-                                    onError={(e) => {
-                                        const target = e.target as HTMLImageElement
-                                        console.error('Logo failed to load:', target.src);
-                                        // Fallback to the other logo
-                                        target.src = '/easyflow-logo.png';
-                                    }}
-                                />
-                                <div>
-                                    <h1 className="text-xl font-semibold text-gray-900">Dolittle</h1>
-                                    <p className="text-sm text-gray-500">ניהול הרשמות</p>
-                                </div>
-                            </Link>
+                <>
+                    <nav className="bg-white shadow-sm border-b">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+                            <div className="flex items-center justify-between">
+                                {/* Logo */}
+                                <Link to="/" className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                                    <img
+                                        src={easyflowLogo}
+                                        alt="EasyFlow logo"
+                                        className="h-8 sm:h-10 w-auto object-contain flex-shrink-0"
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement
+                                            console.error('Logo failed to load:', target.src);
+                                            target.src = '/easyflow-logo.png';
+                                        }}
+                                    />
+                                    <div className="hidden sm:block">
+                                        <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Dolittle</h1>
+                                        <p className="text-xs sm:text-sm text-gray-500">ניהול הרשמות</p>
+                                    </div>
+                                </Link>
 
-                            <div className="order-2 w-full lg:order-2 lg:w-auto">
-                                <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-end">
-                                    <NavigationButton path="/" currentPath={location.pathname}>
-                                        מערכת דיוור
-                                    </NavigationButton>
-                                    <NavigationButton path="/arrivals" currentPath={location.pathname}>
-                                        מערכת הגעות
-                                    </NavigationButton>
-                                </div>
-                            </div>
-
-                            <div className="order-3 flex w-full flex-wrap items-center justify-center gap-3 lg:order-3 lg:w-auto lg:justify-end lg:gap-4">
-                                <div className="w-full text-center sm:w-auto sm:text-right">
-                                    <p className="text-sm font-medium text-gray-900">סה"כ הרשמות</p>
-                                    <p className="text-2xl font-bold text-blue-600">{filteredRegistrations.length}</p>
-                                </div>
-                                <div className="hidden lg:block w-px h-8 bg-gray-300" />
-
-                                {filteredRegistrations.length > 0 && (
+                                {/* Desktop Actions */}
+                                <div className="hidden lg:flex items-center gap-4">
+                                    <div className="flex items-center gap-4">
+                                        <NavigationButton path="/" currentPath={location.pathname}>
+                                            מערכת דיוור
+                                        </NavigationButton>
+                                        <NavigationButton path="/arrivals" currentPath={location.pathname}>
+                                            מערכת הגעות
+                                        </NavigationButton>
+                                    </div>
+                                    <div className="w-px h-8 bg-gray-300" />
+                                    <div className="text-right">
+                                        <p className="text-sm font-medium text-gray-900">סה"כ הרשמות</p>
+                                        <p className="text-2xl font-bold text-blue-600">{filteredRegistrations.length}</p>
+                                    </div>
+                                    {filteredRegistrations.length > 0 && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setShowBulkMessaging(true)}
+                                            className="flex items-center gap-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                        >
+                                            <MessageCircle className="w-4 h-4" />
+                                            שליחת הודעות
+                                        </Button>
+                                    )}
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => setShowBulkMessaging(true)}
-                                        className="flex w-full items-center justify-center gap-2 text-green-600 hover:text-green-700 hover:bg-green-50 sm:w-auto"
+                                        onClick={() => signOut()}
+                                        className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
                                     >
-                                        <MessageCircle className="w-4 h-4" />
-                                        שליחת הודעות
+                                        <LogOut className="w-4 h-4" />
                                     </Button>
-                                )}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleRefresh}
+                                        disabled={refreshing}
+                                        className="flex items-center gap-2"
+                                    >
+                                        {refreshing ? (
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                                        ) : (
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                            </svg>
+                                        )}
+                                    </Button>
+                                </div>
 
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => signOut()}
-                                    className="flex w-full items-center justify-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 sm:w-auto"
+                                {/* Mobile Menu Button */}
+                                <button
+                                    onClick={() => setMobileMenuOpen(true)}
+                                    className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                                    aria-label="פתח תפריט"
                                 >
-                                    <LogOut className="w-4 h-4" />
-                                    התנתק
-                                </Button>
+                                    <Menu className="w-6 h-6 text-gray-700" />
+                                </button>
+                            </div>
+                        </div>
+                    </nav>
 
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleRefresh}
-                                    disabled={refreshing}
-                                    className="flex w-full items-center justify-center gap-2 sm:w-auto"
+                    {/* Mobile Drawer */}
+                    <div
+                        className={`fixed inset-0 z-50 lg:hidden transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                        onClick={() => setMobileMenuOpen(false)}
+                    >
+                        {/* Backdrop */}
+                        <div className="absolute inset-0 bg-black bg-opacity-50" />
+
+                        {/* Drawer */}
+                        <div
+                            className={`fixed inset-y-0 right-0 w-80 max-w-[85vw] bg-white shadow-xl transform transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+                            dir="rtl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Drawer Header */}
+                            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                                <h2 className="text-lg font-semibold text-gray-900">תפריט</h2>
+                                <button
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                                    aria-label="סגור תפריט"
                                 >
-                                    {refreshing ? (
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-                                    ) : (
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                        </svg>
+                                    <X className="w-6 h-6 text-gray-700" />
+                                </button>
+                            </div>
+
+                            {/* Drawer Content */}
+                            <div className="overflow-y-auto h-full pb-20">
+                                {/* Total Count */}
+                                <div className="p-4 border-b border-gray-200">
+                                    <p className="text-sm font-medium text-gray-900 mb-1">סה"כ הרשמות</p>
+                                    <p className="text-3xl font-bold text-blue-600">{filteredRegistrations.length}</p>
+                                </div>
+
+                                {/* Navigation Links */}
+                                <div className="p-4 border-b border-gray-200">
+                                    <nav className="space-y-2">
+                                        <NavigationButton path="/" currentPath={location.pathname}>
+                                            מערכת דיוור
+                                        </NavigationButton>
+                                        <NavigationButton path="/arrivals" currentPath={location.pathname}>
+                                            מערכת הגעות
+                                        </NavigationButton>
+                                    </nav>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="p-4 space-y-2">
+                                    {filteredRegistrations.length > 0 && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                setShowBulkMessaging(true)
+                                                setMobileMenuOpen(false)
+                                            }}
+                                            className="w-full flex items-center justify-center gap-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                        >
+                                            <MessageCircle className="w-4 h-4" />
+                                            שליחת הודעות
+                                        </Button>
                                     )}
-                                    {refreshing ? 'מרענן...' : 'רענן'}
-                                </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleRefresh}
+                                        disabled={refreshing}
+                                        className="w-full flex items-center justify-center gap-2"
+                                    >
+                                        {refreshing ? (
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                                        ) : (
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                            </svg>
+                                        )}
+                                        {refreshing ? 'מרענן...' : 'רענן'}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            signOut()
+                                            setMobileMenuOpen(false)
+                                        }}
+                                        className="w-full flex items-center justify-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        התנתק
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </nav>
+                </>
             )}
 
             {/* Conditional Content Based on Route */}

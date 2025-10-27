@@ -38,6 +38,18 @@ interface SelectedFilters {
 }
 
 const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = false }) => {
+    // Early return for loading state - MUST be before all hooks to avoid "Rendered fewer hooks" error
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">טוען...</p>
+                </div>
+            </div>
+        )
+    }
+
     const [searchParams, setSearchParams] = useSearchParams()
 
     // Initialize state from URL params
@@ -176,18 +188,6 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
             }
         }
     }, [selectedFilters.cohortId, selectedFilters.cohort, registrations])
-
-    // Early return for loading state - MUST be before all hooks to avoid "Rendered fewer hooks" error
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">טוען...</p>
-                </div>
-            </div>
-        )
-    }
 
     // Sync filters to URL params - only store cohortId for cleaner URLs
     useEffect(() => {
