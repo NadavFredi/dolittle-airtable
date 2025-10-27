@@ -1062,7 +1062,7 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-gray-100 flex flex-col">
             {/* Navbar - only show on messaging route */}
             {location.pathname !== '/arrivals' && (
                 <>
@@ -1253,940 +1253,942 @@ const App: React.FC = () => {
                     <ArrivalSystemPage registrations={registrations} loading={loading} />
                 </>
             ) : (
-                <>
-                    {/* Search Bar */}
-                    <div className="bg-white border-b">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                                <div className="w-full sm:flex-1">
-                                    <div className="relative">
-                                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                        <input
-                                            type="text"
-                                            placeholder="חיפוש בכל השדות..."
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-right"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="flex items-center justify-end">
-                                    {searchQuery && (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setSearchQuery('')}
-                                            className="w-full text-gray-600 hover:text-gray-800 sm:w-auto"
-                                        >
-                                            נקה חיפוש
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Filter Bar */}
-                    <div className="border-b bg-white">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-                            <div className="flex items-center gap-4 flex-wrap">
-                                <div className="flex items-center gap-2">
-                                    <Filter className="h-4 w-4 text-gray-500" />
-                                    <span className="text-sm font-medium text-gray-700">סינון:</span>
-                                </div>
-
-                                {/* Mode Toggle */}
-                                <Button
-                                    variant={isAdvancedMode ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => setIsAdvancedMode(!isAdvancedMode)}
-                                    className="flex items-center gap-2"
-                                >
-                                    <Settings className="h-4 w-4" />
-                                    {isAdvancedMode ? 'מצב מתקדם' : 'מצב פשוט'}
-                                </Button>
-
-                                {isAdvancedMode ? (
-                                    // Filter Groups Interface
-                                    <div className="w-full">
-                                        <div className="text-sm font-medium text-gray-700 mb-3">
-                                            בתצוגה זו, הצג רשומות
-                                        </div>
-
-                                        {filterGroups.length === 0 ? (
-                                            <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                                                <div className="text-gray-500 mb-6 text-sm">
-                                                    גרור תנאים לכאן כדי להוסיף אותם לקבוצה זו
-                                                </div>
-                                                <div className="flex items-center justify-center gap-4">
-                                                    <button
-                                                        onClick={addFilterGroup}
-                                                        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors"
-                                                    >
-                                                        <span className="text-lg">+</span>
-                                                        הוסף תנאי
-                                                    </button>
-                                                    <button
-                                                        onClick={addFilterGroup}
-                                                        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors"
-                                                    >
-                                                        <span className="text-lg">+</span>
-                                                        הוסף קבוצת תנאים
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-4">
-                                                {filterGroups.map((group, index) => (
-                                                    <div key={group.id}>
-                                                        {index > 0 && (
-                                                            <div className="flex items-center justify-center py-2">
-                                                                <div className="flex items-center gap-2 bg-white px-3 py-1 rounded border shadow-sm">
-                                                                    <span className="text-sm text-gray-600">לוגיקה בין קבוצות:</span>
-                                                                    <select
-                                                                        value={interGroupOperator}
-                                                                        onChange={(e) => setInterGroupOperator(e.target.value as 'AND' | 'OR')}
-                                                                        className="px-2 py-1 border border-gray-300 rounded text-sm bg-white"
-                                                                    >
-                                                                        <option value="AND">וגם (AND)</option>
-                                                                        <option value="OR">או (OR)</option>
-                                                                    </select>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                        <FilterGroup
-                                                            group={group}
-                                                            fieldOptions={fieldOptions}
-                                                            operatorOptions={operatorOptions}
-                                                            filterOptions={filterOptions}
-                                                            onUpdate={(updatedGroup) => updateFilterGroup(group.id, updatedGroup)}
-                                                            onDelete={() => deleteFilterGroup(group.id)}
-                                                            onAddCondition={() => addConditionToGroup(group.id)}
-                                                        />
-                                                    </div>
-                                                ))}
-
-                                                <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
-                                                    <button
-                                                        onClick={addFilterGroup}
-                                                        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors"
-                                                    >
-                                                        <span className="text-lg">+</span>
-                                                        הוסף תנאי
-                                                    </button>
-                                                    <button
-                                                        onClick={addFilterGroup}
-                                                        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors"
-                                                    >
-                                                        <span className="text-lg">+</span>
-                                                        הוסף קבוצת תנאים
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    // Simple Filters
-                                    <div className="flex items-center gap-3 flex-wrap">
-                                        <Autocomplete
-                                            options={filterOptions.schools.map(school => ({ label: school, value: school }))}
-                                            value={filters.school}
-                                            onSelect={(value) => handleFilterChange('school', value)}
-                                            placeholder="בית ספר"
-                                            allowClear={true}
-                                            className="min-w-[120px]"
-                                        />
-
-                                        <Autocomplete
-                                            options={filterOptions.cycles.map(cycle => ({ label: cycle, value: cycle }))}
-                                            value={filters.cycle}
-                                            onSelect={(value) => handleFilterChange('cycle', value)}
-                                            placeholder="מחזור"
-                                            allowClear={true}
-                                            className="min-w-[250px]"
-                                        />
-
-                                        <Autocomplete
-                                            options={filterOptions.courses.map(course => ({ label: course, value: course }))}
-                                            value={filters.course}
-                                            onSelect={(value) => handleFilterChange('course', value)}
-                                            placeholder="חוג"
-                                            allowClear={true}
-                                            className="min-w-[180px]"
-                                        />
-
-                                        <Autocomplete
-                                            options={filterOptions.classes.map(cls => ({ label: cls, value: cls }))}
-                                            value={filters.class}
-                                            onSelect={(value) => handleFilterChange('class', value)}
-                                            placeholder="כיתה"
-                                            allowClear={true}
-                                            className="min-w-[100px]"
-                                        />
-
-                                        <Autocomplete
-                                            options={[
-                                                { label: "כן", value: "true" },
-                                                { label: "לא", value: "false" }
-                                            ]}
-                                            value={filters.needsPickup}
-                                            onSelect={(value) => handleFilterChange('needsPickup', value)}
-                                            placeholder="איסוף מהצהרון"
-                                            allowClear={true}
-                                            className="min-w-[140px]"
-                                        />
-
-                                        <Autocomplete
-                                            options={[
-                                                { label: "כן", value: "true" },
-                                                { label: "לא", value: "false" }
-                                            ]}
-                                            value={filters.inWhatsAppGroup}
-                                            onSelect={(value) => handleFilterChange('inWhatsAppGroup', value)}
-                                            placeholder="קבוצת וואטסאפ"
-                                            allowClear={true}
-                                            className="min-w-[140px]"
-                                        />
-
-                                        <Autocomplete
-                                            options={filterOptions.registrationStatuses.map(status => ({ label: status, value: status }))}
-                                            value={filters.registrationStatus}
-                                            onSelect={(value) => handleFilterChange('registrationStatus', value)}
-                                            placeholder="סטטוס רישום"
-                                            allowClear={true}
-                                            className="min-w-[140px]"
-                                        />
-
-                                        <div className="flex flex-col gap-1">
-                                            <label className="text-xs text-gray-600 font-medium">
-                                                תאריך הגעה לשיעור ניסיון
-                                            </label>
-                                            <DatePickerInput
-                                                value={filters.trialDate}
-                                                onChange={(date) => setFilters(prev => ({ ...prev, trialDate: date }))}
-                                                placeholder="בחר תאריך"
-                                                className="min-w-[180px]"
-                                                wrapperClassName="min-w-[180px]"
+                <div className="flex-1 flex flex-col">
+                    <>
+                        {/* Search Bar */}
+                        <div className="bg-white border-b">
+                            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                                    <div className="w-full sm:flex-1">
+                                        <div className="relative">
+                                            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                            <input
+                                                type="text"
+                                                placeholder="חיפוש בכל השדות..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-right"
                                             />
                                         </div>
                                     </div>
-                                )}
+                                    <div className="flex items-center justify-end">
+                                        {searchQuery && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setSearchQuery('')}
+                                                className="w-full text-gray-600 hover:text-gray-800 sm:w-auto"
+                                            >
+                                                נקה חיפוש
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                                {/* Clear Button */}
-                                {(isAdvancedMode ?
-                                    (filterGroups.length > 0 || advancedFilters.schools.length > 0 || advancedFilters.cycles.length > 0 || advancedFilters.courses.length > 0 ||
-                                        advancedFilters.classes.length > 0 || advancedFilters.registrationStatuses.length > 0 ||
-                                        advancedFilters.needsPickup !== null || advancedFilters.inWhatsAppGroup !== null) :
-                                    (filters.school || filters.cycle || filters.course || filters.class || filters.needsPickup || filters.inWhatsAppGroup || filters.registrationStatus || filters.trialDate)
-                                ) && (
+                        {/* Filter Bar */}
+                        <div className="border-b bg-white">
+                            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+                                <div className="flex items-center gap-4 flex-wrap">
+                                    <div className="flex items-center gap-2">
+                                        <Filter className="h-4 w-4 text-gray-500" />
+                                        <span className="text-sm font-medium text-gray-700">סינון:</span>
+                                    </div>
+
+                                    {/* Mode Toggle */}
+                                    <Button
+                                        variant={isAdvancedMode ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => setIsAdvancedMode(!isAdvancedMode)}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <Settings className="h-4 w-4" />
+                                        {isAdvancedMode ? 'מצב מתקדם' : 'מצב פשוט'}
+                                    </Button>
+
+                                    {isAdvancedMode ? (
+                                        // Filter Groups Interface
+                                        <div className="w-full">
+                                            <div className="text-sm font-medium text-gray-700 mb-3">
+                                                בתצוגה זו, הצג רשומות
+                                            </div>
+
+                                            {filterGroups.length === 0 ? (
+                                                <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                                                    <div className="text-gray-500 mb-6 text-sm">
+                                                        גרור תנאים לכאן כדי להוסיף אותם לקבוצה זו
+                                                    </div>
+                                                    <div className="flex items-center justify-center gap-4">
+                                                        <button
+                                                            onClick={addFilterGroup}
+                                                            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors"
+                                                        >
+                                                            <span className="text-lg">+</span>
+                                                            הוסף תנאי
+                                                        </button>
+                                                        <button
+                                                            onClick={addFilterGroup}
+                                                            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors"
+                                                        >
+                                                            <span className="text-lg">+</span>
+                                                            הוסף קבוצת תנאים
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-4">
+                                                    {filterGroups.map((group, index) => (
+                                                        <div key={group.id}>
+                                                            {index > 0 && (
+                                                                <div className="flex items-center justify-center py-2">
+                                                                    <div className="flex items-center gap-2 bg-white px-3 py-1 rounded border shadow-sm">
+                                                                        <span className="text-sm text-gray-600">לוגיקה בין קבוצות:</span>
+                                                                        <select
+                                                                            value={interGroupOperator}
+                                                                            onChange={(e) => setInterGroupOperator(e.target.value as 'AND' | 'OR')}
+                                                                            className="px-2 py-1 border border-gray-300 rounded text-sm bg-white"
+                                                                        >
+                                                                            <option value="AND">וגם (AND)</option>
+                                                                            <option value="OR">או (OR)</option>
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            <FilterGroup
+                                                                group={group}
+                                                                fieldOptions={fieldOptions}
+                                                                operatorOptions={operatorOptions}
+                                                                filterOptions={filterOptions}
+                                                                onUpdate={(updatedGroup) => updateFilterGroup(group.id, updatedGroup)}
+                                                                onDelete={() => deleteFilterGroup(group.id)}
+                                                                onAddCondition={() => addConditionToGroup(group.id)}
+                                                            />
+                                                        </div>
+                                                    ))}
+
+                                                    <div className="flex items-center gap-4 pt-4 border-t border-gray-200">
+                                                        <button
+                                                            onClick={addFilterGroup}
+                                                            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors"
+                                                        >
+                                                            <span className="text-lg">+</span>
+                                                            הוסף תנאי
+                                                        </button>
+                                                        <button
+                                                            onClick={addFilterGroup}
+                                                            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors"
+                                                        >
+                                                            <span className="text-lg">+</span>
+                                                            הוסף קבוצת תנאים
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        // Simple Filters
+                                        <div className="flex items-center gap-3 flex-wrap">
+                                            <Autocomplete
+                                                options={filterOptions.schools.map(school => ({ label: school, value: school }))}
+                                                value={filters.school}
+                                                onSelect={(value) => handleFilterChange('school', value)}
+                                                placeholder="בית ספר"
+                                                allowClear={true}
+                                                className="min-w-[120px]"
+                                            />
+
+                                            <Autocomplete
+                                                options={filterOptions.cycles.map(cycle => ({ label: cycle, value: cycle }))}
+                                                value={filters.cycle}
+                                                onSelect={(value) => handleFilterChange('cycle', value)}
+                                                placeholder="מחזור"
+                                                allowClear={true}
+                                                className="min-w-[250px]"
+                                            />
+
+                                            <Autocomplete
+                                                options={filterOptions.courses.map(course => ({ label: course, value: course }))}
+                                                value={filters.course}
+                                                onSelect={(value) => handleFilterChange('course', value)}
+                                                placeholder="חוג"
+                                                allowClear={true}
+                                                className="min-w-[180px]"
+                                            />
+
+                                            <Autocomplete
+                                                options={filterOptions.classes.map(cls => ({ label: cls, value: cls }))}
+                                                value={filters.class}
+                                                onSelect={(value) => handleFilterChange('class', value)}
+                                                placeholder="כיתה"
+                                                allowClear={true}
+                                                className="min-w-[100px]"
+                                            />
+
+                                            <Autocomplete
+                                                options={[
+                                                    { label: "כן", value: "true" },
+                                                    { label: "לא", value: "false" }
+                                                ]}
+                                                value={filters.needsPickup}
+                                                onSelect={(value) => handleFilterChange('needsPickup', value)}
+                                                placeholder="איסוף מהצהרון"
+                                                allowClear={true}
+                                                className="min-w-[140px]"
+                                            />
+
+                                            <Autocomplete
+                                                options={[
+                                                    { label: "כן", value: "true" },
+                                                    { label: "לא", value: "false" }
+                                                ]}
+                                                value={filters.inWhatsAppGroup}
+                                                onSelect={(value) => handleFilterChange('inWhatsAppGroup', value)}
+                                                placeholder="קבוצת וואטסאפ"
+                                                allowClear={true}
+                                                className="min-w-[140px]"
+                                            />
+
+                                            <Autocomplete
+                                                options={filterOptions.registrationStatuses.map(status => ({ label: status, value: status }))}
+                                                value={filters.registrationStatus}
+                                                onSelect={(value) => handleFilterChange('registrationStatus', value)}
+                                                placeholder="סטטוס רישום"
+                                                allowClear={true}
+                                                className="min-w-[140px]"
+                                            />
+
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-xs text-gray-600 font-medium">
+                                                    תאריך הגעה לשיעור ניסיון
+                                                </label>
+                                                <DatePickerInput
+                                                    value={filters.trialDate}
+                                                    onChange={(date) => setFilters(prev => ({ ...prev, trialDate: date }))}
+                                                    placeholder="בחר תאריך"
+                                                    className="min-w-[180px]"
+                                                    wrapperClassName="min-w-[180px]"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Clear Button */}
+                                    {(isAdvancedMode ?
+                                        (filterGroups.length > 0 || advancedFilters.schools.length > 0 || advancedFilters.cycles.length > 0 || advancedFilters.courses.length > 0 ||
+                                            advancedFilters.classes.length > 0 || advancedFilters.registrationStatuses.length > 0 ||
+                                            advancedFilters.needsPickup !== null || advancedFilters.inWhatsAppGroup !== null) :
+                                        (filters.school || filters.cycle || filters.course || filters.class || filters.needsPickup || filters.inWhatsAppGroup || filters.registrationStatus || filters.trialDate)
+                                    ) && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={isAdvancedMode ? (filterGroups.length > 0 ? () => { clearFilterGroups(); setInterGroupOperator('AND') } : clearAdvancedFilters) : clearAllFilters}
+                                                className="text-gray-600 hover:text-gray-800"
+                                            >
+                                                נקה הכל
+                                            </Button>
+                                        )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Grouping Section */}
+                        <div className="bg-white border-b">
+                            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+                                <div className="flex items-center gap-4 flex-wrap">
+                                    {filters.course && (
+                                        <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1 rounded-md">
+                                            <Zap className="h-4 w-4 text-yellow-600" />
+                                            <span className="text-sm font-medium">{filters.course}</span>
+                                            <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">
+                                                {filteredRegistrations.filter(r => r.course === filters.course).length}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {filters.cycle && (
+                                        <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-md">
+                                            <span className="text-sm">{filters.cycle}</span>
+                                            <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full">
+                                                {filteredRegistrations.filter(r => r.cycle === filters.cycle).length}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {filters.school && (
+                                        <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-md">
+                                            <span className="text-sm">{filters.school}</span>
+                                            <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded-full">
+                                                {filteredRegistrations.filter(r => r.school === filters.school).length}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Data Table */}
+                        <div className="bg-white">
+                            <div className="max-w-7xl mx-auto px-4 sm:px-6">
+                                {/* Table Header */}
+                                <div className="hidden items-center border-b bg-gray-50 py-3 lg:flex">
+                                    <div className="flex-1 min-w-[140px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('trialDate')}>
+                                        <div className="flex items-center justify-center gap-2">
+                                            תאריך הגעה לשיעור ניסיון
+                                            {sortConfig.key === 'trialDate' && (
+                                                sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 min-w-[100px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('needsPickup')}>
+                                        <div className="flex items-center justify-center gap-2">
+                                            איסוף מהצהרון
+                                            {sortConfig.key === 'needsPickup' && (
+                                                sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 min-w-[70px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('class')}>
+                                        <div className="flex items-center justify-center gap-2">
+                                            כיתה
+                                            {sortConfig.key === 'class' && (
+                                                sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 min-w-[120px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('school')}>
+                                        <div className="flex items-center justify-center gap-2">
+                                            בית ספר
+                                            {sortConfig.key === 'school' && (
+                                                sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 min-w-[120px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('course')}>
+                                        <div className="flex items-center justify-center gap-2">
+                                            חוג
+                                            {sortConfig.key === 'course' && (
+                                                sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 min-w-[140px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('parentName')}>
+                                        <div className="flex items-center justify-center gap-2">
+                                            שם מלא הורה
+                                            {sortConfig.key === 'parentName' && (
+                                                sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 min-w-[120px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('parentPhone')}>
+                                        <div className="flex items-center justify-center gap-2">
+                                            טלפון הורה
+                                            {sortConfig.key === 'parentPhone' && (
+                                                sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 min-w-[200px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('cycle')}>
+                                        <div className="flex items-center justify-center gap-2">
+                                            מחזור
+                                            {sortConfig.key === 'cycle' && (
+                                                sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 min-w-[120px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('childName')}>
+                                        <div className="flex items-center justify-center gap-2">
+                                            שם הילד
+                                            {sortConfig.key === 'childName' && (
+                                                sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="lg:hidden border-b border-gray-200">
+                                    <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                        <label className="flex w-full flex-col gap-1 text-sm font-medium text-gray-700 sm:w-auto">
+                                            <span>מיון לפי</span>
+                                            <select
+                                                value={sortConfig.key ?? ''}
+                                                onChange={(e) => handleMobileSortChange(e.target.value as keyof Registration)}
+                                                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-48"
+                                            >
+                                                <option value="">ללא</option>
+                                                {mobileSortOptions.map(option => (
+                                                    <option key={option.value} value={option.value}>
+                                                        {option.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </label>
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={isAdvancedMode ? (filterGroups.length > 0 ? () => { clearFilterGroups(); setInterGroupOperator('AND') } : clearAdvancedFilters) : clearAllFilters}
-                                            className="text-gray-600 hover:text-gray-800"
+                                            onClick={toggleSortDirection}
+                                            disabled={!sortConfig.key}
+                                            className="flex w-full items-center justify-center gap-2 sm:w-auto"
                                         >
-                                            נקה הכל
+                                            {sortConfig.direction === 'asc' ? (
+                                                <ArrowUp className="h-4 w-4" />
+                                            ) : (
+                                                <ArrowDown className="h-4 w-4" />
+                                            )}
+                                            {sortConfig.direction === 'asc' ? 'סדר עולה' : 'סדר יורד'}
                                         </Button>
-                                    )}
-                            </div>
-                        </div>
-                    </div>
+                                    </div>
+                                </div>
 
-                    {/* Grouping Section */}
-                    <div className="bg-white border-b">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-                            <div className="flex items-center gap-4 flex-wrap">
-                                {filters.course && (
-                                    <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1 rounded-md">
-                                        <Zap className="h-4 w-4 text-yellow-600" />
-                                        <span className="text-sm font-medium">{filters.course}</span>
-                                        <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">
-                                            {filteredRegistrations.filter(r => r.course === filters.course).length}
-                                        </span>
-                                    </div>
-                                )}
-
-                                {filters.cycle && (
-                                    <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-md">
-                                        <span className="text-sm">{filters.cycle}</span>
-                                        <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full">
-                                            {filteredRegistrations.filter(r => r.cycle === filters.cycle).length}
-                                        </span>
-                                    </div>
-                                )}
-
-                                {filters.school && (
-                                    <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-md">
-                                        <span className="text-sm">{filters.school}</span>
-                                        <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded-full">
-                                            {filteredRegistrations.filter(r => r.school === filters.school).length}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Data Table */}
-                    <div className="bg-white">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-                            {/* Table Header */}
-                            <div className="hidden items-center border-b bg-gray-50 py-3 lg:flex">
-                                <div className="flex-1 min-w-[140px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('trialDate')}>
-                                    <div className="flex items-center justify-center gap-2">
-                                        תאריך הגעה לשיעור ניסיון
-                                        {sortConfig.key === 'trialDate' && (
-                                            sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="flex-1 min-w-[100px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('needsPickup')}>
-                                    <div className="flex items-center justify-center gap-2">
-                                        איסוף מהצהרון
-                                        {sortConfig.key === 'needsPickup' && (
-                                            sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="flex-1 min-w-[70px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('class')}>
-                                    <div className="flex items-center justify-center gap-2">
-                                        כיתה
-                                        {sortConfig.key === 'class' && (
-                                            sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="flex-1 min-w-[120px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('school')}>
-                                    <div className="flex items-center justify-center gap-2">
-                                        בית ספר
-                                        {sortConfig.key === 'school' && (
-                                            sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="flex-1 min-w-[120px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('course')}>
-                                    <div className="flex items-center justify-center gap-2">
-                                        חוג
-                                        {sortConfig.key === 'course' && (
-                                            sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="flex-1 min-w-[140px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('parentName')}>
-                                    <div className="flex items-center justify-center gap-2">
-                                        שם מלא הורה
-                                        {sortConfig.key === 'parentName' && (
-                                            sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="flex-1 min-w-[120px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('parentPhone')}>
-                                    <div className="flex items-center justify-center gap-2">
-                                        טלפון הורה
-                                        {sortConfig.key === 'parentPhone' && (
-                                            sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="flex-1 min-w-[200px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('cycle')}>
-                                    <div className="flex items-center justify-center gap-2">
-                                        מחזור
-                                        {sortConfig.key === 'cycle' && (
-                                            sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="flex-1 min-w-[120px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('childName')}>
-                                    <div className="flex items-center justify-center gap-2">
-                                        שם הילד
-                                        {sortConfig.key === 'childName' && (
-                                            sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="lg:hidden border-b border-gray-200">
-                                <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                                    <label className="flex w-full flex-col gap-1 text-sm font-medium text-gray-700 sm:w-auto">
-                                        <span>מיון לפי</span>
-                                        <select
-                                            value={sortConfig.key ?? ''}
-                                            onChange={(e) => handleMobileSortChange(e.target.value as keyof Registration)}
-                                            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-48"
-                                        >
-                                            <option value="">ללא</option>
-                                            {mobileSortOptions.map(option => (
-                                                <option key={option.value} value={option.value}>
-                                                    {option.label}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </label>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={toggleSortDirection}
-                                        disabled={!sortConfig.key}
-                                        className="flex w-full items-center justify-center gap-2 sm:w-auto"
-                                    >
-                                        {sortConfig.direction === 'asc' ? (
-                                            <ArrowUp className="h-4 w-4" />
-                                        ) : (
-                                            <ArrowDown className="h-4 w-4" />
-                                        )}
-                                        {sortConfig.direction === 'asc' ? 'סדר עולה' : 'סדר יורד'}
-                                    </Button>
-                                </div>
-                            </div>
-
-                            {paginatedRegistrations.length > 0 ? (
-                                <>
-                                    <div className="hidden lg:block">
-                                        <div className="overflow-x-auto">
-                                            {paginatedRegistrations.map((registration, index) => (
-                                                <div
-                                                    key={registration.id}
-                                                    className={`flex items-center border-b ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
-                                                >
-                                                    <div className="flex-1 min-w-[140px] px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
-                                                        {registration.trialDate}
+                                {paginatedRegistrations.length > 0 ? (
+                                    <>
+                                        <div className="hidden lg:block">
+                                            <div className="overflow-x-auto">
+                                                {paginatedRegistrations.map((registration, index) => (
+                                                    <div
+                                                        key={registration.id}
+                                                        className={`flex items-center border-b ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                                                    >
+                                                        <div className="flex-1 min-w-[140px] px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
+                                                            {registration.trialDate}
+                                                        </div>
+                                                        <div className="flex-1 min-w-[100px] px-4 py-3 text-center">
+                                                            {registration.needsPickup && (
+                                                                <div className="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-green-100">
+                                                                    <Check className="h-4 w-4 text-green-600" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-1 min-w-[70px] px-4 py-3">
+                                                            <span className="whitespace-nowrap rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+                                                                {registration.class}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex-1 min-w-[120px] px-4 py-3 text-gray-700 whitespace-nowrap">
+                                                            {registration.school}
+                                                        </div>
+                                                        <div className="flex-1 min-w-[120px] px-4 py-3">
+                                                            <div className="flex items-center gap-2 whitespace-nowrap">
+                                                                <Zap className="h-4 w-4 text-yellow-600" />
+                                                                <span className="text-gray-700">{registration.course}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex-1 min-w-[140px] px-4 py-3 text-gray-700 whitespace-nowrap">
+                                                            {registration.parentName}
+                                                        </div>
+                                                        <div className="flex-1 min-w-[120px] px-4 py-3 font-mono text-gray-700 whitespace-nowrap">
+                                                            {registration.parentPhone}
+                                                        </div>
+                                                        <div className="flex-1 min-w-[200px] px-4 py-3">
+                                                            <Popover content={registration.cycle}>
+                                                                <Button variant="outline" size="sm" className="max-w-[180px] truncate whitespace-nowrap border-gray-300 bg-gray-100 text-xs hover:bg-gray-200">
+                                                                    {registration.cycle}
+                                                                </Button>
+                                                            </Popover>
+                                                        </div>
+                                                        <div className="flex-1 min-w-[120px] px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">
+                                                            {registration.childName}
+                                                        </div>
                                                     </div>
-                                                    <div className="flex-1 min-w-[100px] px-4 py-3 text-center">
-                                                        {registration.needsPickup && (
-                                                            <div className="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-green-100">
-                                                                <Check className="h-4 w-4 text-green-600" />
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="divide-y divide-gray-200 border-t lg:hidden">
+                                            {paginatedRegistrations.map(registration => (
+                                                <RegistrationCard key={registration.id} registration={registration} />
+                                            ))}
+                                        </div>
+
+                                        <div className="flex flex-col gap-3 border-t bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <div className="text-center text-sm text-gray-700 sm:text-right">
+                                                מציג {startIndex + 1}-{Math.min(endIndex, filteredRegistrations.length)} מתוך {filteredRegistrations.length} רשומות
+                                            </div>
+                                            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                                    disabled={currentPage === 1}
+                                                    className="w-full sm:w-auto"
+                                                >
+                                                    <ChevronRight className="h-4 w-4" />
+                                                    הקודם
+                                                </Button>
+                                                <span className="text-sm text-gray-700 text-center sm:text-right">
+                                                    עמוד {currentPage} מתוך {totalPages}
+                                                </span>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                                    disabled={currentPage === totalPages}
+                                                    className="w-full sm:w-auto"
+                                                >
+                                                    הבא
+                                                    <ChevronLeft className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="flex items-center justify-center py-16 text-gray-500">
+                                        <div className="px-4 text-center">
+                                            <p className="text-lg font-medium">אין נתונים להצגה</p>
+                                            <p className="mt-2 text-sm text-gray-500">לא נמצאו הרשמות התואמות לסינון הנוכחי</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Bulk Messaging Modal */}
+                        {showBulkMessaging && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                                    <div className="p-6">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                                    <MessageCircle className="w-5 h-5 text-green-600" />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-xl font-semibold text-gray-900">שליחת הודעות WhatsApp</h2>
+                                                    <p className="text-sm text-gray-500">שליחת הודעות למשתמשים מסוננים</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    setShowBulkMessaging(false)
+                                                    setBulkMessagingStep('config')
+                                                    setRegistrationLink('')
+                                                    setMessageContent('')
+                                                    setFlowId('')
+                                                    setMessagingMode('formal')
+                                                    setIsSendingLink(false)
+                                                    setTrackingUrl('')
+                                                    setMessageParams({
+                                                        courseName: '',
+                                                        paymentReason: '',
+                                                        arrivalDay: '',
+                                                        arrivalTime: ''
+                                                    })
+                                                    setParamsApproved(false)
+                                                }}
+                                                className="p-2 text-gray-400 hover:text-gray-600"
+                                            >
+                                                <X className="w-5 h-5" />
+                                            </button>
+                                        </div>
+
+                                        {/* Statistics */}
+                                        <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="text-center">
+                                                    <p className="text-2xl font-bold text-blue-600">{filteredRegistrations.length}</p>
+                                                    <p className="text-sm text-gray-600">סה"כ משתמשים</p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-2xl font-bold text-green-600">{getUniquePhoneNumbers().length}</p>
+                                                    <p className="text-sm text-gray-600">מספרים ייחודיים</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {bulkMessagingStep === 'config' && (
+                                            <div className="space-y-6">
+                                                {/* Mode Selection */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                                                        בחר סוג הודעה
+                                                    </label>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <button
+                                                            onClick={() => setMessagingMode('formal')}
+                                                            className={`p-4 rounded-lg border-2 transition-colors ${messagingMode === 'formal'
+                                                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                                                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                                                                }`}
+                                                        >
+                                                            <div className="text-center">
+                                                                <div className="font-medium mb-1">רשמי</div>
+                                                                <div className="text-xs text-gray-500">WhatsApp Business API</div>
+                                                            </div>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setMessagingMode('informal')}
+                                                            className={`p-4 rounded-lg border-2 transition-colors ${messagingMode === 'informal'
+                                                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                                                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                                                                }`}
+                                                        >
+                                                            <div className="text-center">
+                                                                <div className="font-medium mb-1">לא רשמי</div>
+                                                                <div className="text-xs text-gray-500">הודעות ארוכות</div>
+                                                            </div>
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Formal Mode Fields */}
+                                                {messagingMode === 'formal' && (
+                                                    <>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                                Flow ID
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={flowId}
+                                                                onChange={(e) => setFlowId(e.target.value)}
+                                                                placeholder="content20250910073225_988996"
+                                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                            />
+                                                            <p className="text-xs text-gray-500 mt-1">
+                                                                הזן את מזהה ה-Flow מה-WhatsApp Business API
+                                                            </p>
+                                                        </div>
+
+                                                    </>
+                                                )}
+
+                                                {/* Informal Mode Fields */}
+                                                {messagingMode === 'informal' && (
+                                                    <>
+                                                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <div className="w-5 h-5 bg-yellow-100 rounded-full flex items-center justify-center">
+                                                                    <span className="text-yellow-600 text-sm">!</span>
+                                                                </div>
+                                                                <h3 className="font-medium text-yellow-800">שירות זמנית לא זמין</h3>
+                                                            </div>
+                                                            <p className="text-sm text-yellow-700">
+                                                                אנו עדיין לא תומכים בהודעות WhatsApp לא רשמיות. אנא בחר במצב רשמי.
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="opacity-50">
+                                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                                תוכן ההודעה הארוכה
+                                                            </label>
+                                                            <textarea
+                                                                value={messageContent}
+                                                                onChange={(e) => setMessageContent(e.target.value)}
+                                                                placeholder="הזן את תוכן ההודעה הארוכה שתישלח..."
+                                                                rows={6}
+                                                                disabled
+                                                                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                                                            />
+                                                            <p className="text-xs text-gray-500 mt-1">
+                                                                שדה זה יהיה זמין בעתיד
+                                                            </p>
+                                                        </div>
+                                                    </>
+                                                )}
+
+                                                <div className="flex items-center justify-end gap-3 pt-4">
+                                                    <Button
+                                                        variant="outline"
+                                                        onClick={() => setShowBulkMessaging(false)}
+                                                    >
+                                                        ביטול
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() => setBulkMessagingStep('params')}
+                                                        disabled={messagingMode === 'formal' ? !flowId.trim() : true}
+                                                        className="bg-green-600 hover:bg-green-700"
+                                                    >
+                                                        המשך
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {bulkMessagingStep === 'params' && (
+                                            <div className="space-y-6">
+                                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
+                                                            <span className="text-blue-600 text-sm">i</span>
+                                                        </div>
+                                                        <h3 className="font-medium text-blue-800">הגדרת פרמטרים</h3>
+                                                    </div>
+                                                    <p className="text-sm text-blue-700">
+                                                        הגדר את הפרמטרים שיישלחו בהודעה. כל הפרמטרים הם אופציונליים.
+                                                    </p>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 gap-4">
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            שם החוג
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={messageParams.courseName}
+                                                            onChange={(e) => setMessageParams(prev => ({ ...prev, courseName: e.target.value }))}
+                                                            placeholder="הזן שם החוג"
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                        />
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            סיבת בקשת תשלום
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={messageParams.paymentReason}
+                                                            onChange={(e) => setMessageParams(prev => ({ ...prev, paymentReason: e.target.value }))}
+                                                            placeholder="הזן סיבת בקשת התשלום"
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                        />
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            יום הגעה לחוג
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={messageParams.arrivalDay}
+                                                            onChange={(e) => setMessageParams(prev => ({ ...prev, arrivalDay: e.target.value }))}
+                                                            placeholder="למשל: יום שני"
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                        />
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            שעת הגעה לחוג
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={messageParams.arrivalTime}
+                                                            onChange={(e) => setMessageParams(prev => ({ ...prev, arrivalTime: e.target.value }))}
+                                                            placeholder="למשל: 16:00"
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Registration Link Section */}
+                                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="sendingLink"
+                                                            checked={isSendingLink}
+                                                            onChange={(e) => setIsSendingLink(e.target.checked)}
+                                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                        />
+                                                        <label htmlFor="sendingLink" className="text-sm font-medium text-gray-700">
+                                                            אני שולח קישור הרשמה
+                                                        </label>
+                                                    </div>
+
+                                                    {isSendingLink && (
+                                                        <div>
+                                                            <input
+                                                                type="url"
+                                                                value={registrationLink}
+                                                                onChange={(e) => setRegistrationLink(e.target.value)}
+                                                                placeholder="קישור בסיס (עם פרמטר שאילתה)"
+                                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                            />
+                                                            <p className="text-xs text-gray-500 mt-1">
+                                                                הקישור יושלם עם מזהה כל רשומה: {registrationLink ? `${registrationLink}123` : 'https://example.com/register?id=123'}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                                    <div className="flex items-start gap-3">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="paramsApproval"
+                                                            checked={paramsApproved}
+                                                            onChange={(e) => setParamsApproved(e.target.checked)}
+                                                            className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                        />
+                                                        <div className="flex-1">
+                                                            <label htmlFor="paramsApproval" className="text-sm font-medium text-gray-700 cursor-pointer">
+                                                                אני מאשר/ת את הפרמטרים הבאים
+                                                            </label>
+                                                            <ul className="text-xs text-gray-600 mt-2 space-y-1">
+                                                                <li>• סקרתי את ההודעות והפרמטרים הנדרשים</li>
+                                                                <li>• אני יודע/ת שכל פרמטר שלא הגדרתי לא יישלח למשתמש</li>
+                                                                <li>• סקרתי את ה-Flow ומאשר/ת שהכל מוגדר כראוי</li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex justify-end gap-3">
+                                                    <Button
+                                                        variant="outline"
+                                                        onClick={() => {
+                                                            setBulkMessagingStep('config')
+                                                            setParamsApproved(false)
+                                                        }}
+                                                    >
+                                                        חזור
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() => setBulkMessagingStep('confirm')}
+                                                        disabled={!paramsApproved}
+                                                        className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                                    >
+                                                        המשך לאישור
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {bulkMessagingStep === 'confirm' && (
+                                            <div className="space-y-6">
+                                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <div className="w-5 h-5 bg-yellow-100 rounded-full flex items-center justify-center">
+                                                            <span className="text-yellow-600 text-sm">!</span>
+                                                        </div>
+                                                        <h3 className="font-medium text-yellow-800">אישור שליחה</h3>
+                                                    </div>
+                                                    <p className="text-sm text-yellow-700">
+                                                        אתה עומד לשלוח הודעה ל-{getUniquePhoneNumbers().length} מספרים ייחודיים.
+                                                    </p>
+                                                </div>
+
+                                                <div className="bg-gray-50 rounded-lg p-4">
+                                                    <h4 className="font-medium text-gray-900 mb-3">תצוגה מקדימה:</h4>
+                                                    <div className="space-y-2">
+                                                        <p className="text-sm text-gray-600">
+                                                            <span className="font-medium">סוג הודעה:</span> {messagingMode === 'formal' ? 'רשמי (WhatsApp Business API)' : 'לא רשמי (הודעות ארוכות)'}
+                                                        </p>
+                                                        <p className="text-sm text-gray-600">
+                                                            <span className="font-medium">מספר נמענים:</span> {getUniquePhoneNumbers().length}
+                                                        </p>
+                                                        {messagingMode === 'formal' && (
+                                                            <>
+                                                                <p className="text-sm text-gray-600">
+                                                                    <span className="font-medium">Flow ID:</span> {flowId}
+                                                                </p>
+                                                                <p className="text-sm text-gray-600">
+                                                                    <span className="font-medium">קישור הרשמה:</span> {isSendingLink ? (registrationLink ? 'כן' : 'לא מוגדר') : 'לא'}
+                                                                </p>
+                                                            </>
+                                                        )}
+                                                        {messagingMode === 'informal' && messageContent && (
+                                                            <div className="mt-3 p-3 bg-white rounded border">
+                                                                <p className="text-sm font-medium text-gray-700 mb-1">תוכן ההודעה:</p>
+                                                                <p className="text-sm text-gray-600 whitespace-pre-wrap">{messageContent}</p>
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <div className="flex-1 min-w-[70px] px-4 py-3">
-                                                        <span className="whitespace-nowrap rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
-                                                            {registration.class}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex-1 min-w-[120px] px-4 py-3 text-gray-700 whitespace-nowrap">
-                                                        {registration.school}
-                                                    </div>
-                                                    <div className="flex-1 min-w-[120px] px-4 py-3">
-                                                        <div className="flex items-center gap-2 whitespace-nowrap">
-                                                            <Zap className="h-4 w-4 text-yellow-600" />
-                                                            <span className="text-gray-700">{registration.course}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex-1 min-w-[140px] px-4 py-3 text-gray-700 whitespace-nowrap">
-                                                        {registration.parentName}
-                                                    </div>
-                                                    <div className="flex-1 min-w-[120px] px-4 py-3 font-mono text-gray-700 whitespace-nowrap">
-                                                        {registration.parentPhone}
-                                                    </div>
-                                                    <div className="flex-1 min-w-[200px] px-4 py-3">
-                                                        <Popover content={registration.cycle}>
-                                                            <Button variant="outline" size="sm" className="max-w-[180px] truncate whitespace-nowrap border-gray-300 bg-gray-100 text-xs hover:bg-gray-200">
-                                                                {registration.cycle}
-                                                            </Button>
-                                                        </Popover>
-                                                    </div>
-                                                    <div className="flex-1 min-w-[120px] px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">
-                                                        {registration.childName}
-                                                    </div>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </div>
 
-                                    <div className="divide-y divide-gray-200 border-t lg:hidden">
-                                        {paginatedRegistrations.map(registration => (
-                                            <RegistrationCard key={registration.id} registration={registration} />
-                                        ))}
-                                    </div>
-
-                                    <div className="flex flex-col gap-3 border-t bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                                        <div className="text-center text-sm text-gray-700 sm:text-right">
-                                            מציג {startIndex + 1}-{Math.min(endIndex, filteredRegistrations.length)} מתוך {filteredRegistrations.length} רשומות
-                                        </div>
-                                        <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                                disabled={currentPage === 1}
-                                                className="w-full sm:w-auto"
-                                            >
-                                                <ChevronRight className="h-4 w-4" />
-                                                הקודם
-                                            </Button>
-                                            <span className="text-sm text-gray-700 text-center sm:text-right">
-                                                עמוד {currentPage} מתוך {totalPages}
-                                            </span>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                                disabled={currentPage === totalPages}
-                                                className="w-full sm:w-auto"
-                                            >
-                                                הבא
-                                                <ChevronLeft className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="flex items-center justify-center py-16 text-gray-500">
-                                    <div className="px-4 text-center">
-                                        <p className="text-lg font-medium">אין נתונים להצגה</p>
-                                        <p className="mt-2 text-sm text-gray-500">לא נמצאו הרשמות התואמות לסינון הנוכחי</p>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Bulk Messaging Modal */}
-                    {showBulkMessaging && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-                                <div className="p-6">
-                                    <div className="flex items-center justify-between mb-6">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                                <MessageCircle className="w-5 h-5 text-green-600" />
-                                            </div>
-                                            <div>
-                                                <h2 className="text-xl font-semibold text-gray-900">שליחת הודעות WhatsApp</h2>
-                                                <p className="text-sm text-gray-500">שליחת הודעות למשתמשים מסוננים</p>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => {
-                                                setShowBulkMessaging(false)
-                                                setBulkMessagingStep('config')
-                                                setRegistrationLink('')
-                                                setMessageContent('')
-                                                setFlowId('')
-                                                setMessagingMode('formal')
-                                                setIsSendingLink(false)
-                                                setTrackingUrl('')
-                                                setMessageParams({
-                                                    courseName: '',
-                                                    paymentReason: '',
-                                                    arrivalDay: '',
-                                                    arrivalTime: ''
-                                                })
-                                                setParamsApproved(false)
-                                            }}
-                                            className="p-2 text-gray-400 hover:text-gray-600"
-                                        >
-                                            <X className="w-5 h-5" />
-                                        </button>
-                                    </div>
-
-                                    {/* Statistics */}
-                                    <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="text-center">
-                                                <p className="text-2xl font-bold text-blue-600">{filteredRegistrations.length}</p>
-                                                <p className="text-sm text-gray-600">סה"כ משתמשים</p>
-                                            </div>
-                                            <div className="text-center">
-                                                <p className="text-2xl font-bold text-green-600">{getUniquePhoneNumbers().length}</p>
-                                                <p className="text-sm text-gray-600">מספרים ייחודיים</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {bulkMessagingStep === 'config' && (
-                                        <div className="space-y-6">
-                                            {/* Mode Selection */}
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-3">
-                                                    בחר סוג הודעה
-                                                </label>
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <button
-                                                        onClick={() => setMessagingMode('formal')}
-                                                        className={`p-4 rounded-lg border-2 transition-colors ${messagingMode === 'formal'
-                                                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                                                            }`}
-                                                    >
-                                                        <div className="text-center">
-                                                            <div className="font-medium mb-1">רשמי</div>
-                                                            <div className="text-xs text-gray-500">WhatsApp Business API</div>
-                                                        </div>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setMessagingMode('informal')}
-                                                        className={`p-4 rounded-lg border-2 transition-colors ${messagingMode === 'informal'
-                                                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                                                            }`}
-                                                    >
-                                                        <div className="text-center">
-                                                            <div className="font-medium mb-1">לא רשמי</div>
-                                                            <div className="text-xs text-gray-500">הודעות ארוכות</div>
-                                                        </div>
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            {/* Formal Mode Fields */}
-                                            {messagingMode === 'formal' && (
-                                                <>
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                            Flow ID
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            value={flowId}
-                                                            onChange={(e) => setFlowId(e.target.value)}
-                                                            placeholder="content20250910073225_988996"
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                        />
-                                                        <p className="text-xs text-gray-500 mt-1">
-                                                            הזן את מזהה ה-Flow מה-WhatsApp Business API
-                                                        </p>
-                                                    </div>
-
-                                                </>
-                                            )}
-
-                                            {/* Informal Mode Fields */}
-                                            {messagingMode === 'informal' && (
-                                                <>
-                                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <div className="w-5 h-5 bg-yellow-100 rounded-full flex items-center justify-center">
-                                                                <span className="text-yellow-600 text-sm">!</span>
+                                                {/* Tracking URL Section - shown after successful send */}
+                                                {trackingUrl && (
+                                                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                                        <div className="flex items-center gap-2 mb-3">
+                                                            <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+                                                                <span className="text-green-600 text-sm">✓</span>
                                                             </div>
-                                                            <h3 className="font-medium text-yellow-800">שירות זמנית לא זמין</h3>
+                                                            <h3 className="font-medium text-green-800">הודעות נשלחו בהצלחה!</h3>
                                                         </div>
-                                                        <p className="text-sm text-yellow-700">
-                                                            אנו עדיין לא תומכים בהודעות WhatsApp לא רשמיות. אנא בחר במצב רשמי.
+                                                        <p className="text-sm text-green-700 mb-3">
+                                                            אתה יכול לבדוק את הסטטוס כאן:
                                                         </p>
-                                                    </div>
-
-                                                    <div className="opacity-50">
-                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                            תוכן ההודעה הארוכה
-                                                        </label>
-                                                        <textarea
-                                                            value={messageContent}
-                                                            onChange={(e) => setMessageContent(e.target.value)}
-                                                            placeholder="הזן את תוכן ההודעה הארוכה שתישלח..."
-                                                            rows={6}
-                                                            disabled
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
-                                                        />
-                                                        <p className="text-xs text-gray-500 mt-1">
-                                                            שדה זה יהיה זמין בעתיד
-                                                        </p>
-                                                    </div>
-                                                </>
-                                            )}
-
-                                            <div className="flex items-center justify-end gap-3 pt-4">
-                                                <Button
-                                                    variant="outline"
-                                                    onClick={() => setShowBulkMessaging(false)}
-                                                >
-                                                    ביטול
-                                                </Button>
-                                                <Button
-                                                    onClick={() => setBulkMessagingStep('params')}
-                                                    disabled={messagingMode === 'formal' ? !flowId.trim() : true}
-                                                    className="bg-green-600 hover:bg-green-700"
-                                                >
-                                                    המשך
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {bulkMessagingStep === 'params' && (
-                                        <div className="space-y-6">
-                                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
-                                                        <span className="text-blue-600 text-sm">i</span>
-                                                    </div>
-                                                    <h3 className="font-medium text-blue-800">הגדרת פרמטרים</h3>
-                                                </div>
-                                                <p className="text-sm text-blue-700">
-                                                    הגדר את הפרמטרים שיישלחו בהודעה. כל הפרמטרים הם אופציונליים.
-                                                </p>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 gap-4">
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                        שם החוג
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        value={messageParams.courseName}
-                                                        onChange={(e) => setMessageParams(prev => ({ ...prev, courseName: e.target.value }))}
-                                                        placeholder="הזן שם החוג"
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    />
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                        סיבת בקשת תשלום
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        value={messageParams.paymentReason}
-                                                        onChange={(e) => setMessageParams(prev => ({ ...prev, paymentReason: e.target.value }))}
-                                                        placeholder="הזן סיבת בקשת התשלום"
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    />
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                        יום הגעה לחוג
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        value={messageParams.arrivalDay}
-                                                        onChange={(e) => setMessageParams(prev => ({ ...prev, arrivalDay: e.target.value }))}
-                                                        placeholder="למשל: יום שני"
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    />
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                        שעת הגעה לחוג
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        value={messageParams.arrivalTime}
-                                                        onChange={(e) => setMessageParams(prev => ({ ...prev, arrivalTime: e.target.value }))}
-                                                        placeholder="למשל: 16:00"
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {/* Registration Link Section */}
-                                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                                                <div className="flex items-center gap-2 mb-3">
-                                                    <input
-                                                        type="checkbox"
-                                                        id="sendingLink"
-                                                        checked={isSendingLink}
-                                                        onChange={(e) => setIsSendingLink(e.target.checked)}
-                                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                                    />
-                                                    <label htmlFor="sendingLink" className="text-sm font-medium text-gray-700">
-                                                        אני שולח קישור הרשמה
-                                                    </label>
-                                                </div>
-
-                                                {isSendingLink && (
-                                                    <div>
-                                                        <input
-                                                            type="url"
-                                                            value={registrationLink}
-                                                            onChange={(e) => setRegistrationLink(e.target.value)}
-                                                            placeholder="קישור בסיס (עם פרמטר שאילתה)"
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                        />
-                                                        <p className="text-xs text-gray-500 mt-1">
-                                                            הקישור יושלם עם מזהה כל רשומה: {registrationLink ? `${registrationLink}123` : 'https://example.com/register?id=123'}
-                                                        </p>
+                                                        <div className="flex items-center gap-2">
+                                                            <input
+                                                                type="text"
+                                                                value={trackingUrl}
+                                                                readOnly
+                                                                className="flex-1 px-3 py-2 border border-green-300 rounded-md bg-white text-sm font-mono"
+                                                            />
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => navigator.clipboard.writeText(trackingUrl)}
+                                                                className="text-green-600 hover:text-green-700 border-green-300 hover:bg-green-50"
+                                                            >
+                                                                העתק
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                onClick={() => window.open(trackingUrl, '_blank')}
+                                                                className="bg-green-600 hover:bg-green-700"
+                                                            >
+                                                                פתח
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 )}
-                                            </div>
 
-                                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                                <div className="flex items-start gap-3">
-                                                    <input
-                                                        type="checkbox"
-                                                        id="paramsApproval"
-                                                        checked={paramsApproved}
-                                                        onChange={(e) => setParamsApproved(e.target.checked)}
-                                                        className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                                    />
-                                                    <div className="flex-1">
-                                                        <label htmlFor="paramsApproval" className="text-sm font-medium text-gray-700 cursor-pointer">
-                                                            אני מאשר/ת את הפרמטרים הבאים
-                                                        </label>
-                                                        <ul className="text-xs text-gray-600 mt-2 space-y-1">
-                                                            <li>• סקרתי את ההודעות והפרמטרים הנדרשים</li>
-                                                            <li>• אני יודע/ת שכל פרמטר שלא הגדרתי לא יישלח למשתמש</li>
-                                                            <li>• סקרתי את ה-Flow ומאשר/ת שהכל מוגדר כראוי</li>
-                                                        </ul>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex justify-end gap-3">
-                                                <Button
-                                                    variant="outline"
-                                                    onClick={() => {
-                                                        setBulkMessagingStep('config')
-                                                        setParamsApproved(false)
-                                                    }}
-                                                >
-                                                    חזור
-                                                </Button>
-                                                <Button
-                                                    onClick={() => setBulkMessagingStep('confirm')}
-                                                    disabled={!paramsApproved}
-                                                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                                >
-                                                    המשך לאישור
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {bulkMessagingStep === 'confirm' && (
-                                        <div className="space-y-6">
-                                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <div className="w-5 h-5 bg-yellow-100 rounded-full flex items-center justify-center">
-                                                        <span className="text-yellow-600 text-sm">!</span>
-                                                    </div>
-                                                    <h3 className="font-medium text-yellow-800">אישור שליחה</h3>
-                                                </div>
-                                                <p className="text-sm text-yellow-700">
-                                                    אתה עומד לשלוח הודעה ל-{getUniquePhoneNumbers().length} מספרים ייחודיים.
-                                                </p>
-                                            </div>
-
-                                            <div className="bg-gray-50 rounded-lg p-4">
-                                                <h4 className="font-medium text-gray-900 mb-3">תצוגה מקדימה:</h4>
-                                                <div className="space-y-2">
-                                                    <p className="text-sm text-gray-600">
-                                                        <span className="font-medium">סוג הודעה:</span> {messagingMode === 'formal' ? 'רשמי (WhatsApp Business API)' : 'לא רשמי (הודעות ארוכות)'}
-                                                    </p>
-                                                    <p className="text-sm text-gray-600">
-                                                        <span className="font-medium">מספר נמענים:</span> {getUniquePhoneNumbers().length}
-                                                    </p>
-                                                    {messagingMode === 'formal' && (
-                                                        <>
-                                                            <p className="text-sm text-gray-600">
-                                                                <span className="font-medium">Flow ID:</span> {flowId}
-                                                            </p>
-                                                            <p className="text-sm text-gray-600">
-                                                                <span className="font-medium">קישור הרשמה:</span> {isSendingLink ? (registrationLink ? 'כן' : 'לא מוגדר') : 'לא'}
-                                                            </p>
-                                                        </>
-                                                    )}
-                                                    {messagingMode === 'informal' && messageContent && (
-                                                        <div className="mt-3 p-3 bg-white rounded border">
-                                                            <p className="text-sm font-medium text-gray-700 mb-1">תוכן ההודעה:</p>
-                                                            <p className="text-sm text-gray-600 whitespace-pre-wrap">{messageContent}</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Tracking URL Section - shown after successful send */}
-                                            {trackingUrl && (
-                                                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                                                    <div className="flex items-center gap-2 mb-3">
-                                                        <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
-                                                            <span className="text-green-600 text-sm">✓</span>
-                                                        </div>
-                                                        <h3 className="font-medium text-green-800">הודעות נשלחו בהצלחה!</h3>
-                                                    </div>
-                                                    <p className="text-sm text-green-700 mb-3">
-                                                        אתה יכול לבדוק את הסטטוס כאן:
-                                                    </p>
-                                                    <div className="flex items-center gap-2">
-                                                        <input
-                                                            type="text"
-                                                            value={trackingUrl}
-                                                            readOnly
-                                                            className="flex-1 px-3 py-2 border border-green-300 rounded-md bg-white text-sm font-mono"
-                                                        />
+                                                <div className="flex items-center justify-end gap-3 pt-4">
+                                                    <Button
+                                                        variant="outline"
+                                                        onClick={() => setBulkMessagingStep('config')}
+                                                    >
+                                                        חזור
+                                                    </Button>
+                                                    {!trackingUrl && (
                                                         <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => navigator.clipboard.writeText(trackingUrl)}
-                                                            className="text-green-600 hover:text-green-700 border-green-300 hover:bg-green-50"
-                                                        >
-                                                            העתק
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            onClick={() => window.open(trackingUrl, '_blank')}
+                                                            onClick={sendBulkMessages}
                                                             className="bg-green-600 hover:bg-green-700"
                                                         >
-                                                            פתח
+                                                            <Send className="w-4 h-4 mr-2" />
+                                                            שלח הודעות
                                                         </Button>
-                                                    </div>
+                                                    )}
+                                                    {trackingUrl && (
+                                                        <Button
+                                                            onClick={() => {
+                                                                setShowBulkMessaging(false)
+                                                                setBulkMessagingStep('config')
+                                                                setRegistrationLink('')
+                                                                setMessageContent('')
+                                                                setFlowId('')
+                                                                setMessagingMode('formal')
+                                                                setIsSendingLink(false)
+                                                                setTrackingUrl('')
+                                                                setMessageParams({
+                                                                    courseName: '',
+                                                                    paymentReason: '',
+                                                                    arrivalDay: '',
+                                                                    arrivalTime: ''
+                                                                })
+                                                                setParamsApproved(false)
+                                                            }}
+                                                            className="bg-blue-600 hover:bg-blue-700"
+                                                        >
+                                                            סגור
+                                                        </Button>
+                                                    )}
                                                 </div>
-                                            )}
-
-                                            <div className="flex items-center justify-end gap-3 pt-4">
-                                                <Button
-                                                    variant="outline"
-                                                    onClick={() => setBulkMessagingStep('config')}
-                                                >
-                                                    חזור
-                                                </Button>
-                                                {!trackingUrl && (
-                                                    <Button
-                                                        onClick={sendBulkMessages}
-                                                        className="bg-green-600 hover:bg-green-700"
-                                                    >
-                                                        <Send className="w-4 h-4 mr-2" />
-                                                        שלח הודעות
-                                                    </Button>
-                                                )}
-                                                {trackingUrl && (
-                                                    <Button
-                                                        onClick={() => {
-                                                            setShowBulkMessaging(false)
-                                                            setBulkMessagingStep('config')
-                                                            setRegistrationLink('')
-                                                            setMessageContent('')
-                                                            setFlowId('')
-                                                            setMessagingMode('formal')
-                                                            setIsSendingLink(false)
-                                                            setTrackingUrl('')
-                                                            setMessageParams({
-                                                                courseName: '',
-                                                                paymentReason: '',
-                                                                arrivalDay: '',
-                                                                arrivalTime: ''
-                                                            })
-                                                            setParamsApproved(false)
-                                                        }}
-                                                        className="bg-blue-600 hover:bg-blue-700"
-                                                    >
-                                                        סגור
-                                                    </Button>
-                                                )}
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
 
-                                    {bulkMessagingStep === 'sending' && (
-                                        <div className="text-center py-8">
-                                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-                                            <h3 className="text-lg font-medium text-gray-900 mb-2">שולח הודעות...</h3>
-                                            <p className="text-sm text-gray-600">
-                                                נא להמתין בזמן שליחת ההודעות ל-{getUniquePhoneNumbers().length} מספרים
-                                            </p>
-                                        </div>
-                                    )}
+                                        {bulkMessagingStep === 'sending' && (
+                                            <div className="text-center py-8">
+                                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                                                <h3 className="text-lg font-medium text-gray-900 mb-2">שולח הודעות...</h3>
+                                                <p className="text-sm text-gray-600">
+                                                    נא להמתין בזמן שליחת ההודעות ל-{getUniquePhoneNumbers().length} מספרים
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* Footer */}
-                    <AppFooter />
-                </>
+                        {/* Footer */}
+                        <AppFooter />
+                    </>
+                </div>
             )}
         </div>
     )
