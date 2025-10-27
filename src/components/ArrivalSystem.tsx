@@ -61,6 +61,8 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
     const [arrivalStatuses, setArrivalStatuses] = useState<Record<string, boolean>>({})
     const [notes, setNotes] = useState<Record<string, string>>({}) // studentId -> note text
     const [noteEditMode, setNoteEditMode] = useState<string | null>(null) // studentId currently being edited
+    const [notePopupOpen, setNotePopupOpen] = useState<string | null>(null) // studentId for popup dialog
+    const [tempNoteValue, setTempNoteValue] = useState<string>('') // Temporary value for popup
     const [isSaving, setIsSaving] = useState(false)
     const [isLoadingAttendance, setIsLoadingAttendance] = useState(false)
 
@@ -128,8 +130,46 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         }))
     }
 
+    const handleOpenNotePopup = (studentId: string) => {
+        setNotePopupOpen(studentId)
+        setTempNoteValue(notes[studentId] || '')
+    }
+
+    const handleCloseNotePopup = () => {
+        setNotePopupOpen(null)
+        setTempNoteValue('')
+    }
+
+    const handleSaveNote = (studentId: string) => {
+        setNotes(prev => ({ ...prev, [studentId]: tempNoteValue }))
+        handleCloseNotePopup()
+    }
+
+    // Handle ESC key to close popup
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && notePopupOpen) {
+                handleCloseNotePopup()
+            }
+        }
+        document.addEventListener('keydown', handleEscape)
+        return () => document.removeEventListener('keydown', handleEscape)
+    }, [notePopupOpen])
+
     // All required fields for displaying the table (date is optional, for marking attendance)
     const allFieldsSelected = selectedFilters.course && selectedFilters.school && selectedFilters.cohort
+
+    // Early return for loading state - MUST be before all hooks to avoid "Rendered fewer hooks" error
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">טוען...</p>
+                </div>
+            </div>
+        )
+    }
 
     // Sync filters to URL params
     useEffect(() => {
@@ -185,6 +225,12 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
 
                     if (error) {
                         console.error('Error calling get-attendance:', error)
+                        // Don't show error toast for 502s if it's just the function starting up
+                        if (!error.message?.includes('502')) {
+                            toast.error('שגיאה בטעינת נתוני הגעה', {
+                                description: error.message || 'Unknown error'
+                            })
+                        }
                         setIsLoadingAttendance(false)
                         return
                     }
@@ -199,8 +245,14 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                     } else {
                         console.log('No attendance data found for this date')
                     }
-                } catch (error) {
+                } catch (error: any) {
                     console.error('Error fetching attendance:', error)
+                    // Don't show error toast for 502s if it's just the function starting up
+                    if (!error.message?.includes('502') && !error.message?.includes('Bad Gateway')) {
+                        toast.error('שגיאה בטעינת נתוני הגעה', {
+                            description: error.message || 'Unknown error'
+                        })
+                    }
                 } finally {
                     setIsLoadingAttendance(false)
                 }
@@ -281,17 +333,6 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
         } finally {
             setIsSaving(false)
         }
-    }
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">טוען...</p>
-                </div>
-            </div>
-        )
     }
 
     // Fetch full attendance history once when entering history mode
@@ -673,7 +714,7 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                                                 )}
                                                             </div>
                                                             <button
-                                                                onClick={() => setNoteEditMode(registration.id)}
+                                                                onClick={() => handleOpenNotePopup(registration.id)}
                                                                 className="text-xs text-blue-600 hover:text-blue-800"
                                                             >
                                                                 {notes[registration.id] ? 'ערוך' : 'הוסף'}
@@ -822,6 +863,55 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                     <p className="text-sm text-blue-700 mt-2">
                         תאריך משמש לסמן הגעה - נא לבחור תאריך גם כן
                     </p>
+                </div>
+            )}
+
+            {/* Note Popup Modal */}
+            {notePopupOpen && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                    onClick={handleCloseNotePopup}
+                >
+                    <div
+                        className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4"
+                        dir="rtl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-gray-900">הוסף הערה</h3>
+                            <button
+                                onClick={handleCloseNotePopup}
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <textarea
+                            value={tempNoteValue}
+                            onChange={(e) => setTempNoteValue(e.target.value)}
+                            placeholder="הקלד הערה..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px] resize-none text-sm"
+                            dir="rtl"
+                            autoFocus
+                        />
+
+                        <div className="flex gap-2 mt-4">
+                            <Button
+                                onClick={() => handleSaveNote(notePopupOpen)}
+                                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                            >
+                                שמור
+                            </Button>
+                            <Button
+                                onClick={handleCloseNotePopup}
+                                variant="outline"
+                                className="flex-1"
+                            >
+                                ביטול
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
