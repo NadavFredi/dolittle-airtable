@@ -645,9 +645,9 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                                     <div className="flex items-center gap-2">
                                                         <span>{registration.childName}</span>
                                                         {notes[registration.id] && (
-                                                            <div className="relative">
+                                                            <div className="relative group/name-tooltip">
                                                                 <FileText className="w-4 h-4 text-blue-500" />
-                                                                <div className="absolute bottom-full right-0 mb-2 w-64 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                                                <div className="absolute bottom-full right-0 mb-2 w-64 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10 opacity-0 group-hover/name-tooltip:opacity-100 transition-opacity pointer-events-none">
                                                                     {notes[registration.id]}
                                                                 </div>
                                                             </div>
@@ -701,14 +701,14 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                                         </div>
                                                     ) : (
                                                         <div className="flex items-center gap-2">
-                                                            <div className="relative">
+                                                            <div className="relative group/tooltip">
                                                                 {notes[registration.id] ? (
                                                                     <FileText className="w-4 h-4 text-blue-600" />
                                                                 ) : (
                                                                     <FileText className="w-4 h-4 text-gray-300" />
                                                                 )}
                                                                 {notes[registration.id] && (
-                                                                    <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10 pointer-events-none">
+                                                                    <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10 pointer-events-none opacity-0 group-hover/tooltip:opacity-100 transition-opacity">
                                                                         {notes[registration.id]}
                                                                     </div>
                                                                 )}
@@ -835,9 +835,9 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                                                                 <span className="text-red-400 text-xl">✗</span>
                                                             )}
                                                             {hasNote && (
-                                                                <div className="relative">
+                                                                <div className="relative group/history-tooltip">
                                                                     <FileText className="w-3 h-3 text-blue-500" />
-                                                                    <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                                                    <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10 opacity-0 group-hover/history-tooltip:opacity-100 transition-opacity pointer-events-none">
                                                                         {hasNote}
                                                                     </div>
                                                                 </div>
