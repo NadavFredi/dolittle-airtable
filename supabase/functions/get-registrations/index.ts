@@ -77,6 +77,7 @@ serve(async (req) => {
     const fetchAllRecords = async (tableName: string) => {
       const allRecords: any[] = []
       let offset: string | undefined = undefined
+      console.log("fetching records from", tableName)
 
       while (true) {
         const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${tableName}${offset ? `?offset=${offset}` : ""}`
@@ -94,6 +95,7 @@ serve(async (req) => {
         }
 
         const data = await response.json()
+
         allRecords.push(...data.records)
 
         if (data.offset) {
@@ -152,10 +154,11 @@ serve(async (req) => {
       const cycleId = getFirstValue(record.fields["מחזור"])
       const courseId = getFirstValue(record.fields["חוג"])
       const schoolId = getFirstValue(record.fields["בית ספר"])
+      const fullChildName = getFirstValue(record.fields["שם מלא ילד"]) || getFirstValue(record.fields["שם הילד"])
 
       return {
         id: record.id,
-        childName: getFirstValue(record.fields["שם הילד"]),
+        childName: fullChildName,
         cycle: cycleMap.get(cycleId) || cycleId,
         cohortId: cycleId, // מזהה רשומת מחזור - the cohort record ID
         parentPhone: record.fields["טלפון הורה"] || "",
