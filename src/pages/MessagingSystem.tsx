@@ -16,6 +16,7 @@ interface Registration {
     trialDate: string
     inWhatsAppGroup: boolean
     registrationStatus: string
+    discountType?: string
 }
 
 interface MessagingSystemProps {
@@ -26,6 +27,7 @@ interface MessagingSystemProps {
         courses: string[]
         classes: string[]
         registrationStatuses: string[]
+        discountTypes: string[]
     }
     loading: boolean
     error: string | null

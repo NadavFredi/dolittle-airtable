@@ -155,6 +155,7 @@ serve(async (req) => {
       const courseId = getFirstValue(record.fields["חוג"])
       const schoolId = getFirstValue(record.fields["בית ספר"])
       const fullChildName = getFirstValue(record.fields["שם מלא ילד"]) || getFirstValue(record.fields["שם הילד"])
+      const discountType = getFirstValue(record.fields["סוג הנחה"])
 
       return {
         id: record.id,
@@ -170,6 +171,7 @@ serve(async (req) => {
         trialDate: record.fields["תאריך הגעה לשיעור ניסיון"] || "",
         inWhatsAppGroup: record.fields["האם בקבוצת הוואטסאפ"] || false,
         registrationStatus: record.fields["סטטוס רישום לחוג"] || "",
+        discountType,
       }
     })
 
@@ -180,6 +182,7 @@ serve(async (req) => {
       courses: Array.from(courseMap.values()).filter(Boolean),
       classes: [...new Set(registrations.map((r) => r.class))].filter(Boolean),
       registrationStatuses: [...new Set(registrations.map((r) => r.registrationStatus))].filter(Boolean),
+      discountTypes: [...new Set(registrations.map((r) => r.discountType))].filter(Boolean),
     }
 
     return new Response(

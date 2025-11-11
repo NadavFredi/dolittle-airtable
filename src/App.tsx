@@ -27,6 +27,7 @@ interface Registration {
     trialDate: string
     inWhatsAppGroup: boolean
     registrationStatus: string
+    discountType?: string
 }
 
 // Filter groups system
@@ -66,6 +67,7 @@ const FilterCondition = ({
             case 'cycle': return filterOptions.cycles
             case 'class': return filterOptions.classes
             case 'registrationStatus': return filterOptions.registrationStatuses
+            case 'discountType': return filterOptions.discountTypes
             case 'needsPickup':
             case 'inWhatsAppGroup': return ['כן', 'לא']
             default: return []
@@ -284,6 +286,12 @@ const RegistrationCard = ({ registration }: { registration: Registration }) => {
                     <span className="text-gray-500">סטטוס</span>
                     <span className="text-right">{registration.registrationStatus || '—'}</span>
                 </div>
+                {registration.discountType && (
+                    <div className="flex justify-between gap-4">
+                        <span className="text-gray-500">סוג הנחה</span>
+                        <span className="text-right">{registration.discountType}</span>
+                    </div>
+                )}
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
@@ -334,7 +342,17 @@ const App: React.FC = () => {
         cycles: [] as string[],
         courses: [] as string[],
         classes: [] as string[],
-        registrationStatuses: [] as string[]
+        registrationStatuses: [] as string[],
+        discountTypes: [] as string[]
+    })
+
+    const normalizeFilterOptions = (options: any = {}) => ({
+        schools: Array.isArray(options.schools) ? options.schools : [],
+        cycles: Array.isArray(options.cycles) ? options.cycles : [],
+        courses: Array.isArray(options.courses) ? options.courses : [],
+        classes: Array.isArray(options.classes) ? options.classes : [],
+        registrationStatuses: Array.isArray(options.registrationStatuses) ? options.registrationStatuses : [],
+        discountTypes: Array.isArray(options.discountTypes) ? options.discountTypes : []
     })
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
@@ -349,6 +367,7 @@ const App: React.FC = () => {
         needsPickup: '',
         inWhatsAppGroup: '',
         registrationStatus: '',
+        discountType: '',
         trialDate: null as Date | null
     })
 
@@ -358,9 +377,10 @@ const App: React.FC = () => {
         cycles: [] as string[],
         courses: [] as string[],
         classes: [] as string[],
+        registrationStatuses: [] as string[],
+        discountTypes: [] as string[],
         needsPickup: null as boolean | null,
         inWhatsAppGroup: null as boolean | null,
-        registrationStatuses: [] as string[],
         operator: 'AND' as 'AND' | 'OR'
     })
 
@@ -400,7 +420,8 @@ const App: React.FC = () => {
         { value: 'trialDate', label: 'תאריך הגעה לשיעור ניסיון' },
         { value: 'needsPickup', label: 'איסוף מהצהרון' },
         { value: 'inWhatsAppGroup', label: 'בקבוצת הוואטסאפ' },
-        { value: 'registrationStatus', label: 'סטטוס רישום' }
+        { value: 'registrationStatus', label: 'סטטוס רישום' },
+        { value: 'discountType', label: 'סוג הנחה' }
     ]
 
     const operatorOptions = [
@@ -422,6 +443,7 @@ const App: React.FC = () => {
         { value: 'course' as keyof Registration, label: 'חוג' },
         { value: 'parentName' as keyof Registration, label: 'שם הורה' },
         { value: 'parentPhone' as keyof Registration, label: 'טלפון הורה' },
+        { value: 'discountType' as keyof Registration, label: 'סוג הנחה' },
         { value: 'cycle' as keyof Registration, label: 'מחזור' },
         { value: 'childName' as keyof Registration, label: 'שם הילד' },
     ]), [])
@@ -472,7 +494,7 @@ const App: React.FC = () => {
                                 console.log('Using cached data')
                                 const parsedData = JSON.parse(cachedData)
                                 setRegistrations(parsedData.registrations)
-                                setFilterOptions(parsedData.filterOptions)
+                                setFilterOptions(normalizeFilterOptions(parsedData.filterOptions))
                                 setLoading(false)
                                 return
                             }
@@ -512,14 +534,15 @@ const App: React.FC = () => {
                 if (result.success) {
                     setRegistrations(result.data)
                     if (result.filterOptions) {
-                        setFilterOptions(result.filterOptions)
+                    setFilterOptions(normalizeFilterOptions(result.filterOptions))
                     }
 
                     // Cache the data safely
                     try {
+                        const normalizedOptions = normalizeFilterOptions(result.filterOptions)
                         const dataToCache = {
                             registrations: result.data,
-                            filterOptions: result.filterOptions
+                            filterOptions: normalizedOptions
                         }
                         localStorage.setItem(cacheKey, JSON.stringify(dataToCache))
                         localStorage.setItem(`${cacheKey}-timestamp`, Date.now().toString())
@@ -674,6 +697,11 @@ const App: React.FC = () => {
                     conditions.push(advancedFilters.registrationStatuses.includes(reg.registrationStatus))
                 }
 
+                // Discount types filter (OR within discount types)
+                if (advancedFilters.discountTypes.length > 0) {
+                    conditions.push(advancedFilters.discountTypes.includes(reg.discountType || ''))
+                }
+
                 // Boolean filters
                 if (advancedFilters.needsPickup !== null) {
                     conditions.push(reg.needsPickup === advancedFilters.needsPickup)
@@ -700,6 +728,7 @@ const App: React.FC = () => {
                 if (filters.needsPickup && reg.needsPickup.toString() !== filters.needsPickup) return false
                 if (filters.inWhatsAppGroup && reg.inWhatsAppGroup.toString() !== filters.inWhatsAppGroup) return false
                 if (filters.registrationStatus && reg.registrationStatus !== filters.registrationStatus) return false
+                if (filters.discountType && (reg.discountType || '') !== filters.discountType) return false
                 if (filters.trialDate && reg.trialDate) {
                     const regDate = new Date(reg.trialDate)
                     const filterDate = filters.trialDate
@@ -724,7 +753,8 @@ const App: React.FC = () => {
                     reg.class.toLowerCase().includes(query) ||
                     reg.cycle.toLowerCase().includes(query) ||
                     reg.trialDate.includes(query) ||
-                    reg.registrationStatus.toLowerCase().includes(query)
+                    reg.registrationStatus.toLowerCase().includes(query) ||
+                    (reg.discountType ? reg.discountType.toLowerCase().includes(query) : false)
                 )
             })
         }
@@ -780,6 +810,7 @@ const App: React.FC = () => {
             needsPickup: '',
             inWhatsAppGroup: '',
             registrationStatus: '',
+            discountType: '',
             trialDate: null
         })
     }
@@ -790,9 +821,10 @@ const App: React.FC = () => {
             cycles: [],
             courses: [],
             classes: [],
+            registrationStatuses: [],
+            discountTypes: [],
             needsPickup: null,
             inWhatsAppGroup: null,
-            registrationStatuses: [],
             operator: 'AND'
         })
     }
@@ -1013,7 +1045,7 @@ const App: React.FC = () => {
                 if (result.success) {
                     setRegistrations(result.data)
                     if (result.filterOptions) {
-                        setFilterOptions(result.filterOptions)
+                        setFilterOptions(normalizeFilterOptions(result.filterOptions))
                     }
 
                     // Cache the fresh data safely
@@ -1458,6 +1490,15 @@ const App: React.FC = () => {
                                                 className="min-w-[140px]"
                                             />
 
+                                            <Autocomplete
+                                                options={filterOptions.discountTypes.map(type => ({ label: type, value: type }))}
+                                                value={filters.discountType}
+                                                onSelect={(value) => handleFilterChange('discountType', value)}
+                                                placeholder="סוג הנחה"
+                                                allowClear={true}
+                                                className="min-w-[140px]"
+                                            />
+
                                             <div className="flex flex-col gap-1">
                                                 <label className="text-xs text-gray-600 font-medium">
                                                     תאריך הגעה לשיעור ניסיון
@@ -1475,10 +1516,16 @@ const App: React.FC = () => {
 
                                     {/* Clear Button */}
                                     {(isAdvancedMode ?
-                                        (filterGroups.length > 0 || advancedFilters.schools.length > 0 || advancedFilters.cycles.length > 0 || advancedFilters.courses.length > 0 ||
-                                            advancedFilters.classes.length > 0 || advancedFilters.registrationStatuses.length > 0 ||
-                                            advancedFilters.needsPickup !== null || advancedFilters.inWhatsAppGroup !== null) :
-                                        (filters.school || filters.cycle || filters.course || filters.class || filters.needsPickup || filters.inWhatsAppGroup || filters.registrationStatus || filters.trialDate)
+                                        (filterGroups.length > 0 ||
+                                            advancedFilters.schools.length > 0 ||
+                                            advancedFilters.cycles.length > 0 ||
+                                            advancedFilters.courses.length > 0 ||
+                                            advancedFilters.classes.length > 0 ||
+                                            advancedFilters.registrationStatuses.length > 0 ||
+                                            advancedFilters.discountTypes.length > 0 ||
+                                            advancedFilters.needsPickup !== null ||
+                                            advancedFilters.inWhatsAppGroup !== null) :
+                                        (filters.school || filters.cycle || filters.course || filters.class || filters.needsPickup || filters.inWhatsAppGroup || filters.registrationStatus || filters.discountType || filters.trialDate)
                                     ) && (
                                             <Button
                                                 variant="outline"
@@ -1589,6 +1636,14 @@ const App: React.FC = () => {
                                             )}
                                         </div>
                                     </div>
+                                    <div className="flex-1 min-w-[140px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('discountType')}>
+                                        <div className="flex items-center justify-center gap-2">
+                                            סוג הנחה
+                                            {sortConfig.key === 'discountType' && (
+                                                sortConfig.direction === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+                                            )}
+                                        </div>
+                                    </div>
                                     <div className="flex-1 min-w-[200px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('cycle')}>
                                         <div className="flex items-center justify-center gap-2">
                                             מחזור
@@ -1679,6 +1734,9 @@ const App: React.FC = () => {
                                                         </div>
                                                         <div className="flex-1 min-w-[120px] px-4 py-3 font-mono text-gray-700 whitespace-nowrap">
                                                             {registration.parentPhone}
+                                                        </div>
+                                                        <div className="flex-1 min-w-[140px] px-4 py-3 text-gray-700 whitespace-nowrap">
+                                                            {registration.discountType || '—'}
                                                         </div>
                                                         <div className="flex-1 min-w-[200px] px-4 py-3">
                                                             <Popover content={registration.cycle}>
