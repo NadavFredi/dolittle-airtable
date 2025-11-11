@@ -534,7 +534,7 @@ const App: React.FC = () => {
                 if (result.success) {
                     setRegistrations(result.data)
                     if (result.filterOptions) {
-                    setFilterOptions(normalizeFilterOptions(result.filterOptions))
+                        setFilterOptions(normalizeFilterOptions(result.filterOptions))
                     }
 
                     // Cache the data safely
@@ -1420,7 +1420,7 @@ const App: React.FC = () => {
                                         </div>
                                     ) : (
                                         // Simple Filters
-                                        <div className="flex items-center gap-3 flex-wrap">
+                                        <div className="flex items-end gap-3 flex-wrap">
                                             <Autocomplete
                                                 options={filterOptions.schools.map(school => ({ label: school, value: school }))}
                                                 value={filters.school}
@@ -1499,7 +1499,7 @@ const App: React.FC = () => {
                                                 className="min-w-[140px]"
                                             />
 
-                                            <div className="flex flex-col gap-1">
+                                            <div className="flex flex-col gap-1 self-end">
                                                 <label className="text-xs text-gray-600 font-medium">
                                                     תאריך הגעה לשיעור ניסיון
                                                 </label>
