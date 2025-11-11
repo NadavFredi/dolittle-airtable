@@ -1099,7 +1099,7 @@ const App: React.FC = () => {
             {location.pathname !== '/arrivals' && (
                 <>
                     <nav className="bg-white shadow-sm border-b">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+                        <div className="max-w-[110rem] mx-auto px-4 sm:px-6 py-3 sm:py-4">
                             <div className="flex items-center justify-between">
                                 {/* Logo */}
                                 <Link to="/" className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
@@ -1289,7 +1289,7 @@ const App: React.FC = () => {
                     <>
                         {/* Search Bar */}
                         <div className="bg-white border-b">
-                            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+                            <div className="max-w-[110rem] mx-auto px-4 sm:px-6 py-4">
                                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                                     <div className="w-full sm:flex-1">
                                         <div className="relative">
@@ -1321,7 +1321,7 @@ const App: React.FC = () => {
 
                         {/* Filter Bar */}
                         <div className="border-b bg-white">
-                            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+                            <div className="max-w-[110rem] mx-auto px-4 sm:px-6 py-3">
                                 <div className="flex items-center gap-4 flex-wrap">
                                     <div className="flex items-center gap-2">
                                         <Filter className="h-4 w-4 text-gray-500" />
@@ -1542,7 +1542,7 @@ const App: React.FC = () => {
 
                         {/* Grouping Section */}
                         <div className="bg-white border-b">
-                            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+                            <div className="max-w-[110rem] mx-auto px-4 sm:px-6 py-3">
                                 <div className="flex items-center gap-4 flex-wrap">
                                     {filters.course && (
                                         <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1 rounded-md">
@@ -1577,7 +1577,7 @@ const App: React.FC = () => {
 
                         {/* Data Table */}
                         <div className="bg-white">
-                            <div className="max-w-7xl mx-auto px-4 sm:px-6">
+                            <div className="max-w-[110rem] mx-auto px-4 sm:px-6">
                                 {/* Table Header */}
                                 <div className="hidden items-center border-b bg-gray-50 py-3 lg:flex">
                                     <div className="flex-1 min-w-[140px] px-4 text-center font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 select-none" onClick={() => handleSort('trialDate')}>
