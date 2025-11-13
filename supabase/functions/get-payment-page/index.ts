@@ -12,7 +12,7 @@ interface PaymentPageRecord {
     "סוג תשלום"?: string
     "כמות תשלומים"?: number
     "כמות תשלומים מקסימלית"?: number
-    "סכום"?: number
+    "סכום לתשלום"?: number
     "שפה"?: string
   }
 }
@@ -84,7 +84,7 @@ serve(async (req) => {
           paymentType: data.fields["סוג תשלום"] || "",
           numPayments: data.fields["כמות תשלומים"] || 1,
           maxPayments: data.fields["כמות תשלומים מקסימלית"] || null,
-          amount: data.fields["סכום"] || 0,
+          amount: data.fields["סכום לתשלום"] || 0,
           language: data.fields["שפה"] || "il",
         },
       }),

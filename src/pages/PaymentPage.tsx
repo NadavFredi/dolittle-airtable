@@ -248,6 +248,9 @@ export default function PaymentPage() {
                             <div className="flex items-center justify-between mb-1">
                                 <h1 className="text-xl md:text-2xl font-bold">
                                     {paymentData?.productName || 'תשלום'}
+                                    {paymentData?.paymentType === 'הוראת קבע' && paymentData?.numPayments && (
+                                        <span className="text-base font-normal opacity-90 mr-2">({paymentData.numPayments} תשלומים)</span>
+                                    )}
                                 </h1>
                                 <div className="bg-white/20 rounded p-1.5">
                                     <CreditCard className="w-4 h-4" />
@@ -346,16 +349,19 @@ export default function PaymentPage() {
                                         <label htmlFor="numPayments" className="block text-xs font-medium text-gray-700 mb-1">
                                             כמות תשלומים (מקסימום {paymentData.maxPayments})
                                         </label>
-                                        <Input
+                                        <select
                                             id="numPayments"
-                                            type="number"
-                                            min="1"
-                                            max={paymentData.maxPayments}
                                             value={numPayments}
                                             onChange={(e) => setNumPayments(parseInt(e.target.value) || 1)}
-                                            className="w-full border-gray-300 focus:border-[#4f60a8] focus:ring-[#4f60a8] h-9 text-sm"
+                                            className="w-full border border-gray-300 rounded-md focus:border-[#4f60a8] focus:ring-[#4f60a8] h-9 text-sm px-3 bg-white"
                                             dir="rtl"
-                                        />
+                                        >
+                                            {Array.from({ length: paymentData.maxPayments }, (_, i) => i + 1).map((num) => (
+                                                <option key={num} value={num}>
+                                                    {num}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
                                 )}
 
@@ -365,16 +371,21 @@ export default function PaymentPage() {
                                             כמות תשלומים
                                             {paymentData.maxPayments && ` (מקסימום ${paymentData.maxPayments})`}
                                         </label>
-                                        <Input
+                                        <select
                                             id="numPayments"
-                                            type="number"
-                                            min="1"
-                                            max={paymentData.maxPayments || undefined}
                                             value={numPayments}
                                             onChange={(e) => setNumPayments(parseInt(e.target.value) || 1)}
-                                            className="w-full border-gray-300 focus:border-[#4f60a8] focus:ring-[#4f60a8] h-9 text-sm"
+                                            className="w-full border border-gray-300 rounded-md focus:border-[#4f60a8] focus:ring-[#4f60a8] h-9 text-sm px-3 bg-white"
                                             dir="rtl"
-                                        />
+                                        >
+                                            {Array.from({
+                                                length: paymentData.maxPayments || 12
+                                            }, (_, i) => i + 1).map((num) => (
+                                                <option key={num} value={num}>
+                                                    {num}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
                                 )}
 
