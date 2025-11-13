@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/hooks/useAuth'
 import easyflowLogo from '@/assets/easyflow-site-logo.png'
 import ArrivalSystemPage from '@/pages/ArrivalSystemPage'
+import PaymentPage from '@/pages/PaymentPage'
 import { Toaster } from 'sonner'
 
 interface Registration {
@@ -961,6 +962,12 @@ const App: React.FC = () => {
         }
     }
 
+
+    // Check if this is a payment page route - allow without authentication
+    const isPaymentPage = location.pathname.startsWith('/payment/')
+    if (isPaymentPage) {
+        return <PaymentPage />
+    }
 
     // Show loading while checking authentication
     if (authLoading) {
