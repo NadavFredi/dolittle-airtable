@@ -75,7 +75,7 @@ export default function PaymentPage() {
         }
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
         if (!childName.trim() || !parentName.trim() || !phone.trim() || !email.trim()) {
@@ -106,53 +106,79 @@ export default function PaymentPage() {
         setSubmitting(true)
         setError(null)
 
-        // Build Tranzila iframe URL
-        const buildIframeUrl = () => {
-            const baseUrl = 'https://direct.tranzila.com/calbnoot/iframenew.php'
-            const params = new URLSearchParams()
+        try {
+            // First, get the Tranzila handshake token
+            const { data: handshakeData, error: handshakeError } = await supabase.functions.invoke('tranzila-handshake', {
+                body: { sum: paymentData.amount },
+            })
 
-            // Required parameters based on Tranzila documentation
-            params.append('lang', paymentData.language || 'il')
-            params.append('sum', paymentData.amount.toString())
+            if (handshakeError || !handshakeData?.success || !handshakeData?.thtk) {
+                throw new Error(handshakeError?.message || 'Failed to create Tranzila handshake')
+            }
 
-            // Payment type configuration
-            // cred_type: 1 for credit card, 0 for other
-            // For recurring payments (הוראת קבע), use recur_payments
-            if (paymentData.paymentType === 'הוראת קבע' || paymentData.paymentType === 'recurring') {
-                params.append('recur_payments', numPayments.toString())
-                params.append('rrecur_transaction', '4_approved')
-                params.append('cred_type', '1')
-            } else {
-                // Credit card payment
-                params.append('cred_type', '1')
-                if (paymentData.maxPayments && numPayments > 1) {
-                    params.append('recur_payments', numPayments.toString())
+            const thtk = handshakeData.thtk
+
+            // Build Tranzila iframe URL
+            const buildIframeUrl = () => {
+                const baseUrl = 'https://direct.tranzila.com/calbnoot/iframenew.php'
+                const params: string[] = []
+
+                // Helper function to add parameter (encode only the value)
+                const addParam = (key: string, value: string | number) => {
+                    if (value !== null && value !== undefined && value !== '') {
+                        params.push(`${key}=${encodeURIComponent(value.toString())}`)
+                    }
                 }
+
+                // Add thtk token from handshake
+                addParam('thtk', thtk)
+
+                // Required parameters based on Tranzila documentation
+                addParam('lang', paymentData.language || 'il')
+                addParam('sum', paymentData.amount.toString())
+
+                // Payment type configuration
+                // cred_type: 1 for credit card, 0 for other
+                // For recurring payments (הוראת קבע), use recur_payments
+                if (paymentData.paymentType === 'הוראת קבע' || paymentData.paymentType === 'recurring') {
+                    addParam('recur_payments', numPayments.toString())
+                    addParam('rrecur_transaction', '4_approved')
+                    addParam('cred_type', '1')
+                } else {
+                    // Credit card payment
+                    addParam('cred_type', '1')
+                    if (paymentData.maxPayments && numPayments > 1) {
+                        addParam('recur_payments', numPayments.toString())
+                    }
+                }
+
+                // Add custom fields (these might be used for tracking)
+                addParam('child_name', childName)
+                addParam('parent_name', parentName)
+                addParam('phone', cleanPhone)
+                addParam('email', email)
+                addParam('record_id', paymentData.id)
+                addParam('product_name', paymentData.productName)
+
+                // Add notify_url_address with record_id suffix
+                if (paymentData.notifyUrlAddress) {
+                    const notifyUrl = paymentData.notifyUrlAddress.endsWith('/')
+                        ? `${paymentData.notifyUrlAddress}${paymentData.id}`
+                        : `${paymentData.notifyUrlAddress}/${paymentData.id}`
+                    addParam('notify_url_address', notifyUrl)
+                }
+
+                return `${baseUrl}?${params.join('&')}`
             }
 
-            // Add custom fields (these might be used for tracking)
-            params.append('child_name', childName)
-            params.append('parent_name', parentName)
-            params.append('phone', cleanPhone)
-            params.append('email', email)
-            params.append('record_id', paymentData.id)
-            params.append('product_name', paymentData.productName)
-
-            // Add notify_url_address with record_id suffix
-            if (paymentData.notifyUrlAddress) {
-                const notifyUrl = paymentData.notifyUrlAddress.endsWith('/')
-                    ? `${paymentData.notifyUrlAddress}${paymentData.id}`
-                    : `${paymentData.notifyUrlAddress}/${paymentData.id}`
-                params.append('notify_url_address', notifyUrl)
-            }
-
-            return `${baseUrl}?${params.toString()}`
+            const url = buildIframeUrl()
+            setIframeUrl(url)
+            setShowIframe(true)
+        } catch (err: any) {
+            setError(err.message || 'שגיאה ביצירת תשלום')
+        } finally {
+            setSubmitting(false)
         }
-
-        const url = buildIframeUrl()
-        setIframeUrl(url)
-        setShowIframe(true)
-        setSubmitting(false)
     }
 
     if (loading) {
