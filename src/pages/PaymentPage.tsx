@@ -207,7 +207,7 @@ export default function PaymentPage() {
                 <div className="flex-1 p-4 md:p-8">
                     <div className="max-w-6xl mx-auto">
                         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-                            <div className="p-4 bg-blue-600 text-white">
+                            <div className="p-4 text-white" style={{ backgroundColor: '#4f60a8' }}>
                                 <h1 className="text-xl font-bold">{paymentData?.productName || 'תשלום'}</h1>
                             </div>
                             <div className="w-full" style={{ minHeight: '600px' }}>
