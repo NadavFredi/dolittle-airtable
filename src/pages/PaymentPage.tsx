@@ -137,17 +137,17 @@ export default function PaymentPage() {
                 addParam('new_process', '1')
                 addParam('lang', paymentData.language || 'il')
                 addParam('sum', paymentData.amount.toString())
+                addParam('cred_type', '1')
+                addParam('currency', '1')
+                addParam('tranmode', 'A')
 
                 // Payment type configuration
-                // cred_type: 1 for credit card, 0 for other
                 // For recurring payments (הוראת קבע), use recur_payments
                 if (paymentData.paymentType === 'הוראת קבע' || paymentData.paymentType === 'recurring') {
                     addParam('recur_payments', numPayments.toString())
                     addParam('rrecur_transaction', '4_approved')
-                    addParam('cred_type', '1')
                 } else {
                     // Credit card payment
-                    addParam('cred_type', '1')
                     if (paymentData.maxPayments && numPayments > 1) {
                         addParam('recur_payments', numPayments.toString())
                     }
