@@ -161,12 +161,10 @@ export default function PaymentPage() {
                 addParam('record_id', paymentData.id)
                 addParam('product_name', paymentData.productName)
 
-                // Add notify_url_address with record_id suffix
+                // Add notify_url_address with record_id suffix (without encoding)
                 if (paymentData.notifyUrlAddress) {
-                    const notifyUrl = paymentData.notifyUrlAddress.endsWith('/')
-                        ? `${paymentData.notifyUrlAddress}${paymentData.id}`
-                        : `${paymentData.notifyUrlAddress}/${paymentData.id}`
-                    addParam('notify_url_address', notifyUrl)
+                    const notifyUrl = paymentData.notifyUrlAddress
+                    params.push(`notify_url_address=${notifyUrl}`)
                 }
 
                 return `${baseUrl}?${params.join('&')}`
