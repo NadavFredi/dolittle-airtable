@@ -58,7 +58,12 @@ export default function PaymentPage() {
 
             if (data?.success && data?.data) {
                 setPaymentData(data.data)
-                setNumPayments(data.data.numPayments)
+                // For credit payments, default to 1. For recurring payments, use the numPayments from data
+                if (data.data.paymentType === 'אשראי') {
+                    setNumPayments(1)
+                } else {
+                    setNumPayments(data.data.numPayments)
+                }
             } else {
                 throw new Error(data?.error || 'Failed to load payment page data')
             }
@@ -359,7 +364,9 @@ export default function PaymentPage() {
                                             className="w-full border border-gray-300 rounded-md focus:border-[#4f60a8] focus:ring-[#4f60a8] h-9 text-sm px-3 bg-white"
                                             dir="rtl"
                                         >
-                                            {Array.from({ length: paymentData.maxPayments || 12 }, (_, i) => i + 1).map((num) => (
+                                            {Array.from({
+                                                length: paymentData.maxPayments || 12
+                                            }, (_, i) => i + 1).map((num) => (
                                                 <option key={num} value={num}>
                                                     {num}
                                                 </option>
