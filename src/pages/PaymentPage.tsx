@@ -248,9 +248,6 @@ export default function PaymentPage() {
                             <div className="flex items-center justify-between mb-1">
                                 <h1 className="text-xl md:text-2xl font-bold">
                                     {paymentData?.productName || 'תשלום'}
-                                    {paymentData?.paymentType === 'הוראת קבע' && paymentData?.numPayments && (
-                                        <span className="text-base font-normal opacity-90 mr-2">({paymentData.numPayments} תשלומים)</span>
-                                    )}
                                 </h1>
                                 <div className="bg-white/20 rounded p-1.5">
                                     <CreditCard className="w-4 h-4" />
@@ -265,7 +262,12 @@ export default function PaymentPage() {
                             {paymentData?.paymentType && (
                                 <div className="mt-1 flex items-center gap-1.5 text-xs opacity-90">
                                     <CheckCircle2 className="w-3 h-3" />
-                                    <span>סוג תשלום: {paymentData.paymentType}</span>
+                                    <span>
+                                        סוג תשלום: {paymentData.paymentType}
+                                        {paymentData.paymentType === 'הוראת קבע' && paymentData?.numPayments && (
+                                            <span className="mr-1"> ({paymentData.numPayments} תשלומים)</span>
+                                        )}
+                                    </span>
                                 </div>
                             )}
                         </div>
