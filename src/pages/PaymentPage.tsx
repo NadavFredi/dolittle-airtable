@@ -14,6 +14,7 @@ interface PaymentPageData {
     maxPayments: number | null
     amount: number
     language: string
+    notifyUrlAddress: string
 }
 
 export default function PaymentPage() {
@@ -136,6 +137,14 @@ export default function PaymentPage() {
             params.append('email', email)
             params.append('record_id', paymentData.id)
             params.append('product_name', paymentData.productName)
+
+            // Add notify_url_address with record_id suffix
+            if (paymentData.notifyUrlAddress) {
+                const notifyUrl = paymentData.notifyUrlAddress.endsWith('/')
+                    ? `${paymentData.notifyUrlAddress}${paymentData.id}`
+                    : `${paymentData.notifyUrlAddress}/${paymentData.id}`
+                params.append('notify_url_address', notifyUrl)
+            }
 
             return `${baseUrl}?${params.toString()}`
         }

@@ -14,6 +14,7 @@ interface PaymentPageRecord {
     "כמות תשלומים מקסימלית"?: number
     "סכום לתשלום"?: number
     "שפה"?: string
+    "כתובת לעדכון"?: string
   }
 }
 
@@ -86,6 +87,7 @@ serve(async (req) => {
           maxPayments: data.fields["כמות תשלומים מקסימלית"] || null,
           amount: data.fields["סכום לתשלום"] || 0,
           language: data.fields["שפה"] || "il",
+          notifyUrlAddress: data.fields["כתובת לעדכון"] || "",
         },
       }),
       {
