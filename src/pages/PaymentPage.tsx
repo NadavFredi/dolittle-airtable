@@ -346,31 +346,10 @@ export default function PaymentPage() {
                                     />
                                 </div>
 
-                                {paymentData && paymentData.paymentType !== 'הוראת קבע' && paymentData.maxPayments && paymentData.maxPayments > 1 && (
+                                {paymentData && paymentData.paymentType === 'אשראי' && (
                                     <div>
                                         <label htmlFor="numPayments" className="block text-xs font-medium text-gray-700 mb-1">
-                                            כמות תשלומים (מקסימום {paymentData.maxPayments})
-                                        </label>
-                                        <select
-                                            id="numPayments"
-                                            value={numPayments}
-                                            onChange={(e) => setNumPayments(parseInt(e.target.value) || 1)}
-                                            className="w-full border border-gray-300 rounded-md focus:border-[#4f60a8] focus:ring-[#4f60a8] h-9 text-sm px-3 bg-white"
-                                            dir="rtl"
-                                        >
-                                            {Array.from({ length: paymentData.maxPayments }, (_, i) => i + 1).map((num) => (
-                                                <option key={num} value={num}>
-                                                    {num}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                )}
-
-                                {paymentData && paymentData.paymentType === 'הוראת קבע' && (
-                                    <div>
-                                        <label htmlFor="numPayments" className="block text-xs font-medium text-gray-700 mb-1">
-                                            כמות תשלומים
+                                            כמות תשלומים מקסימלית (אשראי בלבד)
                                             {paymentData.maxPayments && ` (מקסימום ${paymentData.maxPayments})`}
                                         </label>
                                         <select
@@ -380,9 +359,7 @@ export default function PaymentPage() {
                                             className="w-full border border-gray-300 rounded-md focus:border-[#4f60a8] focus:ring-[#4f60a8] h-9 text-sm px-3 bg-white"
                                             dir="rtl"
                                         >
-                                            {Array.from({
-                                                length: paymentData.maxPayments || 12
-                                            }, (_, i) => i + 1).map((num) => (
+                                            {Array.from({ length: paymentData.maxPayments || 12 }, (_, i) => i + 1).map((num) => (
                                                 <option key={num} value={num}>
                                                     {num}
                                                 </option>
