@@ -145,7 +145,13 @@ export default function PaymentPage() {
                 // For recurring payments (הוראת קבע), use recur_payments
                 if (paymentData.paymentType === 'הוראת קבע' || paymentData.paymentType === 'recurring') {
                     addParam('recur_payments', numPayments.toString())
-                    addParam('rrecur_transaction', '4_approved')
+                    addParam('recur_transaction', '4')
+                    // Set start date to today in yyyy-mm-dd format
+                    const today = new Date()
+                    const year = today.getFullYear()
+                    const month = String(today.getMonth() + 1).padStart(2, '0')
+                    const day = String(today.getDate()).padStart(2, '0')
+                    addParam('recur_start_date', `${year}-${month}-${day}`)
                 } else {
                     // Credit card payment
                     if (paymentData.maxPayments && numPayments > 1) {
