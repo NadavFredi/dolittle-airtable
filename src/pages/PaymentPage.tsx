@@ -134,6 +134,7 @@ export default function PaymentPage() {
                 addParam('thtk', thtk)
 
                 // Required parameters based on Tranzila documentation
+                addParam('new_process', '1')
                 addParam('lang', paymentData.language || 'il')
                 addParam('sum', paymentData.amount.toString())
 
