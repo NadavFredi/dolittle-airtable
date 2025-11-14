@@ -9,6 +9,7 @@ interface PaymentPageRecord {
   id: string
   fields: {
     "שם המוצר"?: string
+    "תיאור המוצר"?: string
     "סוג תשלום"?: string
     "כמות תשלומים"?: number
     "כמות תשלומים מקסימלית"?: number
@@ -82,6 +83,7 @@ serve(async (req) => {
         data: {
           id: data.id,
           productName: data.fields["שם המוצר"] || "",
+          productDescription: data.fields["תיאור המוצר"] || "",
           paymentType: data.fields["סוג תשלום"] || "",
           numPayments: data.fields["כמות תשלומים"] || 1,
           maxPayments: data.fields["כמות תשלומים מקסימלית"] || null,

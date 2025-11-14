@@ -9,6 +9,7 @@ import { Loader2, Lock, Shield, CreditCard, CheckCircle2, User } from 'lucide-re
 interface PaymentPageData {
     id: string
     productName: string
+    productDescription?: string
     paymentType: string
     numPayments: number
     maxPayments: number | null
@@ -276,6 +277,11 @@ export default function PaymentPage() {
                         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
                             <div className="p-4 text-white" style={{ backgroundColor: '#4f60a8' }}>
                                 <h1 className="text-xl font-bold">{paymentData?.productName || 'תשלום'}</h1>
+                                {paymentData?.productDescription && paymentData.productDescription.trim() && (
+                                    <p className="text-sm opacity-95 mt-2 leading-relaxed" style={{ lineHeight: '1.6' }}>
+                                        {paymentData.productDescription}
+                                    </p>
+                                )}
                             </div>
                             <div className="w-full" style={{ minHeight: '600px' }}>
                                 <iframe
@@ -325,6 +331,13 @@ export default function PaymentPage() {
                                     <CreditCard className="w-4 h-4" />
                                 </div>
                             </div>
+                            {paymentData?.productDescription && paymentData.productDescription.trim() && (
+                                <div className="mt-2 mb-2">
+                                    <p className="text-sm opacity-95 leading-relaxed" style={{ lineHeight: '1.6' }}>
+                                        {paymentData.productDescription}
+                                    </p>
+                                </div>
+                            )}
                             {paymentData && (
                                 <div className="mt-2 flex items-center justify-between">
                                     <span className="text-sm opacity-90">סכום לתשלום:</span>
