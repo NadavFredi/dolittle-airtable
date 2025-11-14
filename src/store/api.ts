@@ -21,6 +21,22 @@ interface GetAttendanceRequest {
   fullHistory?: boolean
 }
 
+export interface PaymentPage {
+  id: string
+  name: string
+  amount: number
+  paymentType: string
+}
+
+export interface PaymentPagesResponse {
+  success: boolean
+  data?: PaymentPage[]
+}
+
+interface GetPaymentPagesRequest {
+  search?: string
+}
+
 export const attendanceApi = createApi({
   reducerPath: "attendanceApi",
   baseQuery: fetchBaseQuery({
@@ -30,7 +46,7 @@ export const attendanceApi = createApi({
       return headers
     },
   }),
-  tagTypes: ["Attendance"],
+  tagTypes: ["Attendance", "PaymentPages"],
   endpoints: (builder) => ({
     getAttendance: builder.query<AttendanceResponse, GetAttendanceRequest>({
       async queryFn({ cohortId, date, fullHistory }) {
@@ -58,7 +74,26 @@ export const attendanceApi = createApi({
       },
       providesTags: (result, error, arg) => [{ type: "Attendance", id: `${arg.cohortId}-${arg.date || "history"}` }],
     }),
+    getPaymentPages: builder.query<PaymentPagesResponse, GetPaymentPagesRequest>({
+      async queryFn({ search = "" }) {
+        try {
+          const { data, error } = await supabase.functions.invoke("get-payment-pages", {
+            body: { search },
+          })
+
+          if (error) {
+            return { error: { status: "CUSTOM_ERROR", error: error.message } }
+          }
+
+          return { data: data as PaymentPagesResponse }
+        } catch (error: any) {
+          return { error: { status: "CUSTOM_ERROR", error: error.message } }
+        }
+      },
+      // Cache based on search query - same search won't trigger duplicate calls
+      providesTags: (result, error, arg) => [{ type: "PaymentPages", id: arg.search || "all" }],
+    }),
   }),
 })
 
-export const { useGetAttendanceQuery, useLazyGetAttendanceQuery } = attendanceApi
+export const { useGetAttendanceQuery, useLazyGetAttendanceQuery, useGetPaymentPagesQuery, useLazyGetPaymentPagesQuery } = attendanceApi

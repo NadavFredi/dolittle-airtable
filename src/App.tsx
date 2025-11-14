@@ -13,6 +13,7 @@ import easyflowLogo from '@/assets/easyflow-site-logo.png'
 import ArrivalSystemPage from '@/pages/ArrivalSystemPage'
 import PaymentPage from '@/pages/PaymentPage'
 import { Toaster } from 'sonner'
+import { useLazyGetPaymentPagesQuery } from '@/store/api'
 
 interface Registration {
     id: string
@@ -399,6 +400,12 @@ const App: React.FC = () => {
     const [flowId, setFlowId] = useState('')
     const [isSendingLink, setIsSendingLink] = useState(false)
     const [trackingUrl, setTrackingUrl] = useState('')
+    const [selectedPaymentPage, setSelectedPaymentPage] = useState<{ id: string; name: string } | null>(null)
+    
+    // RTK Query hook - automatically handles caching and deduplication
+    const [getPaymentPages, { data: paymentPagesData, isLoading: paymentPagesLoading }] = useLazyGetPaymentPagesQuery()
+    
+    const paymentPages = paymentPagesData?.data || []
 
     // Parameter configuration state
     const [messageParams, setMessageParams] = useState({
@@ -873,6 +880,13 @@ const App: React.FC = () => {
         setFilterGroups([])
     }
 
+    // Load payment pages when bulk messaging opens
+    useEffect(() => {
+        if (showBulkMessaging) {
+            getPaymentPages({ search: '' })
+        }
+    }, [showBulkMessaging, getPaymentPages])
+
     // Bulk messaging functions
     const getUniquePhoneNumbers = () => {
         const phones = filteredRegistrations.map(reg => reg.parentPhone).filter(phone => phone)
@@ -894,13 +908,18 @@ const App: React.FC = () => {
                     school: reg.school,
                     course: reg.course,
                     cycle: reg.cycle,
-                    registrationLink: isSendingLink && registrationLink ? `${registrationLink}${reg.id}` : null,
+                    registrationLink: isSendingLink && selectedPaymentPage 
+                        ? `${window.location.origin}/payment/${selectedPaymentPage.id}?user_id=${reg.id}`
+                        : (isSendingLink && registrationLink ? `${registrationLink}${reg.id}` : null),
                     messageContent: messageContent,
                     flowId: flowId
                 })),
                 totalUsers: filteredRegistrations.length,
                 uniqueNumbers: uniquePhones.length,
-                registrationLink: registrationLink,
+                registrationLink: selectedPaymentPage 
+                    ? `${window.location.origin}/payment/${selectedPaymentPage.id}?user_id=`
+                    : registrationLink,
+                paymentPageId: selectedPaymentPage?.id || null,
                 messageContent: messageContent,
                 messagingMode: messagingMode,
                 flowId: flowId,
@@ -2055,16 +2074,39 @@ const App: React.FC = () => {
 
                                                     {isSendingLink && (
                                                         <div>
-                                                            <input
-                                                                type="url"
-                                                                value={registrationLink}
-                                                                onChange={(e) => setRegistrationLink(e.target.value)}
-                                                                placeholder="קישור בסיס (עם פרמטר שאילתה)"
-                                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                            <Autocomplete
+                                                                options={paymentPages.map(page => ({
+                                                                    label: `${page.name}${page.amount ? ` (₪${page.amount.toLocaleString()})` : ''}`,
+                                                                    value: page.id
+                                                                }))}
+                                                                value={selectedPaymentPage?.id || ''}
+                                                                onSelect={(value) => {
+                                                                    const page = paymentPages.find(p => p.id === value)
+                                                                    if (page) {
+                                                                        setSelectedPaymentPage({ id: page.id, name: page.name })
+                                                                    } else {
+                                                                        setSelectedPaymentPage(null)
+                                                                    }
+                                                                }}
+                                                                onSearch={(search) => {
+                                                                    // Autocomplete component handles debouncing internally
+                                                                    // Only make API call if there's actual user input
+                                                                    // Don't call API when search is cleared - user must type something
+                                                                    if (search && search.trim().length > 0) {
+                                                                        getPaymentPages({ search: search.trim() })
+                                                                    }
+                                                                    // If cleared, do nothing - no API call
+                                                                }}
+                                                                placeholder="חפש דף תשלום..."
+                                                                allowClear={true}
+                                                                loading={paymentPagesLoading}
+                                                                className="w-full"
                                                             />
-                                                            <p className="text-xs text-gray-500 mt-1">
-                                                                הקישור יושלם עם מזהה כל רשומה: {registrationLink ? `${registrationLink}123` : 'https://example.com/register?id=123'}
-                                                            </p>
+                                                            {selectedPaymentPage && (
+                                                                <p className="text-xs text-gray-500 mt-2">
+                                                                    הקישור יושלם עם מזהה דף התשלום ומזהה המשתמש: {window.location.origin}/payment/{selectedPaymentPage.id}?user_id=RECORD_ID
+                                                                </p>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
