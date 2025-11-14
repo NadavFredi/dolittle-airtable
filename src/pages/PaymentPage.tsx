@@ -172,27 +172,6 @@ export default function PaymentPage() {
                 } else {
                     // Credit card payment (אשראי)
                     addParam('cred_type', '8')
-                    const npay = numPayments - 1
-                    addParam('npay', npay.toString())
-
-                    // Calculate payment amounts
-                    if (numPayments > 1) {
-                        // Calculate amount per payment (rounded to 2 decimal places)
-                        const amountPerPayment = paymentData.amount / numPayments
-                        const roundedAmountPerPayment = Math.floor(amountPerPayment * 100) / 100
-
-                        // First payment gets any remainder to ensure total matches
-                        const totalRounded = roundedAmountPerPayment * numPayments
-                        const remainder = paymentData.amount - totalRounded
-                        const fpay = (roundedAmountPerPayment + remainder).toFixed(2)
-                        const spay = roundedAmountPerPayment.toFixed(2)
-
-                        addParam('fpay', fpay)
-                        addParam('spay', spay)
-                    } else {
-                        // Single payment - first payment is the full amount
-                        addParam('fpay', paymentData.amount.toFixed(2))
-                    }
 
                     // Maximum number of installments
                     if (paymentData.maxPayments && paymentData.maxPayments > 0) {
@@ -461,34 +440,6 @@ export default function PaymentPage() {
                                     />
                                 </div>
 
-                                {paymentData && paymentData.paymentType === 'אשראי' && paymentData.maxPayments && paymentData.maxPayments > 0 && (
-                                    <div>
-                                        <label htmlFor="numPayments" className="block text-xs font-medium text-gray-700 mb-1">
-                                            כמות תשלומים מקסימלית
-                                            <span className="text-gray-500"> (מקסימום {paymentData.maxPayments})</span>
-                                        </label>
-                                        <select
-                                            id="numPayments"
-                                            value={numPayments}
-                                            onChange={(e) => {
-                                                const selectedValue = parseInt(e.target.value) || 1
-                                                // Ensure selected value doesn't exceed maxPayments
-                                                const finalValue = Math.min(selectedValue, paymentData.maxPayments || 1)
-                                                setNumPayments(finalValue)
-                                            }}
-                                            className="w-full border border-gray-300 rounded-md focus:border-[#4f60a8] focus:ring-[#4f60a8] h-9 text-sm px-3 bg-white"
-                                            dir="rtl"
-                                        >
-                                            {Array.from({
-                                                length: paymentData.maxPayments
-                                            }, (_, i) => i + 1).map((num) => (
-                                                <option key={num} value={num}>
-                                                    {num}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                )}
 
                                 {error && (
                                     <div className="bg-red-50 border border-red-200 rounded p-2 flex items-start gap-2">
