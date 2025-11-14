@@ -139,11 +139,11 @@ export default function PaymentPage() {
                 addParam('sum', paymentData.amount.toString())
                 addParam('cred_type', '1')
                 addParam('currency', '1')
+                addParam('tranmode', 'A')
 
                 // Payment type configuration
                 // For recurring payments (הוראת קבע), use recur_payments
                 if (paymentData.paymentType === 'הוראת קבע' || paymentData.paymentType === 'recurring') {
-                    addParam('tranmode', 'NK')
                     addParam('recur_payments', numPayments.toString())
                     addParam('recur_transaction', '4')
                     // Set start date to today in yyyy-mm-dd format
@@ -154,7 +154,6 @@ export default function PaymentPage() {
                     addParam('recur_start_date', `${year}-${month}-${day}`)
                 } else {
                     // Credit card payment
-                    addParam('tranmode', 'A')
                     if (paymentData.maxPayments && numPayments > 1) {
                         addParam('recur_payments', numPayments.toString())
                     }
