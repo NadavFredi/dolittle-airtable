@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/hooks/useAuth'
 import { AppFooter } from '@/components/AppFooter'
 import { Input } from '@/components/ui/input'
@@ -19,8 +19,11 @@ interface PaymentPageData {
 
 export default function PaymentPage() {
     const location = useLocation()
+    const [searchParams] = useSearchParams()
     // Extract ID from pathname: /payment/{id}
     const id = location.pathname.replace('/payment/', '')
+    // Extract user_id from query parameters
+    const userId = searchParams.get('user_id')
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
     const [paymentData, setPaymentData] = useState<PaymentPageData | null>(null)
@@ -36,13 +39,20 @@ export default function PaymentPage() {
     const [numPayments, setNumPayments] = useState<number>(1)
 
     useEffect(() => {
+        // Check if userId is provided
+        if (!userId || userId.trim() === '') {
+            setLoading(false)
+            setError('invalid_page')
+            return
+        }
+
         if (id && id.trim() !== '') {
             fetchPaymentPageData(id)
         } else {
             setLoading(false)
             setError('מספר זיהוי לא תקין')
         }
-    }, [id])
+    }, [id, userId])
 
     const fetchPaymentPageData = async (recordId: string) => {
         try {
@@ -164,7 +174,10 @@ export default function PaymentPage() {
                 addParam('parent_name', parentName)
                 addParam('phone', cleanPhone)
                 addParam('email', email)
-                addParam('record_id', paymentData.id)
+                // Pass user_id to iframe as record_id (not the payment page record id)
+                if (userId) {
+                    addParam('record_id', userId)
+                }
                 addParam('product_name', paymentData.productName)
 
                 // Add notify_url_address with record_id suffix (without encoding)
@@ -201,6 +214,7 @@ export default function PaymentPage() {
     }
 
     if (error && !paymentData) {
+        const isInvalidPage = error === 'invalid_page'
         return (
             <div className="min-h-screen flex flex-col bg-gray-50" dir="rtl">
                 <div className="flex-1 flex items-center justify-center px-4 py-12">
@@ -225,12 +239,25 @@ export default function PaymentPage() {
                                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
                                     מצטערים
                                 </h1>
-                                <p className="text-lg text-gray-700 mb-2">
-                                    נראה שדף זה אינו זמין כרגע
-                                </p>
-                                <p className="text-base text-gray-600 mb-6">
-                                    אנא צרו קשר עם הצוות שלנו לקבלת עזרה
-                                </p>
+                                {isInvalidPage ? (
+                                    <>
+                                        <p className="text-lg text-gray-700 mb-2">
+                                            דף זה אינו תקין
+                                        </p>
+                                        <p className="text-base text-gray-600 mb-6">
+                                            אנא צרו קשר עם הצוות שלנו לקבלת עזרה
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-lg text-gray-700 mb-2">
+                                            נראה שדף זה אינו זמין כרגע
+                                        </p>
+                                        <p className="text-base text-gray-600 mb-6">
+                                            אנא צרו קשר עם הצוות שלנו לקבלת עזרה
+                                        </p>
+                                    </>
+                                )}
                             </div>
 
                         </div>
