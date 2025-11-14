@@ -145,7 +145,7 @@ export default function PaymentPage() {
                 // For recurring payments (הוראת קבע), use recur_payments
                 if (paymentData.paymentType === 'הוראת קבע' || paymentData.paymentType === 'recurring') {
                     addParam('recur_payments', numPayments.toString())
-                    addParam('recur_transaction', '4')
+                    addParam('recur_transaction', '4_approved')
                     // Set start date to today in yyyy-mm-dd format
                     const today = new Date()
                     const year = today.getFullYear()
