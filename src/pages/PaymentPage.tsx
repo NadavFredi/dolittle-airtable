@@ -74,7 +74,13 @@ export default function PaymentPage() {
                 if (data.data.paymentType === 'אשראי') {
                     setNumPayments(1)
                 } else {
-                    setNumPayments(data.data.numPayments)
+                    // Ensure numPayments doesn't exceed maxPayments if it exists
+                    const initialNumPayments = data.data.numPayments || 1
+                    if (data.data.maxPayments && data.data.maxPayments > 0) {
+                        setNumPayments(Math.min(initialNumPayments, data.data.maxPayments))
+                    } else {
+                        setNumPayments(initialNumPayments)
+                    }
                 }
             } else {
                 throw new Error(data?.error || 'Failed to load payment page data')
@@ -431,21 +437,26 @@ export default function PaymentPage() {
                                     />
                                 </div>
 
-                                {paymentData && paymentData.paymentType === 'אשראי' && (
+                                {paymentData && paymentData.paymentType === 'אשראי' && paymentData.maxPayments && paymentData.maxPayments > 0 && (
                                     <div>
                                         <label htmlFor="numPayments" className="block text-xs font-medium text-gray-700 mb-1">
-                                            כמות תשלומים מקסימלית (אשראי בלבד)
-                                            {paymentData.maxPayments && ` (מקסימום ${paymentData.maxPayments})`}
+                                            כמות תשלומים מקסימלית
+                                            <span className="text-gray-500"> (מקסימום {paymentData.maxPayments})</span>
                                         </label>
                                         <select
                                             id="numPayments"
                                             value={numPayments}
-                                            onChange={(e) => setNumPayments(parseInt(e.target.value) || 1)}
+                                            onChange={(e) => {
+                                                const selectedValue = parseInt(e.target.value) || 1
+                                                // Ensure selected value doesn't exceed maxPayments
+                                                const finalValue = Math.min(selectedValue, paymentData.maxPayments || 1)
+                                                setNumPayments(finalValue)
+                                            }}
                                             className="w-full border border-gray-300 rounded-md focus:border-[#4f60a8] focus:ring-[#4f60a8] h-9 text-sm px-3 bg-white"
                                             dir="rtl"
                                         >
                                             {Array.from({
-                                                length: paymentData.maxPayments || 12
+                                                length: paymentData.maxPayments
                                             }, (_, i) => i + 1).map((num) => (
                                                 <option key={num} value={num}>
                                                     {num}
