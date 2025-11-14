@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/hooks/useAuth'
 import { AppFooter } from '@/components/AppFooter'
 import { Input } from '@/components/ui/input'
@@ -9,6 +9,7 @@ import { Loader2, Lock, Shield, CreditCard, CheckCircle2, User } from 'lucide-re
 interface PaymentPageData {
     id: string
     productName: string
+    productDescription?: string
     paymentType: string
     numPayments: number
     maxPayments: number | null
@@ -19,8 +20,11 @@ interface PaymentPageData {
 
 export default function PaymentPage() {
     const location = useLocation()
+    const [searchParams] = useSearchParams()
     // Extract ID from pathname: /payment/{id}
     const id = location.pathname.replace('/payment/', '')
+    // Extract user_id from query parameters
+    const userId = searchParams.get('user_id')
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
     const [paymentData, setPaymentData] = useState<PaymentPageData | null>(null)
@@ -36,13 +40,20 @@ export default function PaymentPage() {
     const [numPayments, setNumPayments] = useState<number>(1)
 
     useEffect(() => {
+        // Check if userId is provided
+        if (!userId || userId.trim() === '') {
+            setLoading(false)
+            setError('invalid_page')
+            return
+        }
+
         if (id && id.trim() !== '') {
             fetchPaymentPageData(id)
         } else {
             setLoading(false)
             setError('מספר זיהוי לא תקין')
         }
-    }, [id])
+    }, [id, userId])
 
     const fetchPaymentPageData = async (recordId: string) => {
         try {
@@ -63,7 +74,13 @@ export default function PaymentPage() {
                 if (data.data.paymentType === 'אשראי') {
                     setNumPayments(1)
                 } else {
-                    setNumPayments(data.data.numPayments)
+                    // Ensure numPayments doesn't exceed maxPayments if it exists
+                    const initialNumPayments = data.data.numPayments || 1
+                    if (data.data.maxPayments && data.data.maxPayments > 0) {
+                        setNumPayments(Math.min(initialNumPayments, data.data.maxPayments))
+                    } else {
+                        setNumPayments(initialNumPayments)
+                    }
                 }
             } else {
                 throw new Error(data?.error || 'Failed to load payment page data')
@@ -75,7 +92,7 @@ export default function PaymentPage() {
         }
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
         if (!childName.trim() || !parentName.trim() || !phone.trim() || !email.trim()) {
@@ -106,53 +123,90 @@ export default function PaymentPage() {
         setSubmitting(true)
         setError(null)
 
-        // Build Tranzila iframe URL
-        const buildIframeUrl = () => {
-            const baseUrl = 'https://direct.tranzila.com/calbnoot/iframenew.php'
-            const params = new URLSearchParams()
+        try {
+            // First, get the Tranzila handshake token
+            const { data: handshakeData, error: handshakeError } = await supabase.functions.invoke('tranzila-handshake', {
+                body: { sum: paymentData.amount },
+            })
 
-            // Required parameters based on Tranzila documentation
-            params.append('lang', paymentData.language || 'il')
-            params.append('sum', paymentData.amount.toString())
+            if (handshakeError || !handshakeData?.success || !handshakeData?.thtk) {
+                throw new Error(handshakeError?.message || 'Failed to create Tranzila handshake')
+            }
 
-            // Payment type configuration
-            // cred_type: 1 for credit card, 0 for other
-            // For recurring payments (הוראת קבע), use recur_payments
-            if (paymentData.paymentType === 'הוראת קבע' || paymentData.paymentType === 'recurring') {
-                params.append('recur_payments', numPayments.toString())
-                params.append('rrecur_transaction', '4_approved')
-                params.append('cred_type', '1')
-            } else {
-                // Credit card payment
-                params.append('cred_type', '1')
-                if (paymentData.maxPayments && numPayments > 1) {
-                    params.append('recur_payments', numPayments.toString())
+            const thtk = handshakeData.thtk
+
+            // Build Tranzila iframe URL
+            const buildIframeUrl = () => {
+                const baseUrl = 'https://direct.tranzila.com/calbnoot/iframenew.php'
+                const params: string[] = []
+
+                // Helper function to add parameter (encode only the value)
+                const addParam = (key: string, value: string | number) => {
+                    if (value !== null && value !== undefined && value !== '') {
+                        params.push(`${key}=${encodeURIComponent(value.toString())}`)
+                    }
                 }
+
+                // Add thtk token from handshake
+                addParam('thtk', thtk)
+
+                // Required parameters based on Tranzila documentation
+                addParam('new_process', '1')
+                addParam('lang', paymentData.language || 'il')
+                addParam('sum', paymentData.amount.toString())
+                addParam('currency', '1')
+                addParam('tranmode', 'A')
+
+                // Payment type configuration
+                if (paymentData.paymentType === 'הוראת קבע' || paymentData.paymentType === 'recurring') {
+                    // For recurring payments (הוראת קבע), use recur_payments
+                    addParam('cred_type', '1')
+                    addParam('recur_payments', numPayments.toString())
+                    addParam('recur_transaction', '4_approved')
+                    // Set start date to today in yyyy-mm-dd format
+                    const today = new Date()
+                    const year = today.getFullYear()
+                    const month = String(today.getMonth() + 1).padStart(2, '0')
+                    const day = String(today.getDate()).padStart(2, '0')
+                    addParam('recur_start_date', `${year}-${month}-${day}`)
+                } else {
+                    // Credit card payment (אשראי)
+                    addParam('cred_type', '8')
+
+                    // Maximum number of installments
+                    if (paymentData.maxPayments && paymentData.maxPayments > 0) {
+                        addParam('maxpay', paymentData.maxPayments.toString())
+                    }
+                }
+
+                // Add custom fields (these might be used for tracking)
+                addParam('child_name', childName)
+                addParam('parent_name', parentName)
+                addParam('phone', cleanPhone)
+                addParam('email', email)
+                // Pass user_id to iframe as record_id (not the payment page record id)
+                if (userId) {
+                    addParam('record_id', userId)
+                }
+                addParam('product_name', paymentData.productName)
+
+                // Add notify_url_address with record_id suffix (without encoding)
+                if (paymentData.notifyUrlAddress) {
+                    const notifyUrl = paymentData.notifyUrlAddress
+                    params.push(`notify_url_address=${notifyUrl}`)
+                }
+
+                return `${baseUrl}?${params.join('&')}`
             }
 
-            // Add custom fields (these might be used for tracking)
-            params.append('child_name', childName)
-            params.append('parent_name', parentName)
-            params.append('phone', cleanPhone)
-            params.append('email', email)
-            params.append('record_id', paymentData.id)
-            params.append('product_name', paymentData.productName)
-
-            // Add notify_url_address with record_id suffix
-            if (paymentData.notifyUrlAddress) {
-                const notifyUrl = paymentData.notifyUrlAddress.endsWith('/')
-                    ? `${paymentData.notifyUrlAddress}${paymentData.id}`
-                    : `${paymentData.notifyUrlAddress}/${paymentData.id}`
-                params.append('notify_url_address', notifyUrl)
-            }
-
-            return `${baseUrl}?${params.toString()}`
+            const url = buildIframeUrl()
+            setIframeUrl(url)
+            setShowIframe(true)
+        } catch (err: any) {
+            setError(err.message || 'שגיאה ביצירת תשלום')
+        } finally {
+            setSubmitting(false)
         }
-
-        const url = buildIframeUrl()
-        setIframeUrl(url)
-        setShowIframe(true)
-        setSubmitting(false)
     }
 
     if (loading) {
@@ -170,6 +224,7 @@ export default function PaymentPage() {
     }
 
     if (error && !paymentData) {
+        const isInvalidPage = error === 'invalid_page'
         return (
             <div className="min-h-screen flex flex-col bg-gray-50" dir="rtl">
                 <div className="flex-1 flex items-center justify-center px-4 py-12">
@@ -194,12 +249,25 @@ export default function PaymentPage() {
                                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
                                     מצטערים
                                 </h1>
-                                <p className="text-lg text-gray-700 mb-2">
-                                    נראה שדף זה אינו זמין כרגע
-                                </p>
-                                <p className="text-base text-gray-600 mb-6">
-                                    אנא צרו קשר עם הצוות שלנו לקבלת עזרה
-                                </p>
+                                {isInvalidPage ? (
+                                    <>
+                                        <p className="text-lg text-gray-700 mb-2">
+                                            דף זה אינו תקין
+                                        </p>
+                                        <p className="text-base text-gray-600 mb-6">
+                                            אנא צרו קשר עם הצוות שלנו לקבלת עזרה
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-lg text-gray-700 mb-2">
+                                            נראה שדף זה אינו זמין כרגע
+                                        </p>
+                                        <p className="text-base text-gray-600 mb-6">
+                                            אנא צרו קשר עם הצוות שלנו לקבלת עזרה
+                                        </p>
+                                    </>
+                                )}
                             </div>
 
                         </div>
@@ -218,6 +286,11 @@ export default function PaymentPage() {
                         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
                             <div className="p-4 text-white" style={{ backgroundColor: '#4f60a8' }}>
                                 <h1 className="text-xl font-bold">{paymentData?.productName || 'תשלום'}</h1>
+                                {paymentData?.productDescription && paymentData.productDescription.trim() && (
+                                    <p className="text-sm opacity-95 mt-2 leading-relaxed" style={{ lineHeight: '1.6' }}>
+                                        {paymentData.productDescription}
+                                    </p>
+                                )}
                             </div>
                             <div className="w-full" style={{ minHeight: '600px' }}>
                                 <iframe
@@ -267,6 +340,13 @@ export default function PaymentPage() {
                                     <CreditCard className="w-4 h-4" />
                                 </div>
                             </div>
+                            {paymentData?.productDescription && paymentData.productDescription.trim() && (
+                                <div className="mt-2 mb-2">
+                                    <p className="text-sm opacity-95 leading-relaxed" style={{ lineHeight: '1.6' }}>
+                                        {paymentData.productDescription}
+                                    </p>
+                                </div>
+                            )}
                             {paymentData && (
                                 <div className="mt-2 flex items-center justify-between">
                                     <span className="text-sm opacity-90">סכום לתשלום:</span>
@@ -360,29 +440,6 @@ export default function PaymentPage() {
                                     />
                                 </div>
 
-                                {paymentData && paymentData.paymentType === 'אשראי' && (
-                                    <div>
-                                        <label htmlFor="numPayments" className="block text-xs font-medium text-gray-700 mb-1">
-                                            כמות תשלומים מקסימלית (אשראי בלבד)
-                                            {paymentData.maxPayments && ` (מקסימום ${paymentData.maxPayments})`}
-                                        </label>
-                                        <select
-                                            id="numPayments"
-                                            value={numPayments}
-                                            onChange={(e) => setNumPayments(parseInt(e.target.value) || 1)}
-                                            className="w-full border border-gray-300 rounded-md focus:border-[#4f60a8] focus:ring-[#4f60a8] h-9 text-sm px-3 bg-white"
-                                            dir="rtl"
-                                        >
-                                            {Array.from({
-                                                length: paymentData.maxPayments || 12
-                                            }, (_, i) => i + 1).map((num) => (
-                                                <option key={num} value={num}>
-                                                    {num}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                )}
 
                                 {error && (
                                     <div className="bg-red-50 border border-red-200 rounded p-2 flex items-start gap-2">
