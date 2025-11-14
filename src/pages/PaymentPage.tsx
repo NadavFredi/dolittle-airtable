@@ -172,7 +172,8 @@ export default function PaymentPage() {
                 } else {
                     // Credit card payment (אשראי)
                     addParam('cred_type', '8')
-                    addParam('npay', numPayments.toString())
+                    const npay = numPayments - 1
+                    addParam('npay', npay.toString())
                 }
 
                 // Add custom fields (these might be used for tracking)
