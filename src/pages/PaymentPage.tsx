@@ -154,13 +154,13 @@ export default function PaymentPage() {
                 addParam('new_process', '1')
                 addParam('lang', paymentData.language || 'il')
                 addParam('sum', paymentData.amount.toString())
-                addParam('cred_type', '1')
                 addParam('currency', '1')
                 addParam('tranmode', 'A')
 
                 // Payment type configuration
-                // For recurring payments (הוראת קבע), use recur_payments
                 if (paymentData.paymentType === 'הוראת קבע' || paymentData.paymentType === 'recurring') {
+                    // For recurring payments (הוראת קבע), use recur_payments
+                    addParam('cred_type', '1')
                     addParam('recur_payments', numPayments.toString())
                     addParam('recur_transaction', '4_approved')
                     // Set start date to today in yyyy-mm-dd format
@@ -170,10 +170,9 @@ export default function PaymentPage() {
                     const day = String(today.getDate()).padStart(2, '0')
                     addParam('recur_start_date', `${year}-${month}-${day}`)
                 } else {
-                    // Credit card payment
-                    if (paymentData.maxPayments && numPayments > 1) {
-                        addParam('recur_payments', numPayments.toString())
-                    }
+                    // Credit card payment (אשראי)
+                    addParam('cred_type', '8')
+                    addParam('npay', numPayments.toString())
                 }
 
                 // Add custom fields (these might be used for tracking)
