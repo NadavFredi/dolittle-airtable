@@ -25,6 +25,7 @@ serve(async (req) => {
       arrivalDay,
       arrivalTime,
       isSendingLink,
+      paymentPageId,
       debug,
     } = await req.json()
 
@@ -50,6 +51,7 @@ serve(async (req) => {
       arrivalDay,
       arrivalTime,
       isSendingLink,
+      paymentPageId: paymentPageId || undefined,
       debug,
       timestamp: new Date().toISOString(),
     }

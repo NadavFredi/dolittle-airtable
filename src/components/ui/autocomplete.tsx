@@ -80,6 +80,7 @@ interface AutocompleteProps {
     options: AutocompleteOption[]
     value?: string
     onSelect?: (value: string) => void
+    onSearch?: (search: string) => void
     placeholder?: string
     emptyMessage?: string
     disabled?: boolean
@@ -87,6 +88,7 @@ interface AutocompleteProps {
     buttonClassName?: string
     searchPlaceholder?: string
     allowClear?: boolean
+    loading?: boolean
 }
 
 const Autocomplete = React.forwardRef<HTMLButtonElement, AutocompleteProps>(
@@ -94,6 +96,7 @@ const Autocomplete = React.forwardRef<HTMLButtonElement, AutocompleteProps>(
         options,
         value,
         onSelect,
+        onSearch,
         placeholder = "Select option...",
         emptyMessage = "No option found.",
         disabled = false,
@@ -101,11 +104,59 @@ const Autocomplete = React.forwardRef<HTMLButtonElement, AutocompleteProps>(
         buttonClassName,
         searchPlaceholder = "Search options...",
         allowClear = false,
+        loading = false,
         ...props
     }, ref) => {
         const [open, setOpen] = React.useState(false)
         const [searchValue, setSearchValue] = React.useState("")
         const autocompleteId = React.useId()
+        const debounceTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+        const lastSearchedValueRef = React.useRef<string>("")
+        const isInitialOpenRef = React.useRef<boolean>(false)
+        
+        // Track when popup opens to prevent API call on initial open
+        React.useEffect(() => {
+            if (open) {
+                isInitialOpenRef.current = true
+                // Reset after a short delay to allow user to start typing
+                const timer = setTimeout(() => {
+                    isInitialOpenRef.current = false
+                }, 100)
+                return () => clearTimeout(timer)
+            } else {
+                isInitialOpenRef.current = false
+                lastSearchedValueRef.current = ""
+            }
+        }, [open])
+        
+        // Debounced search - only call onSearch after user stops typing
+        React.useEffect(() => {
+            // Clear any existing timeout
+            if (debounceTimeoutRef.current) {
+                clearTimeout(debounceTimeoutRef.current)
+            }
+            
+            // Only call onSearch if:
+            // 1. Popup is open
+            // 2. onSearch is provided
+            // 3. User has typed something (not empty)
+            // 4. Not the initial open
+            // 5. Value has actually changed from last search
+            if (onSearch && open && searchValue.trim().length > 0 && !isInitialOpenRef.current && searchValue !== lastSearchedValueRef.current) {
+                // Set debounce timeout - only call API after user stops typing for 300ms
+                debounceTimeoutRef.current = setTimeout(() => {
+                    lastSearchedValueRef.current = searchValue
+                    onSearch(searchValue)
+                }, 300)
+            }
+            
+            // Cleanup timeout on unmount or when dependencies change
+            return () => {
+                if (debounceTimeoutRef.current) {
+                    clearTimeout(debounceTimeoutRef.current)
+                }
+            }
+        }, [searchValue, onSearch, open])
 
         const selectedOption = options.find((option) => option.value === value)
 
@@ -199,15 +250,22 @@ const Autocomplete = React.forwardRef<HTMLButtonElement, AutocompleteProps>(
                                 onPointerDown={(e) => e.preventDefault()}
                             >
                                 <div className="p-2 border-b border-gray-100">
-                                    <input
-                                        type="text"
-                                        placeholder={searchPlaceholder}
-                                        value={searchValue}
-                                        onChange={(e) => setSearchValue(e.target.value)}
-                                        onMouseDown={(e) => e.stopPropagation()}
-                                        onPointerDown={(e) => e.stopPropagation()}
-                                        className="w-full px-2 py-1 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder={searchPlaceholder}
+                                            value={searchValue}
+                                            onChange={(e) => setSearchValue(e.target.value)}
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                            onPointerDown={(e) => e.stopPropagation()}
+                                            className="w-full px-2 py-1 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-6"
+                                        />
+                                        {loading && (
+                                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="max-h-[250px] overflow-y-auto">
                                     {options
