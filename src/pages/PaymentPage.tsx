@@ -174,6 +174,30 @@ export default function PaymentPage() {
                     addParam('cred_type', '8')
                     const npay = numPayments - 1
                     addParam('npay', npay.toString())
+
+                    // Calculate payment amounts
+                    if (numPayments > 1) {
+                        // Calculate amount per payment (rounded to 2 decimal places)
+                        const amountPerPayment = paymentData.amount / numPayments
+                        const roundedAmountPerPayment = Math.floor(amountPerPayment * 100) / 100
+
+                        // First payment gets any remainder to ensure total matches
+                        const totalRounded = roundedAmountPerPayment * numPayments
+                        const remainder = paymentData.amount - totalRounded
+                        const fpay = (roundedAmountPerPayment + remainder).toFixed(2)
+                        const spay = roundedAmountPerPayment.toFixed(2)
+
+                        addParam('fpay', fpay)
+                        addParam('spay', spay)
+                    } else {
+                        // Single payment - first payment is the full amount
+                        addParam('fpay', paymentData.amount.toFixed(2))
+                    }
+
+                    // Maximum number of installments
+                    if (paymentData.maxPayments && paymentData.maxPayments > 0) {
+                        addParam('maxpay', paymentData.maxPayments.toString())
+                    }
                 }
 
                 // Add custom fields (these might be used for tracking)
