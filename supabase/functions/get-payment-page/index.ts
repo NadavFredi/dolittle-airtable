@@ -16,6 +16,8 @@ interface PaymentPageRecord {
     "סכום לתשלום"?: number
     "שפה"?: string
     "כתובת לעדכון"?: string
+    "טקסט לאישור תקנון"?: string
+    "קישור לתקנון"?: string
   }
 }
 
@@ -90,6 +92,8 @@ serve(async (req) => {
           amount: data.fields["סכום לתשלום"] || 0,
           language: data.fields["שפה"] || "il",
           notifyUrlAddress: data.fields["כתובת לעדכון"] || "",
+          termsApprovalText: data.fields["טקסט לאישור תקנון"] || "",
+          termsLink: data.fields["קישור לתקנון"] || "",
         },
       }),
       {
