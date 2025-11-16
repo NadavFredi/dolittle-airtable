@@ -4,6 +4,7 @@ import { supabase } from '@/hooks/useAuth'
 import { AppFooter } from '@/components/AppFooter'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Loader2, Lock, Shield, CreditCard, CheckCircle2, User } from 'lucide-react'
 
 interface PaymentPageData {
@@ -16,6 +17,8 @@ interface PaymentPageData {
     amount: number
     language: string
     notifyUrlAddress: string
+    termsApprovalText?: string
+    termsLink?: string
 }
 
 export default function PaymentPage() {
@@ -31,6 +34,7 @@ export default function PaymentPage() {
     const [error, setError] = useState<string | null>(null)
     const [showIframe, setShowIframe] = useState(false)
     const [iframeUrl, setIframeUrl] = useState<string>('')
+    const [termsAccepted, setTermsAccepted] = useState(false)
 
     // Form fields
     const [childName, setChildName] = useState('')
@@ -102,6 +106,12 @@ export default function PaymentPage() {
 
         if (!paymentData) {
             setError('נתוני התשלום לא נטענו')
+            return
+        }
+
+        // Check terms acceptance if terms link exists
+        if (paymentData.termsLink && paymentData.termsLink.trim() !== '' && !termsAccepted) {
+            setError('אנא אשר את התקנון כדי להמשיך')
             return
         }
 
@@ -452,6 +462,31 @@ export default function PaymentPage() {
                                     </div>
                                 )}
 
+                                {paymentData?.termsLink && paymentData.termsLink.trim() !== '' && (
+                                    <label htmlFor="termsCheckbox" className="flex items-start gap-3 cursor-pointer">
+                                        <Checkbox
+                                            id="termsCheckbox"
+                                            checked={termsAccepted}
+                                            onChange={(e) => setTermsAccepted(e.target.checked)}
+                                            className="mt-0.5 flex-shrink-0"
+                                        />
+                                        <span className="text-sm text-gray-700 leading-relaxed">
+                                            {paymentData.termsApprovalText && paymentData.termsApprovalText.trim() !== ''
+                                                ? paymentData.termsApprovalText
+                                                : 'אני מאשר שקראתי והסכמתי לתקנון'}{' '}
+                                            <a
+                                                href={paymentData.termsLink}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-[#4f60a8] underline hover:text-[#3d4d7a] transition-colors"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                קישור לתקנון
+                                            </a>
+                                        </span>
+                                    </label>
+                                )}
+
                                 {/* Security Notice - Compact */}
                                 <div className="bg-purple-50 border border-purple-200 rounded p-2 flex items-start gap-2" style={{ backgroundColor: '#f3f4f6', borderColor: '#e5e7eb' }}>
                                     <Lock className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: '#4f60a8' }} />
@@ -463,11 +498,19 @@ export default function PaymentPage() {
 
                                 <Button
                                     type="submit"
-                                    disabled={submitting}
-                                    className="w-full text-white py-3 text-base font-semibold shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+                                    disabled={submitting || (!!paymentData?.termsLink && paymentData.termsLink.trim() !== '' && !termsAccepted)}
+                                    className="w-full text-white py-3 text-base font-semibold shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                     style={{ backgroundColor: '#4f60a8' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3d4d7a'}
-                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4f60a8'}
+                                    onMouseEnter={(e) => {
+                                        if (!e.currentTarget.disabled) {
+                                            e.currentTarget.style.backgroundColor = '#3d4d7a'
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!e.currentTarget.disabled) {
+                                            e.currentTarget.style.backgroundColor = '#4f60a8'
+                                        }
+                                    }}
                                 >
                                     {submitting ? (
                                         <>
