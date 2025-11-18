@@ -18,6 +18,7 @@ interface PaymentPageRecord {
     "כתובת לעדכון"?: string
     "טקסט לאישור תקנון"?: string
     "קישור לתקנון"?: string
+    "תשלום ראשון"?: number
   }
 }
 
@@ -94,6 +95,7 @@ serve(async (req) => {
           notifyUrlAddress: data.fields["כתובת לעדכון"] || "",
           termsApprovalText: data.fields["טקסט לאישור תקנון"] || "",
           termsLink: data.fields["קישור לתקנון"] || "",
+          firstPayment: data.fields["תשלום ראשון"] || null,
         },
       }),
       {

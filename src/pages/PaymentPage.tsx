@@ -19,6 +19,7 @@ interface PaymentPageData {
     notifyUrlAddress: string
     termsApprovalText?: string
     termsLink?: string
+    firstPayment?: number | null
 }
 
 export default function PaymentPage() {
@@ -74,8 +75,11 @@ export default function PaymentPage() {
 
             if (data?.success && data?.data) {
                 setPaymentData(data.data)
-                // For credit payments, default to 1. For recurring payments, use the numPayments from data
-                if (data.data.paymentType === 'אשראי') {
+                // If firstPayment has a value, force single payment (ignore כמות תשלומים)
+                if (data.data.firstPayment !== null && data.data.firstPayment !== undefined && data.data.firstPayment > 0) {
+                    setNumPayments(1)
+                } else if (data.data.paymentType === 'אשראי') {
+                    // For credit payments, default to 1. For recurring payments, use the numPayments from data
                     setNumPayments(1)
                 } else {
                     // Ensure numPayments doesn't exceed maxPayments if it exists
@@ -204,6 +208,13 @@ export default function PaymentPage() {
                 if (paymentData.notifyUrlAddress) {
                     const notifyUrl = paymentData.notifyUrlAddress
                     params.push(`notify_url_address=${notifyUrl}`)
+                }
+
+                // Add required parameters: amount_of_next_payments, single_payment_sum, first_payment
+                addParam('amount_of_next_payments', numPayments)
+                addParam('single_payment_sum', paymentData.amount)
+                if (paymentData.firstPayment !== null && paymentData.firstPayment !== undefined) {
+                    addParam('first_payment', paymentData.firstPayment)
                 }
 
                 return `${baseUrl}?${params.join('&')}`
