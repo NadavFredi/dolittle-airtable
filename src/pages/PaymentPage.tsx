@@ -312,6 +312,18 @@ export default function PaymentPage() {
                                         {paymentData.productDescription}
                                     </p>
                                 )}
+                                {paymentData && paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0 && (
+                                    <div className="mt-3 space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm opacity-90">תשלום ראשון:</span>
+                                            <span className="text-lg font-bold">₪{paymentData.firstPayment.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm opacity-90">יתר התשלומים:</span>
+                                            <span className="text-base font-semibold">₪{paymentData.amount.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             <div className="w-full" style={{ minHeight: '600px' }}>
                                 <iframe
@@ -369,10 +381,25 @@ export default function PaymentPage() {
                                 </div>
                             )}
                             {paymentData && (
-                                <div className="mt-2 flex items-center justify-between">
-                                    <span className="text-sm opacity-90">סכום לתשלום:</span>
-                                    <span className="text-xl font-bold">₪{paymentData.amount.toLocaleString()}</span>
-                                </div>
+                                <>
+                                    {paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0 ? (
+                                        <>
+                                            <div className="mt-2 flex items-center justify-between">
+                                                <span className="text-sm opacity-90">תשלום ראשון:</span>
+                                                <span className="text-xl font-bold">₪{paymentData.firstPayment.toLocaleString()}</span>
+                                            </div>
+                                            <div className="mt-1 flex items-center justify-between">
+                                                <span className="text-sm opacity-90">יתר התשלומים:</span>
+                                                <span className="text-lg font-semibold">₪{paymentData.amount.toLocaleString()}</span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="mt-2 flex items-center justify-between">
+                                            <span className="text-sm opacity-90">סכום לתשלום:</span>
+                                            <span className="text-xl font-bold">₪{paymentData.amount.toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                </>
                             )}
                             {paymentData?.paymentType && (
                                 <div className="mt-1 flex items-center gap-1.5 text-xs opacity-90">

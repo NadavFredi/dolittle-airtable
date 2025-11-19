@@ -14,7 +14,7 @@ interface PaymentPageRecord {
     "כמות תשלומים"?: number
     "כמות תשלומים מקסימלית אשראי בלבד"?: number
     "סכום לתשלום"?: number
-    "שפה"?: string
+    שפה?: string
     "כתובת לעדכון"?: string
   }
 }
@@ -48,7 +48,9 @@ serve(async (req) => {
     let offset: string | undefined = undefined
 
     while (true) {
-      const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}${offset ? `?offset=${offset}` : ""}`
+      const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}${
+        offset ? `?offset=${offset}` : ""
+      }`
 
       const response = await fetch(url, {
         headers: {
@@ -100,15 +102,9 @@ serve(async (req) => {
       }
     )
   } catch (error: any) {
-    return new Response(
-      JSON.stringify({ error: error.message || "Failed to fetch payment pages" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    )
+    return new Response(JSON.stringify({ error: error.message || "Failed to fetch payment pages" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    })
   }
 })
-
-
-
