@@ -313,15 +313,37 @@ export default function PaymentPage() {
                                     </p>
                                 )}
                                 {paymentData && paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0 && (
-                                    <div className="mt-3 space-y-1">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm opacity-90">תשלום ראשון:</span>
-                                            <span className="text-lg font-bold">₪{paymentData.firstPayment.toLocaleString()}</span>
+                                    <div className="mt-3 space-y-2">
+                                        <div className="space-y-1">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm opacity-90">תשלום ראשון:</span>
+                                                <span className="text-lg font-bold">₪{paymentData.firstPayment.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm opacity-90">יתר התשלומים:</span>
+                                                <span className="text-base font-semibold">₪{paymentData.amount.toLocaleString()}</span>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm opacity-90">יתר התשלומים:</span>
-                                            <span className="text-base font-semibold">₪{paymentData.amount.toLocaleString()}</span>
-                                        </div>
+                                        {(() => {
+                                            const recurringPayments = paymentData.numPayments || 1
+                                            const totalPayments = 1 + recurringPayments
+                                            return (
+                                                <div className="pt-2 border-t border-white/20 space-y-1">
+                                                    <div className="flex items-center justify-between text-xs opacity-85">
+                                                        <span>סה"כ תשלומים:</span>
+                                                        <span className="font-semibold">{totalPayments}</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between text-xs opacity-85">
+                                                        <span>תשלומים חוזרים:</span>
+                                                        <span className="font-semibold">{recurringPayments}</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between text-xs opacity-85">
+                                                        <span>תשלום ראשון:</span>
+                                                        <span className="font-semibold">1</span>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })()}
                                     </div>
                                 )}
                             </div>
@@ -392,6 +414,26 @@ export default function PaymentPage() {
                                                 <span className="text-sm opacity-90">יתר התשלומים:</span>
                                                 <span className="text-lg font-semibold">₪{paymentData.amount.toLocaleString()}</span>
                                             </div>
+                                            {(() => {
+                                                const recurringPayments = paymentData.numPayments || 1
+                                                const totalPayments = 1 + recurringPayments
+                                                return (
+                                                    <div className="mt-2 pt-2 border-t border-white/20 space-y-1">
+                                                        <div className="flex items-center justify-between text-xs opacity-85">
+                                                            <span>סה"כ תשלומים:</span>
+                                                            <span className="font-semibold">{totalPayments}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between text-xs opacity-85">
+                                                            <span>תשלומים חוזרים:</span>
+                                                            <span className="font-semibold">{recurringPayments}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between text-xs opacity-85">
+                                                            <span>תשלום ראשון:</span>
+                                                            <span className="font-semibold">1</span>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })()}
                                         </>
                                     ) : (
                                         <div className="mt-2 flex items-center justify-between">
