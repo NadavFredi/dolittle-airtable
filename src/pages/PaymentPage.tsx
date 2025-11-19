@@ -139,8 +139,12 @@ export default function PaymentPage() {
 
         try {
             // First, get the Tranzila handshake token
+            // If firstPayment exists, use it for the handshake (first payment amount), otherwise use regular amount
+            const handshakeSum = (paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0)
+                ? paymentData.firstPayment
+                : paymentData.amount
             const { data: handshakeData, error: handshakeError } = await supabase.functions.invoke('tranzila-handshake', {
-                body: { sum: paymentData.amount },
+                body: { sum: handshakeSum },
             })
 
             if (handshakeError || !handshakeData?.success || !handshakeData?.thtk) {
@@ -167,7 +171,11 @@ export default function PaymentPage() {
                 // Required parameters based on Tranzila documentation
                 addParam('new_process', '1')
                 addParam('lang', paymentData.language || 'il')
-                addParam('sum', paymentData.amount.toString())
+                // If firstPayment exists, use it as the sum (first payment amount), otherwise use regular amount
+                const sumAmount = (paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0)
+                    ? paymentData.firstPayment
+                    : paymentData.amount
+                addParam('sum', sumAmount.toString())
                 addParam('currency', '1')
                 addParam('tranmode', 'A')
 
@@ -211,9 +219,13 @@ export default function PaymentPage() {
                 }
 
                 // Add required parameters: amount_of_next_payments, single_payment_sum, first_payment
-                addParam('amount_of_next_payments', numPayments)
+                // When firstPayment exists, use original numPayments from data (not the state which is forced to 1)
+                const recurringPaymentsCount = (paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0)
+                    ? (paymentData.numPayments || 1)
+                    : numPayments
+                addParam('amount_of_next_payments', recurringPaymentsCount)
                 addParam('single_payment_sum', paymentData.amount)
-                if (paymentData.firstPayment !== null && paymentData.firstPayment !== undefined) {
+                if (paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0) {
                     addParam('first_payment', paymentData.firstPayment)
                 }
 
@@ -312,6 +324,40 @@ export default function PaymentPage() {
                                         {paymentData.productDescription}
                                     </p>
                                 )}
+                                {paymentData && paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0 && (
+                                    <div className="mt-3 space-y-2">
+                                        <div className="space-y-1">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm opacity-90">תשלום ראשון:</span>
+                                                <span className="text-lg font-bold">₪{paymentData.firstPayment.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm opacity-90">יתר התשלומים:</span>
+                                                <span className="text-base font-semibold">₪{paymentData.amount.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                        {(() => {
+                                            const recurringPayments = paymentData.numPayments || 1
+                                            const totalPayments = 1 + recurringPayments
+                                            return (
+                                                <div className="pt-2 border-t border-white/20 space-y-1">
+                                                    <div className="flex items-center justify-between text-xs opacity-85">
+                                                        <span>סה"כ תשלומים:</span>
+                                                        <span className="font-semibold">{totalPayments}</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between text-xs opacity-85">
+                                                        <span>תשלומים חוזרים:</span>
+                                                        <span className="font-semibold">{recurringPayments}</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between text-xs opacity-85">
+                                                        <span>תשלום ראשון:</span>
+                                                        <span className="font-semibold">1</span>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })()}
+                                    </div>
+                                )}
                             </div>
                             <div className="w-full" style={{ minHeight: '600px' }}>
                                 <iframe
@@ -369,10 +415,45 @@ export default function PaymentPage() {
                                 </div>
                             )}
                             {paymentData && (
-                                <div className="mt-2 flex items-center justify-between">
-                                    <span className="text-sm opacity-90">סכום לתשלום:</span>
-                                    <span className="text-xl font-bold">₪{paymentData.amount.toLocaleString()}</span>
-                                </div>
+                                <>
+                                    {paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0 ? (
+                                        <>
+                                            <div className="mt-2 flex items-center justify-between">
+                                                <span className="text-sm opacity-90">תשלום ראשון:</span>
+                                                <span className="text-xl font-bold">₪{paymentData.firstPayment.toLocaleString()}</span>
+                                            </div>
+                                            <div className="mt-1 flex items-center justify-between">
+                                                <span className="text-sm opacity-90">יתר התשלומים:</span>
+                                                <span className="text-lg font-semibold">₪{paymentData.amount.toLocaleString()}</span>
+                                            </div>
+                                            {(() => {
+                                                const recurringPayments = paymentData.numPayments || 1
+                                                const totalPayments = 1 + recurringPayments
+                                                return (
+                                                    <div className="mt-2 pt-2 border-t border-white/20 space-y-1">
+                                                        <div className="flex items-center justify-between text-xs opacity-85">
+                                                            <span>סה"כ תשלומים:</span>
+                                                            <span className="font-semibold">{totalPayments}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between text-xs opacity-85">
+                                                            <span>תשלומים חוזרים:</span>
+                                                            <span className="font-semibold">{recurringPayments}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between text-xs opacity-85">
+                                                            <span>תשלום ראשון:</span>
+                                                            <span className="font-semibold">1</span>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })()}
+                                        </>
+                                    ) : (
+                                        <div className="mt-2 flex items-center justify-between">
+                                            <span className="text-sm opacity-90">סכום לתשלום:</span>
+                                            <span className="text-xl font-bold">₪{paymentData.amount.toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                </>
                             )}
                             {paymentData?.paymentType && (
                                 <div className="mt-1 flex items-center gap-1.5 text-xs opacity-90">
