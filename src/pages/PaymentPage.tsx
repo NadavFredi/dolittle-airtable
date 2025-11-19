@@ -139,8 +139,12 @@ export default function PaymentPage() {
 
         try {
             // First, get the Tranzila handshake token
+            // If firstPayment exists, use it for the handshake (first payment amount), otherwise use regular amount
+            const handshakeSum = (paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0)
+                ? paymentData.firstPayment
+                : paymentData.amount
             const { data: handshakeData, error: handshakeError } = await supabase.functions.invoke('tranzila-handshake', {
-                body: { sum: paymentData.amount },
+                body: { sum: handshakeSum },
             })
 
             if (handshakeError || !handshakeData?.success || !handshakeData?.thtk) {
@@ -167,7 +171,11 @@ export default function PaymentPage() {
                 // Required parameters based on Tranzila documentation
                 addParam('new_process', '1')
                 addParam('lang', paymentData.language || 'il')
-                addParam('sum', paymentData.amount.toString())
+                // If firstPayment exists, use it as the sum (first payment amount), otherwise use regular amount
+                const sumAmount = (paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0)
+                    ? paymentData.firstPayment
+                    : paymentData.amount
+                addParam('sum', sumAmount.toString())
                 addParam('currency', '1')
                 addParam('tranmode', 'A')
 
@@ -211,9 +219,13 @@ export default function PaymentPage() {
                 }
 
                 // Add required parameters: amount_of_next_payments, single_payment_sum, first_payment
-                addParam('amount_of_next_payments', numPayments)
+                // When firstPayment exists, use original numPayments from data (not the state which is forced to 1)
+                const recurringPaymentsCount = (paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0)
+                    ? (paymentData.numPayments || 1)
+                    : numPayments
+                addParam('amount_of_next_payments', recurringPaymentsCount)
                 addParam('single_payment_sum', paymentData.amount)
-                if (paymentData.firstPayment !== null && paymentData.firstPayment !== undefined) {
+                if (paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0) {
                     addParam('first_payment', paymentData.firstPayment)
                 }
 
