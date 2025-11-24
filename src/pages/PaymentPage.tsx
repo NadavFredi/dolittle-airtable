@@ -60,6 +60,15 @@ export default function PaymentPage() {
         }
     }, [id, userId])
 
+    // Cleanup blob URL when component unmounts or iframeUrl changes
+    useEffect(() => {
+        return () => {
+            if (iframeUrl && iframeUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(iframeUrl)
+            }
+        }
+    }, [iframeUrl])
+
     const fetchPaymentPageData = async (recordId: string) => {
         try {
             setLoading(true)
@@ -153,15 +162,14 @@ export default function PaymentPage() {
 
             const thtk = handshakeData.thtk
 
-            // Build Tranzila iframe URL
-            const buildIframeUrl = () => {
-                const baseUrl = 'https://direct.tranzila.com/calbnoot/iframenew.php'
-                const params: string[] = []
+            // Build POST data for Tranzila iframe
+            const buildPostData = () => {
+                const postData: Record<string, string | number> = {}
 
-                // Helper function to add parameter (encode only the value)
+                // Helper function to add parameter
                 const addParam = (key: string, value: string | number) => {
                     if (value !== null && value !== undefined && value !== '') {
-                        params.push(`${key}=${encodeURIComponent(value.toString())}`)
+                        postData[key] = value
                     }
                 }
 
@@ -169,21 +177,21 @@ export default function PaymentPage() {
                 addParam('thtk', thtk)
 
                 // Required parameters based on Tranzila documentation
-                addParam('new_process', '1')
+                addParam('new_process', 1)
                 addParam('lang', paymentData.language || 'il')
                 // If firstPayment exists, use it as the sum (first payment amount), otherwise use regular amount
                 const sumAmount = (paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0)
                     ? paymentData.firstPayment
                     : paymentData.amount
-                addParam('sum', sumAmount.toString())
-                addParam('currency', '1')
+                addParam('sum', sumAmount)
+                addParam('currency', 1)
                 addParam('tranmode', 'AK')
 
                 // Payment type configuration
                 if (paymentData.paymentType === 'הוראת קבע' || paymentData.paymentType === 'recurring') {
                     // For recurring payments (הוראת קבע), use recur_payments
-                    addParam('cred_type', '1')
-                    addParam('recur_payments', numPayments.toString())
+                    addParam('cred_type', 1)
+                    addParam('recur_payments', numPayments)
                     addParam('recur_transaction', '4_approved')
                     // Set start date to today in yyyy-mm-dd format
                     const today = new Date()
@@ -193,11 +201,11 @@ export default function PaymentPage() {
                     addParam('recur_start_date', `${year}-${month}-${day}`)
                 } else {
                     // Credit card payment (אשראי)
-                    addParam('cred_type', '8')
+                    addParam('cred_type', 8)
 
                     // Maximum number of installments
                     if (paymentData.maxPayments && paymentData.maxPayments > 0) {
-                        addParam('maxpay', paymentData.maxPayments.toString())
+                        addParam('maxpay', paymentData.maxPayments)
                     }
                 }
 
@@ -210,10 +218,11 @@ export default function PaymentPage() {
                 if (userId) {
                     addParam('record_id', userId)
                 }
-                addParam('product_name', paymentData.productName)
+                addParam('custom_product_name', paymentData.productName)
                 addParam('contact', parentName)
+
                 // Add product list as JSON array (always 1 product with quantity 1)
-                // Passed as json_purchase_data parameter (URL-encoded JSON)
+                // Passed as json_purchase_data parameter (JSON string, not URL-encoded)
                 const productList = [
                     {
                         product_name: paymentData.productName,
@@ -223,11 +232,11 @@ export default function PaymentPage() {
                 ]
                 const productListJson = JSON.stringify(productList)
                 addParam('json_purchase_data', productListJson)
+                addParam('u71', 1)
 
-                // Add notify_url_address with record_id suffix (without encoding)
+                // Add notify_url_address
                 if (paymentData.notifyUrlAddress) {
-                    const notifyUrl = paymentData.notifyUrlAddress
-                    params.push(`notify_url_address=${notifyUrl}`)
+                    addParam('notify_url_address', paymentData.notifyUrlAddress)
                 }
 
                 // Add required parameters: amount_of_next_payments, single_payment_sum, first_payment
@@ -241,15 +250,32 @@ export default function PaymentPage() {
                     addParam('first_payment', paymentData.firstPayment)
                 }
 
-
-                console.log(params)
-
-
-                return `${baseUrl}?${params.join('&')}`
+                return postData
             }
 
-            const url = buildIframeUrl()
-            setIframeUrl(url)
+            const postData = buildPostData()
+
+            // Make POST request to get HTML
+            const response = await fetch('https://directng.tranzila.com/calbnoot/iframenew.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'text/html, application/xhtml+xml',
+                },
+                body: JSON.stringify(postData)
+            })
+
+            if (!response.ok) {
+                throw new Error(`Failed to load payment form: ${response.status} ${response.statusText}`)
+            }
+
+            const htmlContent = await response.text()
+
+            // Create a blob URL from the HTML content to display in iframe
+            const blob = new Blob([htmlContent], { type: 'text/html' })
+            const blobUrl = URL.createObjectURL(blob)
+
+            setIframeUrl(blobUrl)
             setShowIframe(true)
         } catch (err: any) {
             setError(err.message || 'שגיאה ביצירת תשלום')
