@@ -255,24 +255,21 @@ export default function PaymentPage() {
 
             const postData = buildPostData()
 
-            // Make POST request to get HTML
-            const response = await fetch('https://directng.tranzila.com/calbnoot/iframenew.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'text/html, application/xhtml+xml',
-                },
-                body: JSON.stringify(postData)
+            // Make POST request through Supabase function to avoid CORS issues
+            const { data: responseData, error: iframeError } = await supabase.functions.invoke('tranzila-iframe', {
+                body: postData,
             })
 
-            if (!response.ok) {
-                throw new Error(`Failed to load payment form: ${response.status} ${response.statusText}`)
+            if (iframeError) {
+                throw new Error(iframeError.message || 'Failed to load payment form')
             }
 
-            const htmlContent = await response.text()
+            if (!responseData?.success || !responseData?.html) {
+                throw new Error(responseData?.error || 'No HTML content received from payment form')
+            }
 
             // Create a blob URL from the HTML content to display in iframe
-            const blob = new Blob([htmlContent], { type: 'text/html' })
+            const blob = new Blob([responseData.html], { type: 'text/html' })
             const blobUrl = URL.createObjectURL(blob)
 
             setIframeUrl(blobUrl)
