@@ -212,7 +212,8 @@ export default function PaymentPage() {
                 }
                 addParam('product_name', paymentData.productName)
                 addParam('contact', parentName)
-
+                // Add product list as JSON array (always 1 product with quantity 1)
+                // Passed as json_purchase_data parameter (URL-encoded JSON)
                 const productList = [
                     {
                         product_name: paymentData.productName,
