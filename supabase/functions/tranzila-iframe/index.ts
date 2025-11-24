@@ -24,32 +24,29 @@ serve(async (req) => {
 
     console.log(postData)
 
-    // Convert postData to URL-encoded form data
-    const formData = new URLSearchParams()
+    // Convert postData to FormData (multipart/form-data)
+    const formData = new FormData()
     for (const [key, value] of Object.entries(postData)) {
       if (value !== null && value !== undefined && value !== "") {
         formData.append(key, String(value))
       }
     }
 
-    const formDataString = formData.toString()
+    // Log the form data entries
+    console.log("Form data entries:")
+    for (const [key, value] of formData.entries()) {
+      console.log(`  ${key}: ${value}`)
+    }
 
-    // Log equivalent curl command
-    const curlCommand = `curl --location 'https://directng.tranzila.com/calbnoot/iframenew.php' \\\n  --header 'Content-Type: application/x-www-form-urlencoded' \\\n  --header 'Accept: text/html, application/xhtml+xml' \\\n  --data-raw '${formDataString.replace(
-      /'/g,
-      "'\\''"
-    )}'`
-    console.log("Equivalent curl command:\n", curlCommand)
-    console.log("Form data string:", formDataString)
-
-    // Make POST request to Tranzila iframe endpoint with form data
+    // Make POST request to Tranzila iframe endpoint with FormData
+    // Note: Don't set Content-Type header manually - FormData will set it with boundary
     const response = await fetch("https://directng.tranzila.com/calbnoot/iframenew.php", {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
         Accept: "text/html, application/xhtml+xml",
+        // FormData will automatically set Content-Type: multipart/form-data; boundary=...
       },
-      body: formData.toString(),
+      body: formData,
     })
 
     if (!response.ok) {
