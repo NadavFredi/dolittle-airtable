@@ -177,7 +177,7 @@ export default function PaymentPage() {
                     : paymentData.amount
                 addParam('sum', sumAmount.toString())
                 addParam('currency', '1')
-                addParam('tranmode', 'A')
+                addParam('tranmode', 'AK')
 
                 // Payment type configuration
                 if (paymentData.paymentType === 'הוראת קבע' || paymentData.paymentType === 'recurring') {
@@ -211,6 +211,17 @@ export default function PaymentPage() {
                     addParam('record_id', userId)
                 }
                 addParam('product_name', paymentData.productName)
+                addParam('contact', parentName)
+
+                const productList = [
+                    {
+                        product_name: paymentData.productName,
+                        product_quantity: 1,
+                        product_price: sumAmount
+                    }
+                ]
+                const productListJson = JSON.stringify(productList)
+                addParam('json_purchase_data', productListJson)
 
                 // Add notify_url_address with record_id suffix (without encoding)
                 if (paymentData.notifyUrlAddress) {
@@ -229,6 +240,10 @@ export default function PaymentPage() {
                     addParam('first_payment', paymentData.firstPayment)
                 }
 
+
+                console.log(params)
+
+
                 return `${baseUrl}?${params.join('&')}`
             }
 
@@ -241,6 +256,8 @@ export default function PaymentPage() {
             setSubmitting(false)
         }
     }
+
+
 
     if (loading) {
         return (
