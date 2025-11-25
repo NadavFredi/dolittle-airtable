@@ -298,6 +298,7 @@ export default function PaymentPage() {
 
             // Create a form and submit it to the iframe (similar to Tranzila's example)
             // This approach posts directly to Tranzila and loads the response in the iframe
+            // This works better with jQuery and Tranzila scripts
             setShowIframe(true)
 
             // Use setTimeout to ensure iframe is rendered before form submission
@@ -307,6 +308,13 @@ export default function PaymentPage() {
                 form.action = 'https://direct.tranzila.com/calbnoot/iframenew.php'
                 form.target = 'tranzila-iframe'
                 form.style.display = 'none'
+
+                // Add directcgi parameter first
+                const directcgiInput = document.createElement('input')
+                directcgiInput.type = 'hidden'
+                directcgiInput.name = 'directcgi'
+                directcgiInput.value = 'on'
+                form.appendChild(directcgiInput)
 
                 // Add all form fields
                 for (const [key, value] of Object.entries(postData)) {
@@ -323,13 +331,6 @@ export default function PaymentPage() {
                         form.appendChild(input)
                     }
                 }
-
-                // Add directcgi parameter
-                const directcgiInput = document.createElement('input')
-                directcgiInput.type = 'hidden'
-                directcgiInput.name = 'directcgi'
-                directcgiInput.value = 'on'
-                form.appendChild(directcgiInput)
 
                 document.body.appendChild(form)
                 form.submit()

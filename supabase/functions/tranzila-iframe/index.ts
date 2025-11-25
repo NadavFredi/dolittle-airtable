@@ -12,20 +12,38 @@ serve(async (req) => {
   }
 
   try {
-    // Use hardcoded values matching the working curl example
-    const jsonPurchaseData =
-      '[{"product_name":"product","product_quantity":1,"product_price":1},{"product_name":"product2","product_quantity":1,"product_price":1},{"product_name":"product3","product_quantity":1,"product_price":1},{"product_name":"product4","product_quantity":1,"product_price":1},{"product_name":"product5","product_quantity":1,"product_price":1}]'
+    // Get POST data from request body
+    const postData = await req.json()
+
+    if (!postData) {
+      return new Response(JSON.stringify({ error: "POST data is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
+    }
+
+    console.log("Received POST data:", postData)
 
     // Use URLSearchParams for application/x-www-form-urlencoded
     const formData = new URLSearchParams()
+
+    // Add directcgi (required for Tranzila)
     formData.append("directcgi", "on")
+
+    // Add supplier (hardcoded as requested)
     formData.append("supplier", "calbnoot")
-    formData.append("sum", "10")
-    formData.append("currency", "1")
-    formData.append("json_purchase_data", encodeURIComponent(jsonPurchaseData))
-    formData.append("cred_type", "8")
-    formData.append("maxpay", "4")
-    formData.append("u71", "1")
+
+    // Add all fields from postData
+    for (const [key, value] of Object.entries(postData)) {
+      if (value !== null && value !== undefined && value !== "") {
+        // For json_purchase_data, URL-encode it if it's a JSON string
+        if (key === "json_purchase_data" && typeof value === "string") {
+          formData.append(key, encodeURIComponent(value))
+        } else {
+          formData.append(key, String(value))
+        }
+      }
+    }
 
     // Log the form data entries and equivalent curl command
     console.log("Form data entries:")
