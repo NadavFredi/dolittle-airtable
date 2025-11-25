@@ -7,6 +7,15 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Loader2, Lock, Shield, CreditCard, CheckCircle2, User } from 'lucide-react'
 
+// Extend Window interface for jQuery
+declare global {
+    interface Window {
+        jQuery?: any
+        $?: any
+        $n?: any
+    }
+}
+
 interface PaymentPageData {
     id: string
     productName: string
@@ -34,7 +43,6 @@ export default function PaymentPage() {
     const [paymentData, setPaymentData] = useState<PaymentPageData | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [showIframe, setShowIframe] = useState(false)
-    const [iframeUrl, setIframeUrl] = useState<string>('')
     const [termsAccepted, setTermsAccepted] = useState(false)
 
     // Form fields
@@ -60,14 +68,44 @@ export default function PaymentPage() {
         }
     }, [id, userId])
 
-    // Cleanup blob URL when component unmounts or iframeUrl changes
+    // Load jQuery and Tranzila scripts when component mounts
     useEffect(() => {
-        return () => {
-            if (iframeUrl && iframeUrl.startsWith('blob:')) {
-                URL.revokeObjectURL(iframeUrl)
+        // Load jQuery if not already loaded
+        if (!window.jQuery) {
+            const jqueryScript = document.createElement('script')
+            jqueryScript.src = 'https://code.jquery.com/jquery-3.6.0.js'
+            jqueryScript.async = true
+            document.head.appendChild(jqueryScript)
+
+            // Load Tranzila script after jQuery loads
+            jqueryScript.onload = () => {
+                const tranzilaScript = document.createElement('script')
+                tranzilaScript.src = `https://direct.tranzila.com/js/tranzilanapple_v3.js?v=${Date.now()}`
+                tranzilaScript.async = true
+                document.head.appendChild(tranzilaScript)
+
+                // Set up jQuery noConflict
+                tranzilaScript.onload = () => {
+                    if (window.jQuery) {
+                        window.$n = window.jQuery.noConflict(true)
+                    }
+                }
+            }
+        } else {
+            // jQuery already loaded, just load Tranzila script
+            const tranzilaScript = document.createElement('script')
+            tranzilaScript.src = `https://direct.tranzila.com/js/tranzilanapple_v3.js?v=${Date.now()}`
+            tranzilaScript.async = true
+            document.head.appendChild(tranzilaScript)
+
+            tranzilaScript.onload = () => {
+                if (window.jQuery) {
+                    window.$n = window.jQuery.noConflict(true)
+                }
             }
         }
-    }, [iframeUrl])
+    }, [])
+
 
     const fetchPaymentPageData = async (recordId: string) => {
         try {
@@ -173,6 +211,9 @@ export default function PaymentPage() {
                     }
                 }
 
+                // Add supplier (required for Tranzila)
+                addParam('supplier', 'calbnoot')
+
                 // Add thtk token from handshake
                 addParam('thtk', thtk)
 
@@ -255,25 +296,45 @@ export default function PaymentPage() {
 
             const postData = buildPostData()
 
-            // Make POST request through Supabase function to avoid CORS issues
-            const { data: responseData, error: iframeError } = await supabase.functions.invoke('tranzila-iframe', {
-                body: postData,
-            })
-
-            if (iframeError) {
-                throw new Error(iframeError.message || 'Failed to load payment form')
-            }
-
-            if (!responseData?.success || !responseData?.html) {
-                throw new Error(responseData?.error || 'No HTML content received from payment form')
-            }
-
-            // Create a blob URL from the HTML content to display in iframe
-            const blob = new Blob([responseData.html], { type: 'text/html' })
-            const blobUrl = URL.createObjectURL(blob)
-
-            setIframeUrl(blobUrl)
+            // Create a form and submit it to the iframe (similar to Tranzila's example)
+            // This approach posts directly to Tranzila and loads the response in the iframe
             setShowIframe(true)
+
+            // Use setTimeout to ensure iframe is rendered before form submission
+            setTimeout(() => {
+                const form = document.createElement('form')
+                form.method = 'POST'
+                form.action = 'https://direct.tranzila.com/calbnoot/iframenew.php'
+                form.target = 'tranzila-iframe'
+                form.style.display = 'none'
+
+                // Add all form fields
+                for (const [key, value] of Object.entries(postData)) {
+                    if (value !== null && value !== undefined && value !== '') {
+                        const input = document.createElement('input')
+                        input.type = 'hidden'
+                        input.name = key
+                        // For json_purchase_data, URL-encode it
+                        if (key === 'json_purchase_data') {
+                            input.value = encodeURIComponent(String(value))
+                        } else {
+                            input.value = String(value)
+                        }
+                        form.appendChild(input)
+                    }
+                }
+
+                // Add directcgi parameter
+                const directcgiInput = document.createElement('input')
+                directcgiInput.type = 'hidden'
+                directcgiInput.name = 'directcgi'
+                directcgiInput.value = 'on'
+                form.appendChild(directcgiInput)
+
+                document.body.appendChild(form)
+                form.submit()
+                document.body.removeChild(form)
+            }, 100)
         } catch (err: any) {
             setError(err.message || 'שגיאה ביצירת תשלום')
         } finally {
@@ -352,7 +413,7 @@ export default function PaymentPage() {
         )
     }
 
-    if (showIframe && iframeUrl) {
+    if (showIframe) {
         return (
             <div className="min-h-screen flex flex-col" dir="rtl">
                 <div className="flex-1 p-4 md:p-8">
@@ -402,11 +463,13 @@ export default function PaymentPage() {
                             </div>
                             <div className="w-full" style={{ minHeight: '600px' }}>
                                 <iframe
-                                    src={iframeUrl}
+                                    id="tranzila-iframe"
+                                    name="tranzila-iframe"
                                     className="w-full border-0"
                                     style={{ minHeight: '600px', width: '100%' }}
                                     title="Tranzila Payment"
                                     allow="payment"
+                                    {...({ allowPaymentRequest: 'true' } as any)}
                                 />
                             </div>
                         </div>

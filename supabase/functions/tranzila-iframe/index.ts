@@ -12,41 +12,44 @@ serve(async (req) => {
   }
 
   try {
-    // Get POST data from request body
-    const postData = await req.json()
+    // Use hardcoded values matching the working curl example
+    const jsonPurchaseData =
+      '[{"product_name":"product","product_quantity":1,"product_price":1},{"product_name":"product2","product_quantity":1,"product_price":1},{"product_name":"product3","product_quantity":1,"product_price":1},{"product_name":"product4","product_quantity":1,"product_price":1},{"product_name":"product5","product_quantity":1,"product_price":1}]'
 
-    if (!postData) {
-      return new Response(JSON.stringify({ error: "POST data is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      })
-    }
+    // Use URLSearchParams for application/x-www-form-urlencoded
+    const formData = new URLSearchParams()
+    formData.append("directcgi", "on")
+    formData.append("supplier", "calbnoot")
+    formData.append("sum", "10")
+    formData.append("currency", "1")
+    formData.append("json_purchase_data", encodeURIComponent(jsonPurchaseData))
+    formData.append("cred_type", "8")
+    formData.append("maxpay", "4")
+    formData.append("u71", "1")
 
-    console.log(postData)
-
-    // Convert postData to FormData (multipart/form-data)
-    const formData = new FormData()
-    for (const [key, value] of Object.entries(postData)) {
-      if (value !== null && value !== undefined && value !== "") {
-        formData.append(key, String(value))
-      }
-    }
-
-    // Log the form data entries
+    // Log the form data entries and equivalent curl command
     console.log("Form data entries:")
+    const curlFormFields: string[] = []
     for (const [key, value] of formData.entries()) {
       console.log(`  ${key}: ${value}`)
+      // Escape single quotes and build curl --data-urlencode flag
+      const escapedValue = String(value).replace(/'/g, "'\\''")
+      curlFormFields.push(`  --data-urlencode '${key}=${escapedValue}'`)
     }
 
-    // Make POST request to Tranzila iframe endpoint with FormData
-    // Note: Don't set Content-Type header manually - FormData will set it with boundary
-    const response = await fetch("https://directng.tranzila.com/calbnoot/iframenew.php", {
+    const curlCommand = `curl --location 'https://direct.tranzila.com/calbnoot/iframenew.php' \\\n  --header 'Content-Type: application/x-www-form-urlencoded' \\\n  --header 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' \\\n${curlFormFields.join(
+      " \\\n"
+    )}`
+    console.log("\nEquivalent curl command:\n", curlCommand)
+
+    // Make POST request to Tranzila iframe endpoint with URL-encoded form data
+    const response = await fetch("https://direct.tranzila.com/calbnoot/iframenew.php", {
       method: "POST",
       headers: {
-        Accept: "text/html, application/xhtml+xml",
-        // FormData will automatically set Content-Type: multipart/form-data; boundary=...
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       },
-      body: formData,
+      body: formData.toString(),
     })
 
     if (!response.ok) {
