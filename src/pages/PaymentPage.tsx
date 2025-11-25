@@ -7,6 +7,15 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Loader2, Lock, Shield, CreditCard, CheckCircle2, User } from 'lucide-react'
 
+// Extend Window interface for jQuery
+declare global {
+    interface Window {
+        jQuery?: any
+        $?: any
+        $n?: any
+    }
+}
+
 interface PaymentPageData {
     id: string
     productName: string
@@ -34,7 +43,6 @@ export default function PaymentPage() {
     const [paymentData, setPaymentData] = useState<PaymentPageData | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [showIframe, setShowIframe] = useState(false)
-    const [iframeUrl, setIframeUrl] = useState<string>('')
     const [termsAccepted, setTermsAccepted] = useState(false)
 
     // Form fields
@@ -59,6 +67,45 @@ export default function PaymentPage() {
             setError('מספר זיהוי לא תקין')
         }
     }, [id, userId])
+
+    // Load jQuery and Tranzila scripts when component mounts
+    useEffect(() => {
+        // Load jQuery if not already loaded
+        if (!window.jQuery) {
+            const jqueryScript = document.createElement('script')
+            jqueryScript.src = 'https://code.jquery.com/jquery-3.6.0.js'
+            jqueryScript.async = true
+            document.head.appendChild(jqueryScript)
+
+            // Load Tranzila script after jQuery loads
+            jqueryScript.onload = () => {
+                const tranzilaScript = document.createElement('script')
+                tranzilaScript.src = `https://direct.tranzila.com/js/tranzilanapple_v3.js?v=${Date.now()}`
+                tranzilaScript.async = true
+                document.head.appendChild(tranzilaScript)
+
+                // Set up jQuery noConflict
+                tranzilaScript.onload = () => {
+                    if (window.jQuery) {
+                        window.$n = window.jQuery.noConflict(true)
+                    }
+                }
+            }
+        } else {
+            // jQuery already loaded, just load Tranzila script
+            const tranzilaScript = document.createElement('script')
+            tranzilaScript.src = `https://direct.tranzila.com/js/tranzilanapple_v3.js?v=${Date.now()}`
+            tranzilaScript.async = true
+            document.head.appendChild(tranzilaScript)
+
+            tranzilaScript.onload = () => {
+                if (window.jQuery) {
+                    window.$n = window.jQuery.noConflict(true)
+                }
+            }
+        }
+    }, [])
+
 
     const fetchPaymentPageData = async (recordId: string) => {
         try {
@@ -153,37 +200,39 @@ export default function PaymentPage() {
 
             const thtk = handshakeData.thtk
 
-            // Build Tranzila iframe URL
-            const buildIframeUrl = () => {
-                const baseUrl = 'https://direct.tranzila.com/calbnoot/iframenew.php'
-                const params: string[] = []
+            // Build POST data for Tranzila iframe
+            const buildPostData = () => {
+                const postData: Record<string, string | number> = {}
 
-                // Helper function to add parameter (encode only the value)
+                // Helper function to add parameter
                 const addParam = (key: string, value: string | number) => {
                     if (value !== null && value !== undefined && value !== '') {
-                        params.push(`${key}=${encodeURIComponent(value.toString())}`)
+                        postData[key] = value
                     }
                 }
+
+                // Add supplier (required for Tranzila)
+                addParam('supplier', 'calbnoot')
 
                 // Add thtk token from handshake
                 addParam('thtk', thtk)
 
                 // Required parameters based on Tranzila documentation
-                addParam('new_process', '1')
+                addParam('new_process', 1)
                 addParam('lang', paymentData.language || 'il')
                 // If firstPayment exists, use it as the sum (first payment amount), otherwise use regular amount
                 const sumAmount = (paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0)
                     ? paymentData.firstPayment
                     : paymentData.amount
-                addParam('sum', sumAmount.toString())
-                addParam('currency', '1')
-                addParam('tranmode', 'A')
+                addParam('sum', sumAmount)
+                addParam('currency', 1)
+                addParam('tranmode', 'AK')
 
                 // Payment type configuration
                 if (paymentData.paymentType === 'הוראת קבע' || paymentData.paymentType === 'recurring') {
                     // For recurring payments (הוראת קבע), use recur_payments
-                    addParam('cred_type', '1')
-                    addParam('recur_payments', numPayments.toString())
+                    addParam('cred_type', 1)
+                    addParam('recur_payments', numPayments)
                     addParam('recur_transaction', '4_approved')
                     // Set start date to today in yyyy-mm-dd format
                     const today = new Date()
@@ -193,11 +242,11 @@ export default function PaymentPage() {
                     addParam('recur_start_date', `${year}-${month}-${day}`)
                 } else {
                     // Credit card payment (אשראי)
-                    addParam('cred_type', '8')
+                    addParam('cred_type', 8)
 
                     // Maximum number of installments
                     if (paymentData.maxPayments && paymentData.maxPayments > 0) {
-                        addParam('maxpay', paymentData.maxPayments.toString())
+                        addParam('maxpay', paymentData.maxPayments)
                     }
                 }
 
@@ -210,12 +259,25 @@ export default function PaymentPage() {
                 if (userId) {
                     addParam('record_id', userId)
                 }
-                addParam('product_name', paymentData.productName)
+                addParam('custom_product_name', paymentData.productName)
+                addParam('contact', parentName)
 
-                // Add notify_url_address with record_id suffix (without encoding)
+                // Add product list as JSON array (always 1 product with quantity 1)
+                // Passed as json_purchase_data parameter (JSON string, not URL-encoded)
+                const productList = [
+                    {
+                        product_name: paymentData.productName,
+                        product_quantity: 1,
+                        product_price: sumAmount
+                    }
+                ]
+                const productListJson = JSON.stringify(productList)
+                addParam('json_purchase_data', productListJson)
+                addParam('u71', 1)
+
+                // Add notify_url_address
                 if (paymentData.notifyUrlAddress) {
-                    const notifyUrl = paymentData.notifyUrlAddress
-                    params.push(`notify_url_address=${notifyUrl}`)
+                    addParam('notify_url_address', paymentData.notifyUrlAddress)
                 }
 
                 // Add required parameters: amount_of_next_payments, single_payment_sum, first_payment
@@ -229,18 +291,59 @@ export default function PaymentPage() {
                     addParam('first_payment', paymentData.firstPayment)
                 }
 
-                return `${baseUrl}?${params.join('&')}`
+                return postData
             }
 
-            const url = buildIframeUrl()
-            setIframeUrl(url)
+            const postData = buildPostData()
+
+            // Create a form and submit it to the iframe (similar to Tranzila's example)
+            // This approach posts directly to Tranzila and loads the response in the iframe
+            // This works better with jQuery and Tranzila scripts
             setShowIframe(true)
+
+            // Use setTimeout to ensure iframe is rendered before form submission
+            setTimeout(() => {
+                const form = document.createElement('form')
+                form.method = 'POST'
+                form.action = 'https://direct.tranzila.com/calbnoot/iframenew.php'
+                form.target = 'tranzila-iframe'
+                form.style.display = 'none'
+
+                // Add directcgi parameter first
+                const directcgiInput = document.createElement('input')
+                directcgiInput.type = 'hidden'
+                directcgiInput.name = 'directcgi'
+                directcgiInput.value = 'on'
+                form.appendChild(directcgiInput)
+
+                // Add all form fields
+                for (const [key, value] of Object.entries(postData)) {
+                    if (value !== null && value !== undefined && value !== '') {
+                        const input = document.createElement('input')
+                        input.type = 'hidden'
+                        input.name = key
+                        // For json_purchase_data, URL-encode it
+                        if (key === 'json_purchase_data') {
+                            input.value = encodeURIComponent(String(value))
+                        } else {
+                            input.value = String(value)
+                        }
+                        form.appendChild(input)
+                    }
+                }
+
+                document.body.appendChild(form)
+                form.submit()
+                document.body.removeChild(form)
+            }, 100)
         } catch (err: any) {
             setError(err.message || 'שגיאה ביצירת תשלום')
         } finally {
             setSubmitting(false)
         }
     }
+
+
 
     if (loading) {
         return (
@@ -311,7 +414,7 @@ export default function PaymentPage() {
         )
     }
 
-    if (showIframe && iframeUrl) {
+    if (showIframe) {
         return (
             <div className="min-h-screen flex flex-col" dir="rtl">
                 <div className="flex-1 p-4 md:p-8">
@@ -361,11 +464,13 @@ export default function PaymentPage() {
                             </div>
                             <div className="w-full" style={{ minHeight: '600px' }}>
                                 <iframe
-                                    src={iframeUrl}
+                                    id="tranzila-iframe"
+                                    name="tranzila-iframe"
                                     className="w-full border-0"
                                     style={{ minHeight: '600px', width: '100%' }}
                                     title="Tranzila Payment"
                                     allow="payment"
+                                    {...({ allowPaymentRequest: 'true' } as any)}
                                 />
                             </div>
                         </div>
