@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Autocomplete } from '@/components/ui/autocomplete'
 import { Popover } from '@/components/ui/popover'
 import { DatePickerInput } from '@/components/ui/date-picker-input'
+import { Checkbox } from '@/components/ui/checkbox'
 import { AppFooter } from '@/components/AppFooter'
 import { Login } from '@/components/Login'
 import { useAuth } from '@/hooks/useAuth'
@@ -401,10 +402,11 @@ const App: React.FC = () => {
     const [isSendingLink, setIsSendingLink] = useState(false)
     const [trackingUrl, setTrackingUrl] = useState('')
     const [selectedPaymentPage, setSelectedPaymentPage] = useState<{ id: string; name: string } | null>(null)
-    
+    const [sendOnlyToUnique, setSendOnlyToUnique] = useState(true)
+
     // RTK Query hook - automatically handles caching and deduplication
     const [getPaymentPages, { data: paymentPagesData, isLoading: paymentPagesLoading }] = useLazyGetPaymentPagesQuery()
-    
+
     const paymentPages = paymentPagesData?.data || []
 
     // Parameter configuration state
@@ -889,18 +891,36 @@ const App: React.FC = () => {
 
     // Bulk messaging functions
     const getUniquePhoneNumbers = () => {
-        const phones = filteredRegistrations.map(reg => reg.parentPhone).filter(phone => phone)
+        const phones = filteredRegistrations
+            .map(reg => reg.parentPhone?.trim())
+            .filter(phone => phone)
         return [...new Set(phones)]
+    }
+
+    const getUniqueRegistrations = () => {
+        const seen = new Set<string>()
+        const unique: typeof filteredRegistrations = []
+
+        for (const reg of filteredRegistrations) {
+            const phone = reg.parentPhone?.trim()
+            if (phone && !seen.has(phone)) {
+                seen.add(phone)
+                unique.push(reg)
+            }
+        }
+
+        return unique
     }
 
     const sendBulkMessages = async () => {
         setBulkMessagingStep('sending')
 
         try {
+            const registrationsToSend = sendOnlyToUnique ? getUniqueRegistrations() : filteredRegistrations
             const uniquePhones = getUniquePhoneNumbers()
 
             const payload = {
-                registrations: filteredRegistrations.map(reg => ({
+                registrations: registrationsToSend.map(reg => ({
                     id: reg.id,
                     childName: reg.childName,
                     parentName: reg.parentName,
@@ -908,15 +928,15 @@ const App: React.FC = () => {
                     school: reg.school,
                     course: reg.course,
                     cycle: reg.cycle,
-                    registrationLink: isSendingLink && selectedPaymentPage 
+                    registrationLink: isSendingLink && selectedPaymentPage
                         ? `${window.location.origin}/payment/${selectedPaymentPage.id}?user_id=${reg.id}`
                         : (isSendingLink && registrationLink ? `${registrationLink}${reg.id}` : null),
                     messageContent: messageContent,
                     flowId: flowId
                 })),
-                totalUsers: filteredRegistrations.length,
+                totalUsers: registrationsToSend.length,
                 uniqueNumbers: uniquePhones.length,
-                registrationLink: selectedPaymentPage 
+                registrationLink: selectedPaymentPage
                     ? `${window.location.origin}/payment/${selectedPaymentPage.id}?user_id=`
                     : registrationLink,
                 paymentPageId: selectedPaymentPage?.id || null,
@@ -1882,6 +1902,27 @@ const App: React.FC = () => {
 
                                         {bulkMessagingStep === 'config' && (
                                             <div className="space-y-6">
+                                                {/* Unique Registrants Option */}
+                                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                                    <label className="flex items-center gap-3 cursor-pointer">
+                                                        <Checkbox
+                                                            checked={sendOnlyToUnique}
+                                                            onChange={(e) => setSendOnlyToUnique(e.target.checked)}
+                                                        />
+                                                        <div className="flex-1">
+                                                            <div className="text-sm font-medium text-gray-900">
+                                                                שלח רק למשתמשים ייחודיים
+                                                            </div>
+                                                            <div className="text-xs text-gray-600 mt-1">
+                                                                {sendOnlyToUnique
+                                                                    ? `שליחה ל-${getUniquePhoneNumbers().length} מספרים ייחודיים בלבד`
+                                                                    : `שליחה לכל ה-${filteredRegistrations.length} רישומים`
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                </div>
+
                                                 {/* Mode Selection */}
                                                 <div>
                                                     <label className="block text-sm font-medium text-gray-700 mb-3">
