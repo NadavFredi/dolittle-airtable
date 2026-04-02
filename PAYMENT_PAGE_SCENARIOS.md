@@ -114,6 +114,27 @@ Current automated coverage:
 - recurring with different first payment and ongoing payment
 - credit with max installments
 - plain credit without max installments
+- credit with different first payment and ongoing payment
+
+## Additional Supported Scenario
+
+Shape:
+- `סוג תשלום = אשראי`
+- `תשלום ראשון > 0`
+- `סכום לתשלום != תשלום ראשון`
+
+Expected behavior:
+- `sum = first payment`
+- `cred_type = 8`
+- `first_payment = first payment`
+- `single_payment_sum = ongoing amount`
+- `amount_of_next_payments = Airtable payment count`
+- optional `maxpay` if defined
+- no recurring params
+
+Meaning:
+- this is still a credit-card flow
+- the page passes stepped payment amounts without STO / recurring setup
 
 Run:
 

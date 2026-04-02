@@ -161,3 +161,43 @@ test('buildTranzilaPostData sends plain credit payload without maxpay for single
   assert.equal(postData.amount_of_next_payments, 1)
   assert.equal(postData.single_payment_sum, 100)
 })
+
+test('buildTranzilaPostData supports credit with first payment different from following payments', () => {
+  const postData = buildTranzilaPostData({
+    paymentData: {
+      ...basePaymentData,
+      paymentType: 'אשראי',
+      amount: 200,
+      maxPayments: 6,
+      numPayments: 6,
+      firstPayment: 350,
+    },
+    selectedNumPayments: 1,
+    thtk: 'token123',
+    childName: 'Kid',
+    parentName: 'Parent',
+    cleanPhone: '0501234567',
+    email: 'parent@example.com',
+    userId: 'recRegistration',
+    today: new Date('2026-04-01T10:00:00Z'),
+  })
+
+  assert.equal(postData.sum, 350)
+  assert.equal(postData.cred_type, 8)
+  assert.equal(postData.first_payment, 350)
+  assert.equal(postData.single_payment_sum, 200)
+  assert.equal(postData.amount_of_next_payments, 6)
+  assert.equal(postData.maxpay, 6)
+  assert.equal(postData.recur_payments, undefined)
+  assert.equal(postData.recur_transaction, undefined)
+  assert.equal(postData.recur_start_date, undefined)
+
+  const purchaseData = JSON.parse(decodeURIComponent(String(postData.json_purchase_data)))
+  assert.deepEqual(purchaseData, [
+    {
+      product_name: 'Dog Training',
+      product_quantity: 1,
+      product_price: 350,
+    },
+  ])
+})
