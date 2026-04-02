@@ -55,6 +55,17 @@ export const getInitialNumPayments = (paymentData: PaymentPageData): number => {
   return initialNumPayments
 }
 
+export const getProductDisplayName = (paymentData: PaymentPageData): string => {
+  const productName = paymentData.productName?.trim() || ''
+  const productDescription = paymentData.productDescription?.trim() || ''
+
+  if (productDescription) {
+    return productDescription
+  }
+
+  return productName || productDescription
+}
+
 export const buildTranzilaPostData = ({
   paymentData,
   selectedNumPayments,
@@ -77,6 +88,7 @@ export const buildTranzilaPostData = ({
   const sumAmount = getHandshakeSum(paymentData)
   const recurringPaymentsCount = getRecurringPaymentsCount(paymentData, selectedNumPayments)
   const hasSteppedPayments = hasFirstPayment(paymentData)
+  const productDisplayName = getProductDisplayName(paymentData)
   const shouldConfigureRecurringInIframe =
     isRecurringPayment(paymentData.paymentType) && !hasFirstPayment(paymentData)
 
@@ -114,18 +126,10 @@ export const buildTranzilaPostData = ({
   if (userId) {
     addParam('record_id', userId)
   }
+  addParam('product_name', productDisplayName)
+  addParam('pdesc', productDisplayName)
   addParam('custom_product_name', paymentData.productName)
   addParam('contact', parentName)
-
-  const productList = [
-    {
-      product_name: paymentData.productName,
-      product_quantity: 1,
-      product_price: sumAmount,
-    },
-  ]
-  addParam('json_purchase_data', JSON.stringify(productList))
-  addParam('u71', 1)
 
   if (paymentData.notifyUrlAddress?.trim()) {
     addParam('notify_url_address', paymentData.notifyUrlAddress.trim())

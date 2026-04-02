@@ -70,6 +70,8 @@ test('buildTranzilaPostData keeps recurring setup in iframe when there is no fir
   assert.equal(postData.single_payment_sum, 180)
   assert.equal(postData.first_payment, undefined)
   assert.equal(postData.notify_url_address, 'https://example.com/webhook')
+  assert.equal(postData.product_name, 'Monthly plan')
+  assert.equal(postData.pdesc, 'Monthly plan')
 })
 
 test('buildTranzilaPostData avoids iframe recurring setup when first payment exists', () => {
@@ -79,6 +81,7 @@ test('buildTranzilaPostData avoids iframe recurring setup when first payment exi
       numPayments: 11,
       amount: 280,
       firstPayment: 350,
+      productDescription: 'Premium recurring plan',
     },
     selectedNumPayments: 1,
     thtk: 'token123',
@@ -98,15 +101,10 @@ test('buildTranzilaPostData avoids iframe recurring setup when first payment exi
   assert.equal(postData.recur_payments, undefined)
   assert.equal(postData.recur_transaction, undefined)
   assert.equal(postData.recur_start_date, undefined)
-
-  const purchaseData = JSON.parse(String(postData.json_purchase_data))
-  assert.deepEqual(purchaseData, [
-    {
-      product_name: 'Dog Training',
-      product_quantity: 1,
-      product_price: 350,
-    },
-  ])
+  assert.equal(postData.product_name, 'Premium recurring plan')
+  assert.equal(postData.pdesc, 'Premium recurring plan')
+  assert.equal(postData.json_purchase_data, undefined)
+  assert.equal(postData.u71, undefined)
 })
 
 test('buildTranzilaPostData sends credit maxpay without recurring params', () => {
@@ -133,6 +131,10 @@ test('buildTranzilaPostData sends credit maxpay without recurring params', () =>
   assert.equal(postData.recur_payments, undefined)
   assert.equal(postData.amount_of_next_payments, undefined)
   assert.equal(postData.single_payment_sum, undefined)
+  assert.equal(postData.product_name, 'Monthly plan')
+  assert.equal(postData.pdesc, 'Monthly plan')
+  assert.equal(postData.json_purchase_data, undefined)
+  assert.equal(postData.u71, undefined)
 })
 
 test('buildTranzilaPostData sends plain credit payload without maxpay for single charge pages', () => {
@@ -162,6 +164,10 @@ test('buildTranzilaPostData sends plain credit payload without maxpay for single
   assert.equal(postData.recur_payments, undefined)
   assert.equal(postData.amount_of_next_payments, undefined)
   assert.equal(postData.single_payment_sum, undefined)
+  assert.equal(postData.product_name, 'Monthly plan')
+  assert.equal(postData.pdesc, 'Monthly plan')
+  assert.equal(postData.json_purchase_data, undefined)
+  assert.equal(postData.u71, undefined)
 })
 
 test('buildTranzilaPostData supports credit with first payment different from following payments', () => {
@@ -173,6 +179,7 @@ test('buildTranzilaPostData supports credit with first payment different from fo
       maxPayments: 6,
       numPayments: 6,
       firstPayment: 350,
+      productDescription: 'Installments',
     },
     selectedNumPayments: 1,
     thtk: 'token123',
@@ -193,13 +200,8 @@ test('buildTranzilaPostData supports credit with first payment different from fo
   assert.equal(postData.recur_payments, undefined)
   assert.equal(postData.recur_transaction, undefined)
   assert.equal(postData.recur_start_date, undefined)
-
-  const purchaseData = JSON.parse(String(postData.json_purchase_data))
-  assert.deepEqual(purchaseData, [
-    {
-      product_name: 'Dog Training',
-      product_quantity: 1,
-      product_price: 350,
-    },
-  ])
+  assert.equal(postData.product_name, 'Installments')
+  assert.equal(postData.pdesc, 'Installments')
+  assert.equal(postData.json_purchase_data, undefined)
+  assert.equal(postData.u71, undefined)
 })
