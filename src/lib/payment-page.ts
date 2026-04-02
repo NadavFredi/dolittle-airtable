@@ -76,6 +76,7 @@ export const buildTranzilaPostData = ({
 
   const sumAmount = getHandshakeSum(paymentData)
   const recurringPaymentsCount = getRecurringPaymentsCount(paymentData, selectedNumPayments)
+  const hasSteppedPayments = hasFirstPayment(paymentData)
   const shouldConfigureRecurringInIframe =
     isRecurringPayment(paymentData.paymentType) && !hasFirstPayment(paymentData)
 
@@ -126,13 +127,15 @@ export const buildTranzilaPostData = ({
   addParam('json_purchase_data', JSON.stringify(productList))
   addParam('u71', 1)
 
-  if (paymentData.notifyUrlAddress) {
-    addParam('notify_url_address', paymentData.notifyUrlAddress)
+  if (paymentData.notifyUrlAddress?.trim()) {
+    addParam('notify_url_address', paymentData.notifyUrlAddress.trim())
   }
 
-  addParam('amount_of_next_payments', recurringPaymentsCount)
-  addParam('single_payment_sum', paymentData.amount)
-  if (hasFirstPayment(paymentData)) {
+  if (isRecurringPayment(paymentData.paymentType) || hasSteppedPayments) {
+    addParam('amount_of_next_payments', recurringPaymentsCount)
+    addParam('single_payment_sum', paymentData.amount)
+  }
+  if (hasSteppedPayments) {
     addParam('first_payment', paymentData.firstPayment!)
   }
 

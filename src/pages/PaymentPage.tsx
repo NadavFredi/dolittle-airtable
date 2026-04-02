@@ -210,12 +210,7 @@ export default function PaymentPage() {
                         const input = document.createElement('input')
                         input.type = 'hidden'
                         input.name = key
-                        // For json_purchase_data, URL-encode it
-                        if (key === 'json_purchase_data') {
-                            input.value = encodeURIComponent(String(value))
-                        } else {
-                            input.value = String(value)
-                        }
+                        input.value = String(value)
                         form.appendChild(input)
                     }
                 }
