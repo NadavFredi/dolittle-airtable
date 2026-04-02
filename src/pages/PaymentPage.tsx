@@ -5,6 +5,12 @@ import { AppFooter } from '@/components/AppFooter'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+    buildTranzilaPostData,
+    getHandshakeSum,
+    getInitialNumPayments,
+    type PaymentPageData,
+} from '@/lib/payment-page'
 import { Loader2, Lock, Shield, CreditCard, CheckCircle2, User } from 'lucide-react'
 
 // Extend Window interface for jQuery
@@ -14,21 +20,6 @@ declare global {
         $?: any
         $n?: any
     }
-}
-
-interface PaymentPageData {
-    id: string
-    productName: string
-    productDescription?: string
-    paymentType: string
-    numPayments: number
-    maxPayments: number | null
-    amount: number
-    language: string
-    notifyUrlAddress: string
-    termsApprovalText?: string
-    termsLink?: string
-    firstPayment?: number | null
 }
 
 export default function PaymentPage() {
@@ -122,21 +113,7 @@ export default function PaymentPage() {
 
             if (data?.success && data?.data) {
                 setPaymentData(data.data)
-                // If firstPayment has a value, force single payment (ignore כמות תשלומים)
-                if (data.data.firstPayment !== null && data.data.firstPayment !== undefined && data.data.firstPayment > 0) {
-                    setNumPayments(1)
-                } else if (data.data.paymentType === 'אשראי') {
-                    // For credit payments, default to 1. For recurring payments, use the numPayments from data
-                    setNumPayments(1)
-                } else {
-                    // Ensure numPayments doesn't exceed maxPayments if it exists
-                    const initialNumPayments = data.data.numPayments || 1
-                    if (data.data.maxPayments && data.data.maxPayments > 0) {
-                        setNumPayments(Math.min(initialNumPayments, data.data.maxPayments))
-                    } else {
-                        setNumPayments(initialNumPayments)
-                    }
-                }
+                setNumPayments(getInitialNumPayments(data.data))
             } else {
                 throw new Error(data?.error || 'Failed to load payment page data')
             }
@@ -186,10 +163,7 @@ export default function PaymentPage() {
 
         try {
             // First, get the Tranzila handshake token
-            // If firstPayment exists, use it for the handshake (first payment amount), otherwise use regular amount
-            const handshakeSum = (paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0)
-                ? paymentData.firstPayment
-                : paymentData.amount
+            const handshakeSum = getHandshakeSum(paymentData)
             const { data: handshakeData, error: handshakeError } = await supabase.functions.invoke('tranzila-handshake', {
                 body: { sum: handshakeSum },
             })
@@ -199,102 +173,16 @@ export default function PaymentPage() {
             }
 
             const thtk = handshakeData.thtk
-
-            // Build POST data for Tranzila iframe
-            const buildPostData = () => {
-                const postData: Record<string, string | number> = {}
-
-                // Helper function to add parameter
-                const addParam = (key: string, value: string | number) => {
-                    if (value !== null && value !== undefined && value !== '') {
-                        postData[key] = value
-                    }
-                }
-
-                // Add supplier (required for Tranzila)
-                addParam('supplier', 'calbnoot')
-
-                // Add thtk token from handshake
-                addParam('thtk', thtk)
-
-                // Required parameters based on Tranzila documentation
-                addParam('new_process', 1)
-                addParam('lang', paymentData.language || 'il')
-                // If firstPayment exists, use it as the sum (first payment amount), otherwise use regular amount
-                const sumAmount = (paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0)
-                    ? paymentData.firstPayment
-                    : paymentData.amount
-                addParam('sum', sumAmount)
-                addParam('currency', 1)
-                addParam('tranmode', 'AK')
-
-                // Payment type configuration
-                if (paymentData.paymentType === 'הוראת קבע' || paymentData.paymentType === 'recurring') {
-                    // For recurring payments (הוראת קבע), use recur_payments
-                    addParam('cred_type', 1)
-                    addParam('recur_payments', numPayments)
-                    addParam('recur_transaction', '4_approved')
-                    // Set start date to today in yyyy-mm-dd format
-                    const today = new Date()
-                    const year = today.getFullYear()
-                    const month = String(today.getMonth() + 1).padStart(2, '0')
-                    const day = String(today.getDate()).padStart(2, '0')
-                    addParam('recur_start_date', `${year}-${month}-${day}`)
-                } else {
-                    // Credit card payment (אשראי)
-                    addParam('cred_type', 8)
-
-                    // Maximum number of installments
-                    if (paymentData.maxPayments && paymentData.maxPayments > 0) {
-                        addParam('maxpay', paymentData.maxPayments)
-                    }
-                }
-
-                // Add custom fields (these might be used for tracking)
-                addParam('child_name', childName)
-                addParam('parent_name', parentName)
-                addParam('phone', cleanPhone)
-                addParam('email', email)
-                // Pass user_id to iframe as record_id (not the payment page record id)
-                if (userId) {
-                    addParam('record_id', userId)
-                }
-                addParam('custom_product_name', paymentData.productName)
-                addParam('contact', parentName)
-
-                // Add product list as JSON array (always 1 product with quantity 1)
-                // Passed as json_purchase_data parameter (JSON string, not URL-encoded)
-                const productList = [
-                    {
-                        product_name: paymentData.productName,
-                        product_quantity: 1,
-                        product_price: sumAmount
-                    }
-                ]
-                const productListJson = JSON.stringify(productList)
-                addParam('json_purchase_data', productListJson)
-                addParam('u71', 1)
-
-                // Add notify_url_address
-                if (paymentData.notifyUrlAddress) {
-                    addParam('notify_url_address', paymentData.notifyUrlAddress)
-                }
-
-                // Add required parameters: amount_of_next_payments, single_payment_sum, first_payment
-                // When firstPayment exists, use original numPayments from data (not the state which is forced to 1)
-                const recurringPaymentsCount = (paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0)
-                    ? (paymentData.numPayments || 1)
-                    : numPayments
-                addParam('amount_of_next_payments', recurringPaymentsCount)
-                addParam('single_payment_sum', paymentData.amount)
-                if (paymentData.firstPayment !== null && paymentData.firstPayment !== undefined && paymentData.firstPayment > 0) {
-                    addParam('first_payment', paymentData.firstPayment)
-                }
-
-                return postData
-            }
-
-            const postData = buildPostData()
+            const postData = buildTranzilaPostData({
+                paymentData,
+                selectedNumPayments: numPayments,
+                thtk,
+                childName,
+                parentName,
+                cleanPhone,
+                email,
+                userId,
+            })
 
             // Create a form and submit it to the iframe (similar to Tranzila's example)
             // This approach posts directly to Tranzila and loads the response in the iframe
@@ -322,12 +210,7 @@ export default function PaymentPage() {
                         const input = document.createElement('input')
                         input.type = 'hidden'
                         input.name = key
-                        // For json_purchase_data, URL-encode it
-                        if (key === 'json_purchase_data') {
-                            input.value = encodeURIComponent(String(value))
-                        } else {
-                            input.value = String(value)
-                        }
+                        input.value = String(value)
                         form.appendChild(input)
                     }
                 }
@@ -730,4 +613,3 @@ export default function PaymentPage() {
         </div>
     )
 }
-
