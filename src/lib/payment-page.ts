@@ -59,10 +59,6 @@ export const getProductDisplayName = (paymentData: PaymentPageData): string => {
   const productName = paymentData.productName?.trim() || ''
   const productDescription = paymentData.productDescription?.trim() || ''
 
-  if (productDescription) {
-    return productDescription
-  }
-
   return productName || productDescription
 }
 
