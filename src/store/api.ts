@@ -4,7 +4,7 @@ import { supabase } from "@/hooks/useAuth"
 // Define the API response types
 export interface AttendanceData {
   attendance?: Record<string, boolean>
-  notes?: Record<string, string>
+  notes?: Record<string, string> | Record<string, Record<string, string>>
   history?: Record<string, Record<string, boolean>>
   historyNotes?: Record<string, Record<string, string>>
   dates?: string[]
@@ -18,6 +18,10 @@ export interface AttendanceResponse {
 interface GetAttendanceRequest {
   cohortId: string
   date?: string
+  dateRange?: {
+    startDate: string
+    endDate: string
+  }
   fullHistory?: boolean
 }
 
@@ -49,11 +53,13 @@ export const attendanceApi = createApi({
   tagTypes: ["Attendance", "PaymentPages"],
   endpoints: (builder) => ({
     getAttendance: builder.query<AttendanceResponse, GetAttendanceRequest>({
-      async queryFn({ cohortId, date, fullHistory }) {
+      async queryFn({ cohortId, date, dateRange, fullHistory }) {
         try {
           const body: any = { cohortId }
 
-          if (date && !fullHistory) {
+          if (dateRange) {
+            body.dateRange = dateRange
+          } else if (date && !fullHistory) {
             body.date = date
           } else if (fullHistory) {
             body.fullHistory = true
@@ -72,7 +78,10 @@ export const attendanceApi = createApi({
           return { error: { status: "CUSTOM_ERROR", error: error.message } }
         }
       },
-      providesTags: (result, error, arg) => [{ type: "Attendance", id: `${arg.cohortId}-${arg.date || "history"}` }],
+      providesTags: (result, error, arg) => [{
+        type: "Attendance",
+        id: `${arg.cohortId}-${arg.date || (arg.dateRange ? `${arg.dateRange.startDate}-${arg.dateRange.endDate}` : "history")}`,
+      }],
     }),
     getPaymentPages: builder.query<PaymentPagesResponse, GetPaymentPagesRequest>({
       async queryFn({ search = "" }) {
