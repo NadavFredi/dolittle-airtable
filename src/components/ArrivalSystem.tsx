@@ -7,6 +7,13 @@ import { Calendar, ChevronLeft, ChevronRight, FileText, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useGetAttendanceQuery } from '@/store/api'
 import { supabase } from '@/hooks/useAuth'
+import {
+    getAttendanceRequestKey,
+    getFilledHistoryWindow,
+    getHistoryDisplayDates,
+    getHistoryNavigationDates,
+    getNextFilledHistoryPageOffset
+} from '@/lib/attendance-history'
 
 interface Registration {
     id: string
@@ -123,9 +130,11 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
     const [fullAttendanceHistory, setFullAttendanceHistory] = useState<Record<string, Record<string, boolean>>>({})
     const [historyNotes, setHistoryNotes] = useState<Record<string, Record<string, string>>>({}) // studentId -> { date: note }
     const [allHistoryDates, setAllHistoryDates] = useState<string[]>([]) // Dates in the requested history window
+    const [reportedHistoryDates, setReportedHistoryDates] = useState<string[] | undefined>(undefined) // Dates that have saved attendance data
     const [attendanceDates, setAttendanceDates] = useState<string[]>([]) // Current 14-day window to display
     const [attendanceHistory, setAttendanceHistory] = useState<Record<string, Record<string, boolean>>>({}) // Current window data
-    const [currentDateOffset, setCurrentDateOffset] = useState(0) // Signed days to offset from selected history date
+    const [currentDateOffset, setCurrentDateOffset] = useState(0) // Days in empty mode, filled-date pages otherwise
+    const [includeEmptyDays, setIncludeEmptyDays] = useState(false)
     const [isLoadingHistory, setIsLoadingHistory] = useState(false)
 
     // Extract unique options
@@ -279,6 +288,10 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
 
     const cohortId = filteredRegistrations[0]?.cohortId
     const date = selectedFilters.date ? formatDateParam(selectedFilters.date) : undefined
+    const markAttendanceRequestKey = getAttendanceRequestKey({
+        cohortId: cohortId || '',
+        date
+    })
 
     const {
         data: markAttendanceData,
@@ -290,9 +303,18 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
             date: date
         },
         {
-            skip: !shouldFetchMarkAttendance || !cohortId || !date
+            skip: !shouldFetchMarkAttendance || !cohortId || !date,
+            refetchOnMountOrArgChange: true
         }
     )
+
+    useEffect(() => {
+        if (shouldFetchMarkAttendance && cohortId && date) {
+            setArrivalStatuses({})
+            setNotes({})
+            setIsLoadingAttendance(true)
+        }
+    }, [markAttendanceRequestKey, shouldFetchMarkAttendance, cohortId, date])
 
     // Update state when mark attendance data is loaded
     useEffect(() => {
@@ -397,26 +419,56 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
     const historyCohortId = filteredRegistrations[0]?.cohortId
     const historyDateRange = useMemo(
         () => getHistoryDateRange(selectedFilters.date, currentDateOffset),
-        [selectedFilters.date, currentDateOffset]
+        [selectedFilters.date, includeEmptyDays, currentDateOffset]
     )
     const requestedHistoryDates = useMemo(
-        () => getDateRangeDates(historyDateRange.startDate, historyDateRange.endDate),
-        [historyDateRange]
+        () => includeEmptyDays
+            ? getDateRangeDates(historyDateRange.startDate, historyDateRange.endDate)
+            : getFilledHistoryWindow({
+                reportedDates: reportedHistoryDates || [],
+                anchorDate: selectedFilters.date ? formatDateParam(selectedFilters.date) : formatDateParam(new Date()),
+                pageOffset: currentDateOffset,
+                pageSize: HISTORY_WINDOW_DAYS
+            }),
+        [historyDateRange, includeEmptyDays, reportedHistoryDates, selectedFilters.date, currentDateOffset]
     )
+    const historyAttendanceRequestKey = getAttendanceRequestKey({
+        cohortId: historyCohortId || '',
+        dateRange: includeEmptyDays ? historyDateRange : undefined,
+        fullHistory: !includeEmptyDays
+    })
+    const historyAttendanceRequest = includeEmptyDays
+        ? {
+            cohortId: historyCohortId || '',
+            dateRange: historyDateRange
+        }
+        : {
+            cohortId: historyCohortId || '',
+            fullHistory: true
+        }
 
     const {
         data: historyAttendanceData,
         isLoading: isLoadingHistoryAttendance,
         error: historyAttendanceError
     } = useGetAttendanceQuery(
+        historyAttendanceRequest,
         {
-            cohortId: historyCohortId || '',
-            dateRange: historyDateRange
-        },
-        {
-            skip: !shouldFetchHistory || !historyCohortId
+            skip: !shouldFetchHistory || !historyCohortId,
+            refetchOnMountOrArgChange: true
         }
     )
+
+    useEffect(() => {
+        if (shouldFetchHistory && historyCohortId) {
+            setFullAttendanceHistory({})
+            setHistoryNotes({})
+            setReportedHistoryDates(undefined)
+            setAttendanceDates([])
+            setAttendanceHistory({})
+            setIsLoadingHistory(true)
+        }
+    }, [historyAttendanceRequestKey, shouldFetchHistory, historyCohortId])
 
     // Update state when history attendance data is loaded
     useEffect(() => {
@@ -426,6 +478,11 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
             } else {
                 setFullAttendanceHistory({})
             }
+            setReportedHistoryDates(
+                Array.isArray(historyAttendanceData.data.dates)
+                    ? historyAttendanceData.data.dates
+                    : undefined
+            )
 
             // Load notes if provided
             const historyNotesData = historyAttendanceData.data.historyNotes || historyAttendanceData.data.notes
@@ -460,7 +517,12 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
     // Update displayed dates based on the requested history window
     useEffect(() => {
         if (viewMode === 'history' && allHistoryDates.length > 0) {
-            const windowDates = [...allHistoryDates]
+            const windowDates = getHistoryDisplayDates({
+                requestedDates: allHistoryDates,
+                reportedDates: reportedHistoryDates,
+                history: fullAttendanceHistory,
+                includeEmptyDays
+            })
             setAttendanceDates(windowDates)
 
             // Filter attendance history for current window
@@ -480,11 +542,22 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
             })
             setAttendanceHistory(windowHistory)
         }
-    }, [viewMode, allHistoryDates, filteredRegistrations, fullAttendanceHistory])
+    }, [viewMode, allHistoryDates, reportedHistoryDates, filteredRegistrations, fullAttendanceHistory, includeEmptyDays])
 
     const handleDateNavigation = (direction: 'forward' | 'back') => {
+        if (!includeEmptyDays) {
+            setCurrentDateOffset(prev => getNextFilledHistoryPageOffset({
+                reportedDates: reportedHistoryDates || [],
+                anchorDate: selectedFilters.date ? formatDateParam(selectedFilters.date) : formatDateParam(new Date()),
+                currentOffset: prev,
+                direction,
+                pageSize: HISTORY_WINDOW_DAYS
+            }))
+            return
+        }
+
         if (direction === 'forward') {
-            setCurrentDateOffset(prev => prev - HISTORY_WINDOW_DAYS)
+            setCurrentDateOffset(prev => Math.max(0, prev - HISTORY_WINDOW_DAYS))
         } else {
             setCurrentDateOffset(prev => prev + HISTORY_WINDOW_DAYS)
         }
@@ -493,7 +566,12 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
     // When filters or anchor date change, reset the current history window
     useEffect(() => {
         setCurrentDateOffset(0)
-    }, [selectedFilters.cohort, selectedFilters.date])
+    }, [selectedFilters.cohort, selectedFilters.date, includeEmptyDays])
+
+    const historyNavigationDates = getHistoryNavigationDates({
+        displayDates: attendanceDates,
+        requestedDates: allHistoryDates
+    })
 
     return (
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-6" dir="rtl">
@@ -871,35 +949,50 @@ const ArrivalSystem: React.FC<ArrivalSystemProps> = ({ registrations, loading = 
                             </div>
 
                             {/* Date Navigation */}
-                            {!isLoadingHistory && attendanceDates.length > 0 && (
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        onClick={() => handleDateNavigation('back')}
-                                        disabled={isLoadingHistory}
-                                        className="p-2 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                        title="תאריכים קודמים"
-                                    >
-                                        <ChevronRight className="w-5 h-5 text-gray-600" />
-                                    </button>
+                            {!isLoadingHistory && (
+                                <div className="flex items-center gap-4">
+                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                        <input
+                                            type="checkbox"
+                                            checked={includeEmptyDays}
+                                            onChange={(event) => setIncludeEmptyDays(event.target.checked)}
+                                            aria-label="include empty days"
+                                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+                                        />
+                                        כלול ימים ריקים
+                                    </label>
 
-                                    <div className="text-sm font-medium text-gray-700 px-3">
-                                        {new Date(attendanceDates[0]).toLocaleDateString('he-IL', {
-                                            day: '2-digit',
-                                            month: '2-digit'
-                                        })} - {new Date(attendanceDates[attendanceDates.length - 1]).toLocaleDateString('he-IL', {
-                                            day: '2-digit',
-                                            month: '2-digit'
-                                        })}
-                                    </div>
+                                    {historyNavigationDates.length > 0 && (
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={() => handleDateNavigation('back')}
+                                                disabled={isLoadingHistory}
+                                                className="p-2 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                title="תאריכים קודמים"
+                                            >
+                                                <ChevronRight className="w-5 h-5 text-gray-600" />
+                                            </button>
 
-                                    <button
-                                        onClick={() => handleDateNavigation('forward')}
-                                        disabled={isLoadingHistory}
-                                        className="p-2 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                        title="תאריכים הבאים"
-                                    >
-                                        <ChevronLeft className="w-5 h-5 text-gray-600" />
-                                    </button>
+                                            <div className="text-sm font-medium text-gray-700 px-3">
+                                                {new Date(historyNavigationDates[0]).toLocaleDateString('he-IL', {
+                                                    day: '2-digit',
+                                                    month: '2-digit'
+                                                })} - {new Date(historyNavigationDates[historyNavigationDates.length - 1]).toLocaleDateString('he-IL', {
+                                                    day: '2-digit',
+                                                    month: '2-digit'
+                                                })}
+                                            </div>
+
+                                            <button
+                                                onClick={() => handleDateNavigation('forward')}
+                                                disabled={isLoadingHistory}
+                                                className="p-2 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                title="תאריכים הבאים"
+                                            >
+                                                <ChevronLeft className="w-5 h-5 text-gray-600" />
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
