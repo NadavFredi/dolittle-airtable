@@ -24,22 +24,28 @@ interface PaymentPageRecord {
 
 // Airtable record ids look like "rec" + 14 alphanumeric chars
 const RECORD_ID_PATTERN = /^rec[a-zA-Z0-9]{14}$/
+const ALREADY_PAID_STATUS = "שולם לכל השנה"
 
 // "valid" = registration exists, "not_found" = missing/malformed/unknown id,
+// "already_paid" = registration is already paid for the whole year,
 // "unknown" = lookup failed (don't block the payer because of our own error)
 async function checkRegistration(
   userId: unknown,
   pat: string,
   baseId: string
-): Promise<"valid" | "not_found" | "unknown"> {
+): Promise<"valid" | "not_found" | "already_paid" | "unknown"> {
   if (typeof userId !== "string" || !RECORD_ID_PATTERN.test(userId.trim())) {
     return "not_found"
   }
 
   try {
-    const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent("הרשמה לניסיון")}/${userId.trim()}`
+    const statusField = "סטטוס רישום לחוג"
+    const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent("הרשמה לניסיון")}/${userId.trim()}?fields%5B%5D=${encodeURIComponent(statusField)}`
     const res = await fetch(url, { headers: { Authorization: `Bearer ${pat}` } })
-    if (res.ok) return "valid"
+    if (res.ok) {
+      const record = await res.json()
+      return record.fields?.[statusField] === ALREADY_PAID_STATUS ? "already_paid" : "valid"
+    }
     if (res.status === 404 || res.status === 422) return "not_found"
     return "unknown"
   } catch {

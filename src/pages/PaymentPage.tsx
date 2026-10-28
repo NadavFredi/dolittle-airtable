@@ -35,7 +35,7 @@ export default function PaymentPage() {
     const [error, setError] = useState<string | null>(null)
     const [showIframe, setShowIframe] = useState(false)
     const [termsAccepted, setTermsAccepted] = useState(false)
-    const [userCheck, setUserCheck] = useState<'valid' | 'not_found' | 'unknown'>('valid')
+    const [userCheck, setUserCheck] = useState<'valid' | 'not_found' | 'already_paid' | 'unknown'>('valid')
     const [invalidLinkAck, setInvalidLinkAck] = useState(false)
     const linkInvalid = userCheck === 'not_found'
 
@@ -237,6 +237,32 @@ export default function PaymentPage() {
                     <div className="text-center">
                         <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto" />
                         <p className="mt-4 text-gray-600">טוען נתונים...</p>
+                    </div>
+                </div>
+                <AppFooter />
+            </div>
+        )
+    }
+
+    if (userCheck === 'already_paid') {
+        return (
+            <div className="min-h-screen flex flex-col bg-gray-50" dir="rtl">
+                <div className="flex-1 flex items-center justify-center px-4 py-12">
+                    <div className="max-w-lg w-full text-center">
+                        <div className="bg-white rounded-lg shadow-lg p-8 md:p-12">
+                            <div className="w-20 h-20 mx-auto bg-amber-100 rounded-full flex items-center justify-center mb-4">
+                                <CheckCircle2 className="w-10 h-10 text-amber-600" />
+                            </div>
+                            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
+                                לא ניתן לשלם דרך קישור זה
+                            </h1>
+                            <p className="text-lg text-gray-700 mb-2">
+                                הקישור הזה משויך להרשמה ששולמה כבר לכל השנה. ייתכן שהקישור הועבר אליך מהורה אחר.
+                            </p>
+                            <p className="text-base text-gray-600">
+                                אנא פנו לצוות ההנהלה, או השתמשו בקישור האישי שנשלח אליכם.
+                            </p>
+                        </div>
                     </div>
                 </div>
                 <AppFooter />
@@ -471,7 +497,7 @@ export default function PaymentPage() {
                                 <div className="mb-3 bg-amber-50 border border-amber-300 rounded p-3 text-xs text-amber-900 space-y-2">
                                     <p className="font-bold text-sm">⚠️ הקישור אינו תקין</p>
                                     <p>
-                                        לא הצלחנו לזהות את ההרשמה שלך לפי הקישור. אם תבחר/י לשלם ולא תתאם/י זאת
+                                        לא הצלחנו לזהות את הפרטים שלך לפי הקישור. אם תבחר/י לשלם ולא תתאם/י זאת
                                         במפורש עם צוות ההנהלה, התשלום לא ישויך אליך.
                                     </p>
                                     <p>
