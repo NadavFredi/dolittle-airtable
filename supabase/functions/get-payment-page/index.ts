@@ -40,13 +40,13 @@ async function checkRegistration(
 
   try {
     const statusField = "סטטוס רישום לחוג"
-    const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent("הרשמה לניסיון")}/${userId.trim()}?fields%5B%5D=${encodeURIComponent(statusField)}`
+    const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent("הרשמה לניסיון")}/${userId.trim()}`
     const res = await fetch(url, { headers: { Authorization: `Bearer ${pat}` } })
     if (res.ok) {
       const record = await res.json()
       return record.fields?.[statusField] === ALREADY_PAID_STATUS ? "already_paid" : "valid"
     }
-    if (res.status === 404 || res.status === 422) return "not_found"
+    if (res.status === 403 || res.status === 404) return "not_found"
     return "unknown"
   } catch {
     return "unknown"

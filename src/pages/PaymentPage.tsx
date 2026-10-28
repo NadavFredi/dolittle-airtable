@@ -254,10 +254,10 @@ export default function PaymentPage() {
                                 <CheckCircle2 className="w-10 h-10 text-amber-600" />
                             </div>
                             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-                                לא ניתן לשלם דרך קישור זה
+                                קישור זה כבר שולם
                             </h1>
                             <p className="text-lg text-gray-700 mb-2">
-                                הקישור הזה משויך להרשמה ששולמה כבר לכל השנה. ייתכן שהקישור הועבר אליך מהורה אחר.
+                                ייתכן שהקישור הועבר אליך מהורה אחר.
                             </p>
                             <p className="text-base text-gray-600">
                                 אנא פנו לצוות ההנהלה, או השתמשו בקישור האישי שנשלח אליכם.
