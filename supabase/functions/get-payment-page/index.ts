@@ -22,6 +22,37 @@ interface PaymentPageRecord {
   }
 }
 
+// Airtable record ids look like "rec" + 14 alphanumeric chars
+const RECORD_ID_PATTERN = /^rec[a-zA-Z0-9]{14}$/
+const ALREADY_PAID_STATUS = "שולם לכל השנה"
+
+// "valid" = registration exists, "not_found" = missing/malformed/unknown id,
+// "already_paid" = registration is already paid for the whole year,
+// "unknown" = lookup failed (don't block the payer because of our own error)
+async function checkRegistration(
+  userId: unknown,
+  pat: string,
+  baseId: string
+): Promise<"valid" | "not_found" | "already_paid" | "unknown"> {
+  if (typeof userId !== "string" || !RECORD_ID_PATTERN.test(userId.trim())) {
+    return "not_found"
+  }
+
+  try {
+    const statusField = "סטטוס רישום לחוג"
+    const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent("הרשמה לניסיון")}/${userId.trim()}`
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${pat}` } })
+    if (res.ok) {
+      const record = await res.json()
+      return record.fields?.[statusField] === ALREADY_PAID_STATUS ? "already_paid" : "valid"
+    }
+    if (res.status === 403 || res.status === 404) return "not_found"
+    return "unknown"
+  } catch {
+    return "unknown"
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -42,7 +73,7 @@ serve(async (req) => {
     }
 
     // Get record ID from request body
-    const { recordId } = await req.json()
+    const { recordId, userId } = await req.json()
 
     if (!recordId) {
       return new Response(
@@ -80,9 +111,12 @@ serve(async (req) => {
 
     const data: PaymentPageRecord = await response.json()
 
+    const userCheck = await checkRegistration(userId, AIRTABLE_PAT, AIRTABLE_BASE_ID)
+
     return new Response(
       JSON.stringify({
         success: true,
+        userCheck,
         data: {
           id: data.id,
           productName: data.fields["שם המוצר"] || "",
