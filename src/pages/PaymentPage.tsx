@@ -35,6 +35,9 @@ export default function PaymentPage() {
     const [error, setError] = useState<string | null>(null)
     const [showIframe, setShowIframe] = useState(false)
     const [termsAccepted, setTermsAccepted] = useState(false)
+    const [userCheck, setUserCheck] = useState<'valid' | 'not_found' | 'unknown'>('valid')
+    const [invalidLinkAck, setInvalidLinkAck] = useState(false)
+    const linkInvalid = userCheck === 'not_found'
 
     // Form fields
     const [childName, setChildName] = useState('')
@@ -44,13 +47,6 @@ export default function PaymentPage() {
     const [numPayments, setNumPayments] = useState<number>(1)
 
     useEffect(() => {
-        // Check if userId is provided
-        if (!userId || userId.trim() === '') {
-            setLoading(false)
-            setError('invalid_page')
-            return
-        }
-
         if (id && id.trim() !== '') {
             fetchPaymentPageData(id)
         } else {
@@ -104,7 +100,7 @@ export default function PaymentPage() {
             setError(null)
 
             const { data, error: fetchError } = await supabase.functions.invoke('get-payment-page', {
-                body: { recordId },
+                body: { recordId, userId },
             })
 
             if (fetchError) {
@@ -113,6 +109,7 @@ export default function PaymentPage() {
 
             if (data?.success && data?.data) {
                 setPaymentData(data.data)
+                setUserCheck(data.userCheck || 'unknown')
                 setNumPayments(getInitialNumPayments(data.data))
             } else {
                 throw new Error(data?.error || 'Failed to load payment page data')
@@ -134,6 +131,11 @@ export default function PaymentPage() {
 
         if (!paymentData) {
             setError('נתוני התשלום לא נטענו')
+            return
+        }
+
+        if (linkInvalid && !invalidLinkAck) {
+            setError('אנא אשר/י שהבנת שהקישור אינו תקין כדי להמשיך')
             return
         }
 
@@ -181,7 +183,7 @@ export default function PaymentPage() {
                 parentName,
                 cleanPhone,
                 email,
-                userId,
+                userId: linkInvalid ? null : userId,
             })
 
             // Create a form and submit it to the iframe (similar to Tranzila's example)
@@ -465,6 +467,31 @@ export default function PaymentPage() {
                                 </h2>
                             </div>
 
+                            {linkInvalid && (
+                                <div className="mb-3 bg-amber-50 border border-amber-300 rounded p-3 text-xs text-amber-900 space-y-2">
+                                    <p className="font-bold text-sm">⚠️ הקישור אינו תקין</p>
+                                    <p>
+                                        לא הצלחנו לזהות את ההרשמה שלך לפי הקישור. אם תבחר/י לשלם ולא תתאם/י זאת
+                                        במפורש עם צוות ההנהלה, התשלום לא ישויך אליך.
+                                    </p>
+                                    <p>
+                                        אם קיבלת את הקישור בוואטסאפ, וודא/י שלחצת על "קרא עוד" בהודעה לפני
+                                        הלחיצה על הקישור, כך שהקישור המלא יפתח.
+                                    </p>
+                                    <label htmlFor="invalidLinkAck" className="flex items-start gap-2 cursor-pointer font-medium">
+                                        <Checkbox
+                                            id="invalidLinkAck"
+                                            checked={invalidLinkAck}
+                                            onChange={(e) => setInvalidLinkAck(e.target.checked)}
+                                            className="mt-0.5 flex-shrink-0"
+                                        />
+                                        <span>
+                                            הבנתי שהקישור אינו תקין, ושבלי תיאום מפורש עם צוות ההנהלה התשלום לא ישויך אליי
+                                        </span>
+                                    </label>
+                                </div>
+                            )}
+
                             <form onSubmit={handleSubmit} className="space-y-3">
                                 <div>
                                     <label htmlFor="childName" className="block text-xs font-medium text-gray-700 mb-1">
@@ -578,7 +605,7 @@ export default function PaymentPage() {
 
                                 <Button
                                     type="submit"
-                                    disabled={submitting || (!!paymentData?.termsLink && paymentData.termsLink.trim() !== '' && !termsAccepted)}
+                                    disabled={submitting || (linkInvalid && !invalidLinkAck) || (!!paymentData?.termsLink && paymentData.termsLink.trim() !== '' && !termsAccepted)}
                                     className="w-full text-white py-3 text-base font-semibold shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                     style={{ backgroundColor: '#4f60a8' }}
                                     onMouseEnter={(e) => {
