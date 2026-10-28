@@ -47,6 +47,13 @@ export default function PaymentPage() {
     const [numPayments, setNumPayments] = useState<number>(1)
 
     useEffect(() => {
+        // Check if userId is provided
+        if (!userId || userId.trim() === '') {
+            setLoading(false)
+            setError('invalid_page')
+            return
+        }
+
         if (id && id.trim() !== '') {
             fetchPaymentPageData(id)
         } else {
